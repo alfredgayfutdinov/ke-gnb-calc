@@ -557,15 +557,19 @@ function addNetPrompt() {
 }
 
 function autoOptimizeDepth() {
-  let maxNetDepth = 2.0;
+  let maxNetDepth = 0.7;
   state.nets.forEach(n => {
     if (n.depth > maxNetDepth) maxNetDepth = n.depth;
   });
-  // Нормативный зазор 1.5м + радиус трубы 0.055м + запас
-  state.depthHall = +(maxNetDepth + 1.80).toFixed(2);
+  // Строгий норматив: зазор в свету не менее 1.0м
+  // maxNetDepth + 1.0м (зазор в свету) + 0.055м (полудиаметр трубы 110) + 0.15м (запас на расширитель бура)
+  const requiredDepth = maxNetDepth + 1.0 + 0.055 + 0.15;
+  state.depthHall = +(Math.max(requiredDepth, 3.20)).toFixed(2);
   document.getElementById('inpHall').value = state.depthHall;
   renderSvg();
-  alert(`Автоматически подобрана безопасная отметка горизонтальной скважины: -${state.depthHall} м (запас под сетями 2.0м составляет $\\Delta h$ = ${(state.depthHall - 2.0 - 0.06).toFixed(2)} м)`);
+  
+  const minClearance = (state.depthHall - maxNetDepth - 0.055).toFixed(2);
+  alert(`Глубина горизонта пересчитана!\n\nПроектная отметка оси скважины: -${state.depthHall} м.\nМинимальный зазор в свету до самой глубокой сети (${maxNetDepth} м) составляет: ${minClearance} м (норматив не менее 1.0 м выдержан).`);
 }
 
 // РЕНДЕРИНГ ИНЖЕНЕРНОГО ЧЕРТЕЖА SVG НА ЛИСТ А3
