@@ -292,18 +292,12 @@
     </div>
 
     <div class="section-title">Геометрия скважины</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Длина ГНБ L (м)</label>
-        <input type="number" id="inpLength" value="110" step="1" onchange="updateProfile()">
-      </div>
-      <div class="form-group">
-        <label>Труба / пакет</label>
-        <input type="text" id="inpPipe" value="1хПНД 110мм" onchange="updateProfile()">
-      </div>
+    <div class="form-group">
+      <label>Длина ГНБ L (м)</label>
+      <input type="number" id="inpLength" value="110" step="1" onchange="updateProfile()">
     </div>
 
-    <div class="form-row" style="margin-top: 8px;">
+    <div class="form-row">
       <div class="form-group">
         <label>Глубина горизонта (м)</label>
         <input type="number" id="inpHall" value="3.80" step="0.05" onchange="updateProfile()">
@@ -362,7 +356,7 @@
       <div class="title-block">
         ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ (КЛ 0,4-10 кВ)
         <div class="subtitle" id="sheetSubtitle">
-          Масштаб: горизонтальный 1:200, вертикальный 1:50 | 1хПНД 110мм | Длина перехода L = 110.0 м
+          Масштаб: горизонтальный 1:200, вертикальный 1:50 | 1хПНД 160мм | Длина перехода L = 110.0 м
         </div>
       </div>
       
@@ -386,7 +380,7 @@
 <script>
 let state = {
   length: 110,
-  pipe: "1хПНД 110мм",
+  pipe: "1хПНД 160мм",
   depthHall: 3.80,
   radius: 60,
   asphaltStart: 20,
@@ -419,7 +413,7 @@ const NET_TYPES = {
 function loadPreset(len) {
   if (len === 110) {
     state.length = 110;
-    state.pipe = "1хПНД 110мм";
+    state.pipe = "1хПНД 160мм";
     state.depthHall = 3.80;
     state.radius = 60;
     state.asphaltStart = 20;
@@ -438,7 +432,7 @@ function loadPreset(len) {
     ];
   } else if (len === 62) {
     state.length = 62;
-    state.pipe = "1хПНД 110мм";
+    state.pipe = "1хПНД 160мм";
     state.depthHall = 3.70;
     state.radius = 50;
     state.asphaltStart = 15;
@@ -455,7 +449,7 @@ function loadPreset(len) {
     ];
   } else if (len === 48) {
     state.length = 48;
-    state.pipe = "1хПНД 110мм";
+    state.pipe = "1хПНД 160мм";
     state.depthHall = 3.80;
     state.radius = 50;
     state.asphaltStart = 14;
@@ -476,7 +470,6 @@ function loadPreset(len) {
 
 function syncInputs() {
   document.getElementById('inpLength').value = state.length;
-  document.getElementById('inpPipe').value = state.pipe;
   document.getElementById('inpHall').value = state.depthHall;
   document.getElementById('inpRadius').value = state.radius;
   document.getElementById('inpAsphaltStart').value = state.asphaltStart;
@@ -485,7 +478,7 @@ function syncInputs() {
 
 function updateProfile() {
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
-  state.pipe = document.getElementById('inpPipe').value;
+  state.pipe = "1хПНД 160мм";
   state.depthHall = parseFloat(document.getElementById('inpHall').value) || 3.5;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
   state.asphaltStart = parseFloat(document.getElementById('inpAsphaltStart').value) || 0;
@@ -552,12 +545,13 @@ function autoOptimizeDepth() {
   state.nets.forEach(n => {
     if (n.depth > maxNetDepth) maxNetDepth = n.depth;
   });
-  const requiredDepth = maxNetDepth + 1.0 + 0.055 + 0.15;
-  state.depthHall = +(Math.max(requiredDepth, 3.20)).toFixed(2);
+  // Труба 160мм: полудиаметр 0.080м + технологический запас 0.15м + норматив 1.0м
+  const requiredDepth = maxNetDepth + 1.0 + 0.080 + 0.15;
+  state.depthHall = +(Math.max(requiredDepth, 3.25)).toFixed(2);
   document.getElementById('inpHall').value = state.depthHall;
   renderSvg();
   
-  const minClearance = (state.depthHall - maxNetDepth - 0.055).toFixed(2);
+  const minClearance = (state.depthHall - maxNetDepth - 0.080).toFixed(2);
   alert(`Глубина пересчитана!\nОтметка горизонта скважины: -${state.depthHall} м.\nЗазор в свету до самой глубокой сети (${maxNetDepth} м): ${minClearance} м (норматив ≥1.0 м выдержан).`);
 }
 
@@ -657,7 +651,8 @@ function renderSvg() {
   const pathD = `M ${xPitStart} ${yPitStart} Q ${toSvgX(2.0 + lTransition*0.6)} ${yHoriz} ${xHorizStart} ${yHoriz} L ${xHorizEnd} ${yHoriz} Q ${toSvgX(L - 2.0 - lTransition*0.6)} ${yHoriz} ${xPitEnd} ${yPitEnd}`;
 
   markup += `
-    <path d="${pathD}" fill="none" stroke="#2196F3" stroke-width="7" stroke-linecap="round" />
+    <!-- Труба 160мм -->
+    <path d="${pathD}" fill="none" stroke="#2196F3" stroke-width="9.5" stroke-linecap="round" />
     <path d="${pathD}" fill="none" stroke="#d32f2f" stroke-width="1.8" stroke-dasharray="8,4" />
     
     <circle cx="${xPitStart}" cy="${yPitStart}" r="3.5" fill="#d32f2f" />
@@ -684,7 +679,8 @@ function renderSvg() {
       const prog = Math.max(0, (L - 2.0) - net.dist) / lTransition;
       pipeYAtDist = 2.0 + (state.depthHall - 2.0) * prog;
     }
-    const deltaHVal = pipeYAtDist - net.depth - 0.055;
+    // Зазор в свету от 160мм трубы (радиус = 0.080м)
+    const deltaHVal = pipeYAtDist - net.depth - 0.080;
     const deltaH = deltaHVal.toFixed(2);
     
     const isUnderNorm = deltaHVal < 1.0;
