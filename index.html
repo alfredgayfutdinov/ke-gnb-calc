@@ -256,6 +256,24 @@
     height: 100%;
     display: block;
   }
+
+  @media print {
+    body {
+      background: #fff !important;
+    }
+    .sidebar {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    .viewport {
+      padding: 0 !important;
+      margin: 0 !important;
+      background: #fff !important;
+      overflow: visible !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -787,88 +805,23 @@ function renderSvg() {
   svg.innerHTML = markup;
 }
 
-/* ФУНКЦИЯ 100% ПЕЧАТИ: ПЕРЕНОС ЧИСТОГО ЛИСТА В НОВОЕ ОКНО */
 function printPureSheet() {
-  const sheetHtml = document.getElementById('printSheet').outerHTML;
-  const printWindow = window.open('', '_blank', 'width=1600,height=1200');
+  const sidebar = document.querySelector('.sidebar');
+  const viewport = document.querySelector('.viewport');
 
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html lang="ru">
-    <head>
-      <meta charset="UTF-8">
-      <title>Чертеж_ГНБ_А3</title>
-      <style>
-        @page {
-          size: A3 landscape;
-          margin: 0;
-        }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        html, body {
-          margin: 0;
-          padding: 0;
-          background: #fff;
-          width: 100%;
-          height: 100%;
-          font-family: "ISOCPEUR", "GOST 2.304 type A", "Segoe UI", Arial, sans-serif;
-        }
-        .sheet {
-          width: 420mm;
-          height: 297mm;
-          box-sizing: border-box;
-          padding: 10mm 5mm 5mm 20mm; /* 20мм подшив слева */
-          background: #fff;
-          margin: 0 auto;
-        }
-        .frame {
-          width: 100%;
-          height: 100%;
-          border: 2px solid #000;
-          position: relative;
-          padding: 8px 12px;
-          box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-        }
-        .title-block {
-          text-align: center;
-          font-weight: bold;
-          font-size: 17px;
-          letter-spacing: 0.5px;
-          margin-bottom: 4px;
-        }
-        .subtitle {
-          font-size: 13px;
-          font-weight: normal;
-          color: #333;
-          margin-top: 2px;
-        }
-        .svg-container {
-          flex: 1;
-          width: 100%;
-          height: calc(100% - 40px);
-        }
-        svg {
-          width: 100%;
-          height: 100%;
-          display: block;
-        }
-      </style>
-    </head>
-    <body>
-      ${sheetHtml}
-      <script>
-        window.onload = function() {
-          setTimeout(function() {
-            window.print();
-            window.close();
-          }, 400);
-        };
-      <\/script>
-    </body>
-    </html>
-  `);
-  printWindow.document.close();
+  sidebar.style.setProperty('display', 'none', 'important');
+  viewport.style.setProperty('padding', '0', 'important');
+  viewport.style.setProperty('background', '#fff', 'important');
+
+  setTimeout(() => {
+    window.print();
+
+    setTimeout(() => {
+      sidebar.style.removeProperty('display');
+      viewport.style.removeProperty('padding');
+      viewport.style.removeProperty('background');
+    }, 300);
+  }, 50);
 }
 
 function exportAutoCAD() {
