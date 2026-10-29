@@ -267,11 +267,43 @@
     display: block;
   }
 
-  @media print {
-    body { background: none; }
-    .sidebar { display: none !エmportant; }
-    .viewport { padding: 0; background: none; overflow: visible; display: block; }
-    .sheet { box-shadow: none; margin: 0; page-break-after: avoid; }
+ @media print {
+    html, body {
+      width: 420mm !important;
+      height: 297mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: none !important;
+      overflow: hidden !important;
+    }
+    /* ПОЛНОСТЬЮ СКРЫВАЕМ ЛЕВУЮ ПАНЕЛЬ */
+    .sidebar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      visibility: hidden !important;
+    }
+    /* ОБЛАСТЬ ПРОСМОТРА РАЗВОРАЧИВАЕМ НА ВЕСЬ ЛИСТ */
+    .viewport {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: none !important;
+      overflow: visible !important;
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    /* ЧЕРТЕЖНЫЙ ЛИСТ СТРОГО ПО РАЗМЕРАМ А3 */
+    .sheet {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 420mm !important;
+      height: 297mm !important;
+      min-width: 420mm !important;
+      min-height: 297mm !important;
+      page-break-after: avoid !important;
+      page-break-inside: avoid !important;
+    }
   }
 </style>
 </head>
