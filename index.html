@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Генератор профилей ГНБ (КЛ 0,4-10 кВ) - Лист А3</title>
+<style>
+  @page {
+    size: A3 landscape;
+    margin: 0;
+  }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "ISOCPEUR", "GOST 2.304 type A", Arial, sans-serif;
+    background: #1e1e24;
+    color: #e0e0e0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ЛЕВАЯ ПАНЕЛЬ: ФОРМА ВВОДА */
+  .sidebar {
+    width: 440px;
+    min-width: 440px;
+    background: #25252d;
+    border-right: 1px solid #383844;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    z-index: 10;
+  }
+  .sidebar-header {
+    padding: 16px 20px;
+    background: #1a1a20;
+    border-bottom: 1px solid #383844;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-header h2 {
+    margin: 0;
+    font-size: 16px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .btn-preset {
+    background: #333340;
+    color: #aaa;
+    border: 1px solid #444455;
+    padding: 6px 4px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-preset:hover { background: #3d3d4d; color: #fff; }
+
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #4da3ff;
+    margin: 16px 0 10px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .form-group {
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+  .form-row {
+    display
