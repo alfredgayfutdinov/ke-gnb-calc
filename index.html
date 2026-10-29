@@ -93,4 +93,802 @@
     margin-bottom: 4px;
   }
   .form-row {
-    display
+    display: flex;
+    gap: 8px;
+  }
+  .form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  input, select {
+    width: 100%;
+    background: #18181f;
+    border: 1px solid #3c3c4a;
+    border-radius: 4px;
+    padding: 7px 10px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+  }
+  input:focus, select:focus {
+    border-color: #007acc;
+  }
+
+  /* Таблица сетей */
+  .net-item {
+    background: #1e1e26;
+    border: 1px solid #353545;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .net-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .net-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  .badge-gas { background: #b28900; color: #fff; }
+  .badge-power { background: #c2185b; color: #fff; }
+  .badge-water { background: #0288d1; color: #fff; }
+  .badge-sewer { background: #5d4037; color: #fff; }
+  .badge-heat { background: #d84315; color: #fff; }
+  .badge-comm { background: #7b1fa2; color: #fff; }
+
+  .btn-remove-net {
+    background: none;
+    border: none;
+    color: #ff5252;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .btn-add-net {
+    width: 100%;
+    background: #2a2a38;
+    color: #4da3ff;
+    border: 1px dashed #4da3ff;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 4px;
+  }
+  .btn-add-net:hover { background: #323245; }
+
+  .sidebar-footer {
+    padding: 14px 20px;
+    background: #1a1a20;
+    border-top: 1px solid #383844;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: #007acc;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover { background: #0066aa; }
+  .export-group {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-secondary {
+    flex: 1;
+    background: #333340;
+    color: #ddd;
+    border: 1px solid #484858;
+    padding: 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-secondary:hover { background: #3d3d4e; color: #fff; }
+
+  /* ПРАВАЯ ОБЛАСТЬ: ПРОСМОТР ЛИСТА А3 */
+  .viewport {
+    flex: 1;
+    height: 100%;
+    overflow: auto;
+    background: #404249;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  
+  /* Лист А3: 420мм х 297мм (при 96 DPI: 1587px x 1122px) */
+  .sheet {
+    width: 1587px;
+    height: 1122px;
+    min-width: 1587px;
+    min-height: 1122px;
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    position: relative;
+    padding: 38px 19px 19px 76px; /* Рамка по ГОСТ: слева 20мм (76px), остальные по 5мм (19px) */
+    box-sizing: border-box;
+    font-family: "ISOCPEUR", "GOST 2.304 type A", "Segoe UI", Arial, sans-serif;
+    color: #000;
+  }
+  .frame {
+    width: 100%;
+    height: 100%;
+    border: 2px solid #000;
+    position: relative;
+    padding: 12px 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+  .title-block {
+    text-align: center;
+    font-weight: bold;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    color: #000;
+  }
+  .subtitle {
+    font-size: 13px;
+    font-weight: normal;
+    color: #333;
+    margin-top: 3px;
+  }
+  .svg-container {
+    flex: 1;
+    width: 100%;
+    height: calc(100% - 45px);
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  @media print {
+    body { background: none; }
+    .sidebar { display: none !エmportant; }
+    .viewport { padding: 0; background: none; overflow: visible; display: block; }
+    .sheet { box-shadow: none; margin: 0; page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>⚡ Профиль ГНБ (А3 ГОСТ)</h2>
+    <span style="font-size: 11px; color: #4da3ff; background: #162438; padding: 3px 6px; border-radius: 4px;">КЛ 0,4-10 кВ</span>
+  </div>
+
+  <div class="sidebar-body">
+    <div style="font-size: 11px; color: #888; margin-bottom: 6px;">Быстрые примеры:</div>
+    <div class="preset-buttons">
+      <button class="btn-preset" onclick="loadPreset(110)">Тест 110 м</button>
+      <button class="btn-preset" onclick="loadPreset(62)">Тест 62 м</button>
+      <button class="btn-preset" onclick="loadPreset(48)">Трасса 48 м</button>
+    </div>
+
+    <div class="section-title">Геометрия скважины</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Длина ГНБ L (м)</label>
+        <input type="number" id="inpLength" value="110" step="1" onchange="updateProfile()">
+      </div>
+      <div class="form-group">
+        <label>Труба / пакет</label>
+        <input type="text" id="inpPipe" value="1хПНД 110мм" onchange="updateProfile()">
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top: 8px;">
+      <div class="form-group">
+        <label>Глубина горизонта (м)</label>
+        <input type="number" id="inpHall" value="3.80" step="0.05" onchange="updateProfile()">
+      </div>
+      <div class="form-group">
+        <label>Радиус Rизг (м)</label>
+        <input type="number" id="inpRadius" value="60" step="5" onchange="updateProfile()">
+      </div>
+    </div>
+    
+    <div class="form-row" style="margin-top: 8px;">
+      <div class="form-group">
+        <label>Котлованы (ДхШхГ, м)</label>
+        <input type="text" value="2.0 х 2.0 х 2.0" disabled style="color:#777; background:#14141a;">
+      </div>
+      <div class="form-group">
+        <label>Отметка земли (м)</label>
+        <input type="text" value="0.000" disabled style="color:#777; background:#14141a;">
+      </div>
+    </div>
+
+    <div class="section-title">Зоны покрытия поверхности</div>
+    <div class="form-group">
+      <label>Участок асфальтобетона (проезжая часть)</label>
+      <div class="form-row">
+        <input type="number" id="inpAsphaltStart" placeholder="Начало (м)" value="20" onchange="updateProfile()">
+        <input type="number" id="inpAsphaltEnd" placeholder="Конец (м)" value="80" onchange="updateProfile()">
+      </div>
+      <div style="font-size: 10.5px; color: #777; margin-top: 4px;">*Все участки вне асфальта принимаются газоном (зелеными насаждениями).</div>
+    </div>
+
+    <div class="section-title">
+      <span>Пересекаемые сети</span>
+      <span id="netsCountBadge" style="color: #888; font-size: 11px;">10 сетей</span>
+    </div>
+    
+    <div id="netsContainer">
+      <!-- Список сетей генерируется скриптом -->
+    </div>
+    <button class="btn-add-net" onclick="addNetPrompt()">+ Добавить пересечение коммуникации</button>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="btn-primary" onclick="window.print()">
+      🖨️ Сохранить в PDF (Лист А3)
+    </button>
+    <div class="export-group">
+      <button class="btn-secondary" onclick="exportAutoCAD()">CAD (ПЛИНИЯ)</button>
+      <button class="btn-secondary" onclick="exportCSV()">Excel (CSV)</button>
+      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-глубина</button>
+    </div>
+  </div>
+</div>
+
+<!-- ПРАВАЯ ОБЛАСТЬ ПРОСМОТРА ЛИСТА А3 -->
+<div class="viewport">
+  <div class="sheet" id="printSheet">
+    <div class="frame">
+      <div class="title-block">
+        ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ (КЛ 0,4-10 кВ)
+        <div class="subtitle" id="sheetSubtitle">
+          Масштаб: горизонтальный 1:200, вертикальный 1:50 | 1хПНД 110мм | Длина перехода L = 110.0 м
+        </div>
+      </div>
+      
+      <div class="svg-container">
+        <svg id="profileSvg" viewBox="0 0 1460 920">
+          <defs>
+            <pattern id="pitHatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="8" stroke="#777" stroke-width="1.2" />
+            </pattern>
+            <pattern id="asphaltHatch" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
+            </pattern>
+          </defs>
+          <g id="svgContent"></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// БАЗОВЫЕ КОНСТАНТЫ И СОСТОЯНИЕ
+let state = {
+  length: 110,
+  pipe: "1хПНД 110мм",
+  depthHall: 3.80,
+  radius: 60,
+  asphaltStart: 20,
+  asphaltEnd: 80,
+  pitDepth: 2.0,
+  pitSize: 2.0,
+  nets: [
+    { type: 'gas', name: 'Газопровод d159', dist: 5, depth: 2.0 },
+    { type: 'power', name: 'КЛ 0.4-10кВ', dist: 10, depth: 0.7 },
+    { type: 'power', name: 'КЛ 10кВ', dist: 15, depth: 0.7 },
+    { type: 'water', name: 'Водопровод В1 d200', dist: 25, depth: 2.0 },
+    { type: 'power', name: 'КЛ 0.4кВ', dist: 30, depth: 0.7 },
+    { type: 'gas', name: 'Газопровод с/д', dist: 50, depth: 2.0 },
+    { type: 'sewer', name: 'Канализация К1 d250', dist: 60, depth: 2.0 },
+    { type: 'heat', name: 'Теплотрасса 2хd159 (в лотке)', dist: 70, depth: 2.0 },
+    { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 80, depth: 0.7 },
+    { type: 'power', name: 'КЛ 0.4кВ', dist: 100, depth: 0.7 }
+  ]
+};
+
+// ТИПЫ СЕТЕЙ И ЦВЕТА
+const NET_TYPES = {
+  power: { label: 'КЛ 0.4-10кВ', defaultDepth: 0.7, color: '#e91e63', badge: 'badge-power' },
+  comm:  { label: 'Кабель связи', defaultDepth: 0.7, color: '#9c27b0', badge: 'badge-comm' },
+  gas:   { label: 'Газопровод', defaultDepth: 2.0, color: '#ffc107', badge: 'badge-gas' },
+  water: { label: 'Водопровод', defaultDepth: 2.0, color: '#03a9f4', badge: 'badge-water' },
+  sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#795548', badge: 'badge-sewer' },
+  heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#ff5722', badge: 'badge-heat' }
+};
+
+// ПРЕСЕТЫ ИЗ ДИАЛОГА
+function loadPreset(len) {
+  if (len === 110) {
+    state.length = 110;
+    state.pipe = "1хПНД 110мм";
+    state.depthHall = 3.80;
+    state.radius = 60;
+    state.asphaltStart = 20;
+    state.asphaltEnd = 80;
+    state.nets = [
+      { type: 'gas', name: 'Газопровод d159', dist: 5, depth: 2.0 },
+      { type: 'power', name: 'КЛ 0.4-10кВ', dist: 10, depth: 0.7 },
+      { type: 'power', name: 'КЛ 10кВ', dist: 15, depth: 0.7 },
+      { type: 'water', name: 'Водопровод В1 d200', dist: 25, depth: 2.0 },
+      { type: 'power', name: 'КЛ 0.4кВ', dist: 30, depth: 0.7 },
+      { type: 'gas', name: 'Газопровод с/д', dist: 50, depth: 2.0 },
+      { type: 'sewer', name: 'Канализация К1 d250', dist: 60, depth: 2.0 },
+      { type: 'heat', name: 'Теплотрасса 2хd159 (в лотке)', dist: 70, depth: 2.0 },
+      { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 80, depth: 0.7 },
+      { type: 'power', name: 'КЛ 0.4кВ', dist: 100, depth: 0.7 }
+    ];
+  } else if (len === 62) {
+    state.length = 62;
+    state.pipe = "1хПНД 110мм";
+    state.depthHall = 3.70;
+    state.radius = 50;
+    state.asphaltStart = 15;
+    state.asphaltEnd = 45;
+    state.nets = [
+      { type: 'power', name: 'Электрокабель', dist: 6, depth: 0.7 },
+      { type: 'gas', name: 'Газопровод', dist: 8, depth: 2.0 },
+      { type: 'power', name: 'Электрокабель', dist: 11, depth: 0.7 },
+      { type: 'power', name: 'Электрокабель', dist: 12, depth: 0.7 },
+      { type: 'power', name: 'Электрокабель', dist: 13, depth: 0.7 },
+      { type: 'power', name: 'Электрокабель', dist: 15, depth: 0.7 },
+      { type: 'power', name: 'Электрокабель', dist: 22, depth: 0.7 },
+      { type: 'heat', name: 'Теплотрасса', dist: 56, depth: 2.0 }
+    ];
+  } else if (len === 48) {
+    state.length = 48;
+    state.pipe = "1хПНД 110мм";
+    state.depthHall = 3.80;
+    state.radius = 50;
+    state.asphaltStart = 14;
+    state.asphaltEnd = 38;
+    state.nets = [
+      { type: 'comm', name: 'Кабель связи', dist: 8, depth: 0.7 },
+      { type: 'power', name: 'КЛ 10кВ', dist: 18, depth: 0.7 },
+      { type: 'water', name: 'Водопровод В1', dist: 22.5, depth: 2.0 },
+      { type: 'gas', name: 'Газопровод с/д', dist: 27, depth: 2.0 },
+      { type: 'sewer', name: 'Канализация К1', dist: 34, depth: 2.0 },
+      { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 42, depth: 0.7 }
+    ];
+  }
+  syncInputs();
+  renderNetsList();
+  renderSvg();
+}
+
+function syncInputs() {
+  document.getElementById('inpLength').value = state.length;
+  document.getElementById('inpPipe').value = state.pipe;
+  document.getElementById('inpHall').value = state.depthHall;
+  document.getElementById('inpRadius').value = state.radius;
+  document.getElementById('inpAsphaltStart').value = state.asphaltStart;
+  document.getElementById('inpAsphaltEnd').value = state.asphaltEnd;
+}
+
+function updateProfile() {
+  state.length = parseFloat(document.getElementById('inpLength').value) || 60;
+  state.pipe = document.getElementById('inpPipe').value;
+  state.depthHall = parseFloat(document.getElementById('inpHall').value) || 3.5;
+  state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
+  state.asphaltStart = parseFloat(document.getElementById('inpAsphaltStart').value) || 0;
+  state.asphaltEnd = parseFloat(document.getElementById('inpAsphaltEnd').value) || 0;
+  renderNetsList();
+  renderSvg();
+}
+
+function renderNetsList() {
+  const container = document.getElementById('netsContainer');
+  container.innerHTML = '';
+  document.getElementById('netsCountBadge').textContent = state.nets.length + ' сетей';
+
+  state.nets.sort((a,b) => a.dist - b.dist);
+
+  state.nets.forEach((net, index) => {
+    const div = document.createElement('div');
+    div.className = 'net-item';
+    const netConf = NET_TYPES[net.type] || NET_TYPES.gas;
+    div.innerHTML = `
+      <div class="net-item-header">
+        <span class="net-badge ${netConf.badge}">${netConf.label}</span>
+        <button class="btn-remove-net" onclick="removeNet(${index})">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <input type="text" value="${net.name}" onchange="updateNetName(${index}, this.value)" placeholder="Название">
+        </div>
+        <div class="form-group" style="flex:1">
+          <input type="number" step="0.5" value="${net.dist}" onchange="updateNetDist(${index}, this.value)" placeholder="ПК (м)">
+        </div>
+        <div class="form-group" style="flex:1">
+          <input type="number" step="0.1" value="${net.depth}" onchange="updateNetDepth(${index}, this.value)" placeholder="Гл (м)">
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function updateNetName(i, val) { state.nets[i].name = val; renderSvg(); }
+function updateNetDist(i, val) { state.nets[i].dist = parseFloat(val) || 0; renderSvg(); }
+function updateNetDepth(i, val) { state.nets[i].depth = parseFloat(val) || 0.7; renderSvg(); }
+function removeNet(i) { state.nets.splice(i, 1); renderNetsList(); renderSvg(); }
+
+function addNetPrompt() {
+  const type = prompt("Выберите тип сети:\n1 - Газопровод (2.0м)\n2 - Электрокабель (0.7м)\n3 - Водопровод (2.0м)\n4 - Канализация (2.0м)\n5 - Теплотрасса (2.0м)\n6 - Связь/ВОЛС (0.7м)", "1");
+  let netType = 'gas';
+  let netName = 'Газопровод';
+  let netDepth = 2.0;
+
+  if (type === '2') { netType = 'power'; netName = 'КЛ 10кВ'; netDepth = 0.7; }
+  else if (type === '3') { netType = 'water'; netName = 'Водопровод В1'; netDepth = 2.0; }
+  else if (type === '4') { netType = 'sewer'; netName = 'Канализация К1'; netDepth = 2.0; }
+  else if (type === '5') { netType = 'heat'; netName = 'Теплотрасса'; netDepth = 2.0; }
+  else if (type === '6') { netType = 'comm'; netName = 'Кабель связи'; netDepth = 0.7; }
+
+  const dist = parseFloat(prompt("Введите расстояние от точки входа (ПК в метрах):", (state.length/2).toFixed(1))) || 10;
+  state.nets.push({ type: netType, name: netName, dist: dist, depth: netDepth });
+  renderNetsList();
+  renderSvg();
+}
+
+function autoOptimizeDepth() {
+  let maxNetDepth = 2.0;
+  state.nets.forEach(n => {
+    if (n.depth > maxNetDepth) maxNetDepth = n.depth;
+  });
+  // Нормативный зазор 1.5м + радиус трубы 0.055м + запас
+  state.depthHall = +(maxNetDepth + 1.80).toFixed(2);
+  document.getElementById('inpHall').value = state.depthHall;
+  renderSvg();
+  alert(`Автоматически подобрана безопасная отметка горизонтальной скважины: -${state.depthHall} м (запас под сетями 2.0м составляет $\\Delta h$ = ${(state.depthHall - 2.0 - 0.06).toFixed(2)} м)`);
+}
+
+// РЕНДЕРИНГ ИНЖЕНЕРНОГО ЧЕРТЕЖА SVG НА ЛИСТ А3
+function renderSvg() {
+  const L = state.length;
+  document.getElementById('sheetSubtitle').textContent = 
+    `Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | ${state.pipe} | Длина перехода L = ${L.toFixed(1)} м`;
+
+  const svg = document.getElementById('svgContent');
+  svg.innerHTML = '';
+
+  // СИСТЕМА КООРДИНАТ
+  // Ширина чертежной зоны: от X=80px до X=1380px (1300 px)
+  const leftX = 80;
+  const rightX = 1380;
+  const drawWidth = rightX - leftX;
+  const scaleX = drawWidth / L; // px на метр
+
+  const toSvgX = (dist) => leftX + (dist * scaleX);
+  
+  // Высотная привязка
+  // Y земли (0.000) = 210px
+  // 1 метр глубины = 60 px
+  const groundY = 210;
+  const scaleY = 60;
+  const toSvgY = (absElev) => groundY - (absElev * scaleY); // absElev < 0
+
+  let markup = '';
+
+  // 1. СЕТКА ОТМЕТОК
+  markup += `
+    <g stroke="#e2e2e2" stroke-width="0.8">
+      <line x1="${leftX-20}" y1="${groundY-120}" x2="${rightX+20}" y2="${groundY-120}" stroke-dasharray="3,3" />
+      <line x1="${leftX-20}" y1="${groundY-60}" x2="${rightX+20}" y2="${groundY-60}" stroke-dasharray="3,3" />
+      <line x1="${leftX-20}" y1="${groundY}" x2="${rightX+20}" y2="${groundY}" stroke="#000" stroke-width="1.3" />
+      <line x1="${leftX-20}" y1="${groundY+60}" x2="${rightX+20}" y2="${groundY+60}" stroke-dasharray="3,3" />
+      <line x1="${leftX-20}" y1="${groundY+120}" x2="${rightX+20}" y2="${groundY+120}" stroke-dasharray="3,3" />
+      <line x1="${leftX-20}" y1="${groundY+180}" x2="${rightX+20}" y2="${groundY+180}" stroke-dasharray="3,3" />
+      <line x1="${leftX-20}" y1="${groundY+240}" x2="${rightX+20}" y2="${groundY+240}" stroke-dasharray="3,3" />
+    </g>
+    <g font-size="11" fill="#444" text-anchor="end">
+      <text x="${leftX-28}" y="${groundY-116}">+2.00</text>
+      <text x="${leftX-28}" y="${groundY-56}">+1.00</text>
+      <text x="${leftX-28}" y="${groundY+4}" font-weight="bold" fill="#000">0.000 (Земля)</text>
+      <text x="${leftX-28}" y="${groundY+64}">-1.00</text>
+      <text x="${leftX-28}" y="${groundY+124}">-2.00</text>
+      <text x="${leftX-28}" y="${groundY+184}">-3.00</text>
+      <text x="${leftX-28}" y="${groundY+244}">-4.00</text>
+    </g>
+  `;
+
+  // 2. ЗОНЫ ПОКРЫТИЯ (АСФАЛЬТ И ГАЗОН)
+  const aStart = Math.max(0, Math.min(L, state.asphaltStart));
+  const aEnd = Math.max(aStart, Math.min(L, state.asphaltEnd));
+
+  // Газон до асфальта
+  if (aStart > 0) {
+    const w1 = toSvgX(aStart) - toSvgX(0);
+    markup += `
+      <rect x="${toSvgX(0)}" y="${groundY-8}" width="${w1}" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />
+      <text x="${toSvgX(aStart/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#28a745">Газон / Зеленые насаждения</text>
+    `;
+  }
+  // Асфальт
+  if (aEnd > aStart) {
+    const wa = toSvgX(aEnd) - toSvgX(aStart);
+    markup += `
+      <rect x="${toSvgX(aStart)}" y="${groundY-10}" width="${wa}" height="10" fill="url(#asphaltHatch)" stroke="#111" stroke-width="1.8" />
+      <rect x="${toSvgX(aStart)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
+      <rect x="${toSvgX(aEnd)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
+      <text x="${toSvgX((aStart+aEnd)/2)}" y="${groundY-18}" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">Асфальтобетонное покрытие (ПК ${aStart} - ПК ${aEnd})</text>
+    `;
+  }
+  // Газон после асфальта
+  if (aEnd < L) {
+    const w2 = toSvgX(L) - toSvgX(aEnd);
+    markup += `
+      <rect x="${toSvgX(aEnd)}" y="${groundY-8}" width="${w2}" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />
+      <text x="${toSvgX((aEnd+L)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#28a745">Газон / Зеленые насаждения</text>
+    `;
+  }
+
+  // 3. КОТЛОВАНЫ 2х2х2 м
+  const pitWidthPx = 2.0 * scaleX;
+  const pitDepthPx = 2.0 * scaleY;
+  // Стартовый
+  markup += `
+    <rect x="${toSvgX(0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#000" stroke-width="1.5" />
+    <line x1="${toSvgX(0)}" y1="${groundY}" x2="${toSvgX(0)}" y2="${groundY+pitDepthPx}" stroke="#c00" stroke-width="2.5" />
+    <text x="${toSvgX(1.0)}" y="${groundY+pitDepthPx+16}" font-size="9.5" text-anchor="middle" font-weight="bold">Котлован 2.0х2.0х2.0м</text>
+  `;
+  // Приемный
+  markup += `
+    <rect x="${toSvgX(L-2.0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#000" stroke-width="1.5" />
+    <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#c00" stroke-width="2.5" />
+    <text x="${toSvgX(L-1.0)}" y="${groundY+pitDepthPx+16}" font-size="9.5" text-anchor="middle" font-weight="bold">Котлован 2.0х2.0х2.0м</text>
+  `;
+
+  // 4. ТРАЕКТОРИЯ ГНБ
+  const xPitStart = toSvgX(2.0);
+  const yPitStart = toSvgY(-2.0);
+  const xPitEnd = toSvgX(L - 2.0);
+  const yPitEnd = toSvgY(-2.0);
+
+  // Выход на горизонт (углы и радиус)
+  const lTransition = Math.min(18, (L - 10) * 0.25);
+  const xHorizStart = toSvgX(2.0 + lTransition);
+  const xHorizEnd = toSvgX(L - 2.0 - lTransition);
+  const yHoriz = toSvgY(-state.depthHall);
+
+  // Кривая траектория скважины
+  const pathD = `M ${xPitStart} ${yPitStart} Q ${toSvgX(2.0 + lTransition*0.6)} ${yHoriz} ${xHorizStart} ${yHoriz} L ${xHorizEnd} ${yHoriz} Q ${toSvgX(L - 2.0 - lTransition*0.6)} ${yHoriz} ${xPitEnd} ${yPitEnd}`;
+
+  markup += `
+    <!-- Тело трубы 110мм -->
+    <path d="${pathD}" fill="none" stroke="#2196F3" stroke-width="7" stroke-linecap="round" />
+    <!-- Ось скважины -->
+    <path d="${pathD}" fill="none" stroke="#d32f2f" stroke-width="1.8" stroke-dasharray="8,4" />
+    
+    <circle cx="${xPitStart}" cy="${yPitStart}" r="3.5" fill="#d32f2f" />
+    <circle cx="${xHorizStart}" cy="${yHoriz}" r="3.5" fill="#d32f2f" />
+    <circle cx="${xHorizEnd}" cy="${yHoriz}" r="3.5" fill="#d32f2f" />
+    <circle cx="${xPitEnd}" cy="${yPitEnd}" r="3.5" fill="#d32f2f" />
+
+    <text x="${(xPitStart+xHorizStart)/2}" y="${yHoriz+36}" font-size="10" fill="#d32f2f" text-anchor="middle">Rизг = ${state.radius}м</text>
+    <text x="${(xHorizEnd+xPitEnd)/2}" y="${yHoriz+36}" font-size="10" fill="#d32f2f" text-anchor="middle">Rизг = ${state.radius}м</text>
+    <text x="${(xHorizStart+xHorizEnd)/2}" y="${yHoriz+20}" font-size="11.5" fill="#004d80" font-weight="bold" text-anchor="middle">${state.pipe} (отм. оси -${state.depthHall.toFixed(3)}м, глубина ${state.depthHall.toFixed(2)}м)</text>
+  `;
+
+  // 5. ПЕРЕСЕКАЕМЫЕ СЕТИ
+  state.nets.forEach((net, idx) => {
+    const nx = toSvgX(net.dist);
+    const ny = toSvgY(-net.depth);
+    const conf = NET_TYPES[net.type] || NET_TYPES.gas;
+    
+    // Зазор безопасности
+    let pipeYAtDist = state.depthHall;
+    if (net.dist <= 2.0 + lTransition) {
+      const prog = Math.max(0, net.dist - 2.0) / lTransition;
+      pipeYAtDist = 2.0 + (state.depthHall - 2.0) * prog;
+    } else if (net.dist >= L - 2.0 - lTransition) {
+      const prog = Math.max(0, (L - 2.0) - net.dist) / lTransition;
+      pipeYAtDist = 2.0 + (state.depthHall - 2.0) * prog;
+    }
+    const deltaH = (pipeYAtDist - net.depth - 0.055).toFixed(2);
+
+    const leaderY = 115 + (idx % 3) * 22;
+
+    markup += `
+      <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="#000" stroke-width="1.2" />
+      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
+      
+      <!-- Выноска -->
+      <line x1="${nx}" y1="${ny-6.5}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1" />
+      <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="#000" stroke-width="1" />
+      <text x="${nx+36}" y="${leaderY+2}" font-size="9" font-weight="bold">${net.name}</text>
+      <text x="${nx+36}" y="${leaderY+13}" font-size="8" fill="#555">ПК ${net.dist.toFixed(1)} / Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м</text>
+    `;
+  });
+
+  // 6. ПОДВАЛЬНАЯ ТАБЛИЦА ГОСТ 21.607
+  const tblY = 530;
+  const colW = 210;
+  markup += `
+    <g stroke="#000" stroke-width="1.2">
+      <line x1="${leftX-30}" y1="${tblY}" x2="${rightX+20}" y2="${tblY}" />
+      <line x1="${leftX-30}" y1="${tblY+50}" x2="${rightX+20}" y2="${tblY+50}" />
+      <line x1="${leftX-30}" y1="${tblY+100}" x2="${rightX+20}" y2="${tblY+100}" />
+      <line x1="${leftX-30}" y1="${tblY+150}" x2="${rightX+20}" y2="${tblY+150}" />
+      <line x1="${leftX-30}" y1="${tblY+200}" x2="${rightX+20}" y2="${tblY+200}" />
+      <line x1="${leftX-30}" y1="${tblY+260}" x2="${rightX+20}" y2="${tblY+260}" />
+      <line x1="${leftX-30}" y1="${tblY+320}" x2="${rightX+20}" y2="${tblY+320}" />
+
+      <line x1="${leftX-30}" y1="${tblY}" x2="${leftX-30}" y2="${tblY+320}" />
+      <line x1="${leftX+colW}" y1="${tblY}" x2="${leftX+colW}" y2="${tblY+320}" />
+      <line x1="${rightX+20}" y1="${tblY}" x2="${rightX+20}" y2="${tblY+320}" />
+    </g>
+
+    <g font-size="11.5" font-weight="bold" fill="#000">
+      <text x="${leftX+colW/2-15}" y="${tblY+30}" text-anchor="middle">Тип покрытия</text>
+      <text x="${leftX+colW/2-15}" y="${tblY+80}" text-anchor="middle">Отметка земли, м</text>
+      <text x="${leftX+colW/2-15}" y="${tblY+130}" text-anchor="middle">Отметка оси трубы, м</text>
+      <text x="${leftX+colW/2-15}" y="${tblY+180}" text-anchor="middle">Глубина заложения, м</text>
+      <text x="${leftX+colW/2-15}" y="${tblY+235}" text-anchor="middle">Уклон, длина, радиус</text>
+      <text x="${leftX+colW/2-15}" y="${tblY+295}" text-anchor="middle">Пикетаж и расстояния</text>
+    </g>
+  `;
+
+  // Заполнение подвала
+  // 1. Покрытия
+  if (aStart > 0) {
+    markup += `
+      <line x1="${toSvgX(aStart)}" y1="${tblY}" x2="${toSvgX(aStart)}" y2="${tblY+50}" stroke="#000" />
+      <text x="${toSvgX(aStart/2)}" y="${tblY+30}" text-anchor="middle" font-size="10.5">Газон (${aStart.toFixed(1)} м)</text>
+    `;
+  }
+  if (aEnd > aStart) {
+    markup += `
+      <line x1="${toSvgX(aEnd)}" y1="${tblY}" x2="${toSvgX(aEnd)}" y2="${tblY+50}" stroke="#000" />
+      <text x="${toSvgX((aStart+aEnd)/2)}" y="${tblY+30}" text-anchor="middle" font-size="11" font-weight="bold">Асфальтобетон (${(aEnd-aStart).toFixed(1)} м)</text>
+    `;
+  }
+  if (aEnd < L) {
+    markup += `
+      <text x="${toSvgX((aEnd+L)/2)}" y="${tblY+30}" text-anchor="middle" font-size="10.5">Газон (${(L-aEnd).toFixed(1)} м)</text>
+    `;
+  }
+
+  // Сетка пикетов для подвала
+  const pts = [0, 2.0, ...state.nets.map(n => n.dist), L-2.0, L].filter((v,i,a) => a.indexOf(v) === i).sort((a,b)=>a-b);
+  pts.forEach(p => {
+    const px = toSvgX(p);
+    
+    // Вычисление отметки оси
+    let d = state.depthHall;
+    if (p <= 2.0 + lTransition) {
+      const prog = Math.max(0, p - 2.0) / lTransition;
+      d = 2.0 + (state.depthHall - 2.0) * prog;
+    } else if (p >= L - 2.0 - lTransition) {
+      const prog = Math.max(0, (L - 2.0) - p) / lTransition;
+      d = 2.0 + (state.depthHall - 2.0) * prog;
+    }
+    if (p < 2.0 || p > L-2.0) d = 2.0;
+
+    markup += `
+      <line x1="${px}" y1="${tblY+260}" x2="${px}" y2="${tblY+320}" stroke="#000" stroke-width="0.8" />
+      <text x="${px}" y="${tblY+80}" font-size="10" text-anchor="middle">0.000</text>
+      <text x="${px}" y="${tblY+130}" font-size="10" text-anchor="middle">-${d.toFixed(3)}</text>
+      <text x="${px}" y="${tblY+180}" font-size="10" text-anchor="middle">${d.toFixed(2)}</text>
+      <text x="${px}" y="${tblY+280}" font-size="9" text-anchor="middle">${p.toFixed(1)}</text>
+      <text x="${px}" y="${tblY+305}" font-size="8.5" text-anchor="middle">ПК${Math.floor(p/100)}+${(p%100 < 10 ? '0' : '') + (p%100).toFixed(0)}</text>
+    `;
+  });
+
+  // Геометрия уклонов
+  const horizLen = (L - 4.0 - 2*lTransition).toFixed(1);
+  markup += `
+    <line x1="${xPitStart}" y1="${tblY+200}" x2="${xPitStart}" y2="${tblY+260}" stroke="#000" />
+    <line x1="${xHorizStart}" y1="${tblY+200}" x2="${xHorizStart}" y2="${tblY+260}" stroke="#000" />
+    <line x1="${xHorizEnd}" y1="${tblY+200}" x2="${xHorizEnd}" y2="${tblY+260}" stroke="#000" />
+    <line x1="${xPitEnd}" y1="${tblY+200}" x2="${xPitEnd}" y2="${tblY+260}" stroke="#000" />
+
+    <line x1="${xPitStart}" y1="${tblY+255}" x2="${xHorizStart}" y2="${tblY+205}" stroke="#555" />
+    <line x1="${xHorizStart}" y1="${tblY+230}" x2="${xHorizEnd}" y2="${tblY+230}" stroke="#555" />
+    <line x1="${xHorizEnd}" y1="${tblY+205}" x2="${xPitEnd}" y2="${tblY+255}" stroke="#555" />
+
+    <text x="${(xPitStart+xHorizStart)/2}" y="${tblY+220}" font-size="9.5" text-anchor="middle">R=${state.radius}м, i=10°</text>
+    <text x="${(xPitStart+xHorizStart)/2}" y="${tblY+245}" font-size="9.5" text-anchor="middle">L = ${lTransition.toFixed(1)}м</text>
+
+    <text x="${(xHorizStart+xHorizEnd)/2}" y="${tblY+222}" font-size="10.5" font-weight="bold" text-anchor="middle">i = 0.000 (горизонт)</text>
+    <text x="${(xHorizStart+xHorizEnd)/2}" y="${tblY+245}" font-size="10" text-anchor="middle">L = ${horizLen} м</text>
+
+    <text x="${(xHorizEnd+xPitEnd)/2}" y="${tblY+220}" font-size="9.5" text-anchor="middle">R=${state.radius}м, i=9°</text>
+    <text x="${(xHorizEnd+xPitEnd)/2}" y="${tblY+245}" font-size="9.5" text-anchor="middle">L = ${lTransition.toFixed(1)}м</text>
+  `;
+
+  // Примечания
+  markup += `
+    <g font-size="10" fill="#333">
+      <text x="${leftX-20}" y="878" font-weight="bold">Примечания:</text>
+      <text x="${leftX-20}" y="894">1. Закрытый переход КЛ выполнить методом ГНБ установкой с тяговым усилием не менее 150 кН. Протягиваемая труба - ${state.pipe} (SDR 11).</text>
+      <text x="${leftX-20}" y="908">2. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+    </g>
+  `;
+
+  svg.innerHTML = markup;
+}
+
+// ЭКСПОРТ В САПР (ПЛИНИЯ)
+function exportAutoCAD() {
+  const L = state.length;
+  const lTransition = Math.min(18, (L - 10) * 0.25);
+  let coords = [];
+  
+  // Координаты оси X, Y
+  coords.push(`2.00,-2.00`);
+  coords.push(`${(2.0 + lTransition).toFixed(2)},-${state.depthHall.toFixed(2)}`);
+  coords.push(`${(L - 2.0 - lTransition).toFixed(2)},-${state.depthHall.toFixed(2)}`);
+  coords.push(`${(L - 2.0).toFixed(2)},-2.00`);
+
+  const cmd = `_PLINE\n` + coords.join('\n') + `\n`;
+  navigator.clipboard.writeText(cmd).then(() => {
+    alert("Цепочка координат скопирована в буфер обмена!\n\nВставьте в AutoCAD/nanoCAD:\n1. Введите команду ПЛИНИЯ (_PLINE)\n2. Нажмите Ctrl+V");
+  });
+}
+
+// ЭКСПОРТ В EXCEL (CSV)
+function exportCSV() {
+  let csv = "Пикетаж (м);Отметка земли (м);Отметка оси трубы (м);Глубина заложения (м);Объект/Сеть\n";
+  const L = state.length;
+  for (let i = 0; i <= L; i += 2) {
+    let d = state.depthHall;
+    const lTransition = Math.min(18, (L - 10) * 0.25);
+    if (i <= 2.0 + lTransition) {
+      const prog = Math.max(0, i - 2.0) / lTransition;
+      d = 2.0 + (state.depthHall - 2.0) * prog;
+    } else if (i >= L - 2.0 - lTransition) {
+      const prog = Math.max(0, (L - 2.0) - i) / lTransition;
+      d = 2.0 + (state.depthHall - 2.0) * prog;
+    }
+    if (i < 2.0 || i > L-2.0) d = 2.0;
+
+    let note = "";
+    const net = state.nets.find(n => Math.abs(n.dist - i) < 1.0);
+    if (net) note = `${net.name} (гл. ${net.depth}м)`;
+    else if (i === 0) note = "Стартовый котлован";
+    else if (i === L) note = "Приемный котлован";
+
+    csv += `${i.toFixed(1)};0.000;-${d.toFixed(3)};${d.toFixed(2)};${note}\n`;
+  }
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Профиль_ГНБ_L${L}m.csv`;
+  a.click();
+}
+
+// Инициализация при загрузке
+window.onload = () => {
+  loadPreset(110);
+};
+</script>
+
+</body>
+</html>
