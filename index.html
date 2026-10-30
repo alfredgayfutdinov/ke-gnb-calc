@@ -808,7 +808,7 @@ function renderSvg() {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м
   let gridLines = '';
   let gridTextsX = '';
   
@@ -823,11 +823,11 @@ function renderSvg() {
   });
 
   markup += `
-    <g stroke="#e2e2e2" stroke-width="0.8">
+    <g stroke="rgb(128, 128, 128)" stroke-width="1.2">
       ${gridLines}
       <line x1="${leftX-20}" y1="${groundY-120}" x2="${rightX+20}" y2="${groundY-120}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY-60}" x2="${rightX+20}" y2="${groundY-60}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY}" x2="${rightX+20}" y2="${groundY}" stroke="#000" stroke-width="1.3" />
+      <line x1="${leftX-20}" y1="${groundY}" x2="${rightX+20}" y2="${groundY}" stroke="#000" stroke-width="1.5" />
       <line x1="${leftX-20}" y1="${groundY+60}" x2="${rightX+20}" y2="${groundY+60}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY+120}" x2="${rightX+20}" y2="${groundY+120}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY+180}" x2="${rightX+20}" y2="${groundY+180}" stroke-dasharray="3,3" />
@@ -891,7 +891,7 @@ function renderSvg() {
       <rect x="${toSvgX(a.start)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
       <rect x="${toSvgX(a.start)}" y="${groundY-10}" width="${w}" height="10" fill="url(#asphaltHatch)" stroke="#111" stroke-width="1.8" />
       <rect x="${toSvgX(a.end)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
-      <text x="${toSvgX((a.start+a.end)/2)}" y="${groundY-18}" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">Асфальтобетон (ПК ${a.start} - ПК ${a.end})</text>
+      <text x="${toSvgX((a.start+a.end)/2)}" y="${groundY-18}" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">Асфальтобетон</text>
     `;
   });
 
@@ -920,7 +920,7 @@ function renderSvg() {
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ТРАЕКТОРИИ
+  // ВЫНОСКИ ТРАЕКТОРИИ (Без указания радиусов и длин)
   let h1 = Math.max(0, state.depthHall - state.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, state.depthHall - state.exitDepth);
@@ -937,20 +937,15 @@ function renderSvg() {
 
   markup += `
     <circle cx="${xPitStart}" cy="${yPitStart}" r="4.5" fill="#9c27b0" />
-    <circle cx="${toSvgX(xHorizStart)}" cy="${yHoriz}" r="3.5" fill="#9c27b0" />
-    <circle cx="${toSvgX(xHorizEnd)}" cy="${yHoriz}" r="3.5" fill="#9c27b0" />
     <circle cx="${xPitEnd}" cy="${yPitEnd}" r="4.5" fill="#9c27b0" />
     
     <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход -${state.entryDepth.toFixed(2)}м</text>
     <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход -${state.exitDepth.toFixed(2)}м</text>
     
-    <text x="${toSvgX(2.0 + L1/2)}" y="${yHoriz+30}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${L1.toFixed(1)}м, R=${state.radius}м</text>
-    <text x="${toSvgX(L - 2.0 - L2/2)}" y="${yHoriz+30}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${L2.toFixed(1)}м, R=${state.radius}м</text>
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
-    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+34}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${horizLen.toFixed(1)}м</text>
   `;
 
-  // СЕТИ И РАСЧЕТ ЗАЗОРОВ С УМНЫМ РАЗДВИГАНИЕМ ВЫНОСОК (СТУПЕНЬКИ ВВЕРХ)
+  // ВЕРТИКАЛЬНЫЕ ВЫНОСКИ СЕТЕЙ (ПОВЕРНУТЫЕ НА 90 ГРАДУСОВ)
   let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
   let slotLastX = Array(15).fill(-999);
 
@@ -965,18 +960,20 @@ function renderSvg() {
     const deltaH = deltaHVal.toFixed(2);
     
     const isUnderNorm = deltaHVal < 0.49; 
-    const positionText = pipeYAtDist < net.depth ? 'над сетью' : 'под сетью';
+    const positionText = pipeYAtDist < net.depth ? 'над' : 'под';
 
+    // Для вертикального текста ширина узкая, конфликты начинаются только если пикеты очень близки
     let assignedSlot = 0;
     for (let s = 0; s < slotLastX.length; s++) {
-        if (nx - slotLastX[s] > 380) {
+        if (nx - slotLastX[s] > 20) {
             assignedSlot = s;
             break;
         }
     }
     slotLastX[assignedSlot] = nx;
     
-    const leaderY = 250 - assignedSlot * 24; 
+    // Ступенчатый старт текста по высоте, чтобы не слипались при очень близком расположении
+    const textStartY = 285 - assignedSlot * 40; 
 
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
@@ -984,17 +981,19 @@ function renderSvg() {
     markup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
       
+      <!-- Линия под землей (пунктир) -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny-6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
       
-      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
-      <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
+      <!-- Линия над землей (идет высоко вверх) -->
+      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="50" stroke="${conf.color}" stroke-width="1.2" />
       
-      <text x="${nx+36}" y="${leaderY+2}" font-size="9" font-weight="bold" fill="${conf.color}">${net.name}</text>
-      <text x="${nx+36}" y="${leaderY+13}" font-size="8.5" fill="${textFill}" font-weight="${textWeight}">ПК ${net.dist.toFixed(1)} / Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}</text>
+      <!-- Повернутый текст вдоль вертикальной линии -->
+      <text x="${nx - 4}" y="${textStartY}" font-size="10.5" font-weight="bold" fill="${conf.color}" text-anchor="start" transform="rotate(-90 ${nx - 4} ${textStartY})">${net.name}</text>
+      <text x="${nx + 8}" y="${textStartY}" font-size="9" fill="${textFill}" font-weight="${textWeight}" text-anchor="start" transform="rotate(-90 ${nx + 8} ${textStartY})">Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}</text>
     `;
   });
 
-  // ПРИМЕЧАНИЯ
+  // ПРИМЕЧАНИЯ (Без указания параметров ПНД)
   markup += `
     <g font-size="10" fill="#333">
       <text x="${leftX-20}" y="850" font-weight="bold">Примечания:</text>
