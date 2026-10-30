@@ -502,7 +502,7 @@ function loadProject(event) {
         } catch (err) {
             alert("Ошибка при чтении файла проекта!");
         }
-        event.target.value = ''; // Сброс input для повторной загрузки
+        event.target.value = ''; 
     };
     reader.readAsText(file);
 }
@@ -857,7 +857,7 @@ function renderSvg() {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м (Новый цвет и толщина)
   let gridLines = '';
   let gridTextsX = '';
   
@@ -899,7 +899,7 @@ function renderSvg() {
     <text x="${leftX-28}" y="${groundY+316}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
   `;
 
-  // ЗОНЫ АСФАЛЬТА И ГАЗОНА
+  // ЗОНЫ АСФАЛЬТА И ГАЗОНА (Убран пикетаж из подписей)
   let rawAsphalts = state.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
                                   .filter(a => a.start < a.end)
                                   .sort((a,b) => a.start - b.start);
@@ -944,7 +944,7 @@ function renderSvg() {
     `;
   });
 
-  // КОТЛОВАНЫ ФИОЛЕТОВЫЕ
+  // КОТЛОВАНЫ
   const pitWidthPx = 2.0 * scaleX;
   const pitDepthPx = 2.0 * scaleY;
   markup += `
@@ -955,7 +955,7 @@ function renderSvg() {
     <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
   `;
 
-  // ИДЕАЛЬНО ПЛАВНАЯ ТРАЕКТОРИЯ ФИОЛЕТОВАЯ
+  // ТРАЕКТОРИЯ 
   let pathD = `M ${toSvgX(2.0)} ${toSvgY(state.entryDepth)}`;
   for (let x = 2.0; x <= L - 2.0; x += 0.5) {
       let y = getTruePipeDepth(x, state.depthHall, state.entryDepth, state.exitDepth, L, R);
@@ -994,7 +994,7 @@ function renderSvg() {
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
   `;
 
-  // ВЕРТИКАЛЬНЫЕ ВЫНОСКИ СЕТЕЙ (ПОВЕРНУТЫЕ НА 90 ГРАДУСОВ)
+  // ВЕРТИКАЛЬНЫЕ ВЫНОСКИ СЕТЕЙ (Без указания ПК в тексте, идеальная обрезка линии)
   let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
   let slotLastX = Array(15).fill(-999);
 
@@ -1021,8 +1021,14 @@ function renderSvg() {
     }
     slotLastX[assignedSlot] = nx;
     
-    // Ступенчатый старт текста по высоте, чтобы не слипались при очень близком расположении
     const textStartY = 285 - assignedSlot * 40; 
+    
+    // Формируем текст (убрали ПК)
+    const paramStr = `Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}`;
+    
+    // Рассчитываем точную длину текста в пикселях (чтобы оборвать выносную линию)
+    const textLenPx = Math.max(net.name.length * 7, paramStr.length * 5.2) + 12; 
+    const lineEndY = textStartY - textLenPx;
 
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
@@ -1033,12 +1039,16 @@ function renderSvg() {
       <!-- Линия под землей (пунктир) -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny-6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
       
-      <!-- Линия над землей (идет высоко вверх) -->
-      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="50" stroke="${conf.color}" stroke-width="1.2" />
-      
-      <!-- Повернутый текст вдоль вертикальной линии -->
+      <!-- Маска для текста (создает белый контур, стирающий сетку) -->
+      <text x="${nx - 4}" y="${textStartY}" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start" transform="rotate(-90 ${nx - 4} ${textStartY})">${net.name}</text>
+      <text x="${nx + 8}" y="${textStartY}" font-size="9" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start" transform="rotate(-90 ${nx + 8} ${textStartY})">${paramStr}</text>
+
+      <!-- Основной текст сетей -->
       <text x="${nx - 4}" y="${textStartY}" font-size="10.5" font-weight="bold" fill="${conf.color}" text-anchor="start" transform="rotate(-90 ${nx - 4} ${textStartY})">${net.name}</text>
-      <text x="${nx + 8}" y="${textStartY}" font-size="9" fill="${textFill}" font-weight="${textWeight}" text-anchor="start" transform="rotate(-90 ${nx + 8} ${textStartY})">Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}</text>
+      <text x="${nx + 8}" y="${textStartY}" font-size="9" fill="${textFill}" font-weight="${textWeight}" text-anchor="start" transform="rotate(-90 ${nx + 8} ${textStartY})">${paramStr}</text>
+      
+      <!-- Вертикальная линия над землей (идет вверх ровно до конца текста) -->
+      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${lineEndY}" stroke="${conf.color}" stroke-width="1.2" />
     `;
   });
 
