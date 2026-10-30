@@ -131,12 +131,12 @@
     font-weight: bold;
     text-transform: uppercase;
   }
-  .badge-gas { background: #b28900; color: #fff; }
-  .badge-power { background: #c2185b; color: #fff; }
-  .badge-water { background: #0288d1; color: #fff; }
-  .badge-sewer { background: #5d4037; color: #fff; }
-  .badge-heat { background: #d84315; color: #fff; }
-  .badge-comm { background: #7b1fa2; color: #fff; }
+  .badge-gas { background: #00008b; color: #fff; }
+  .badge-power { background: #ff0000; color: #fff; }
+  .badge-water { background: #006400; color: #fff; }
+  .badge-sewer { background: #8b4513; color: #fff; }
+  .badge-heat { background: #000000; color: #fff; }
+  .badge-comm { background: #ba68c8; color: #fff; }
 
   .btn-remove-net {
     background: none;
@@ -416,7 +416,7 @@
           <svg id="profileSvg" viewBox="0 0 1460 920">
             <defs>
               <pattern id="pitHatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="8" stroke="#777" stroke-width="1.2" />
+                <line x1="0" y1="0" x2="0" y2="8" stroke="#9c27b0" stroke-width="1.2" />
               </pattern>
               <pattern id="asphaltHatch" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
@@ -442,13 +442,14 @@ let state = {
   nets: []
 };
 
+// ОБНОВЛЕННАЯ ПАЛИТРА СЕТЕЙ
 const NET_TYPES = {
-  power: { label: 'КЛ 0.4-10кВ', defaultDepth: 0.7, color: '#e91e63', badge: 'badge-power' },
-  comm:  { label: 'Кабель связи', defaultDepth: 0.7, color: '#9c27b0', badge: 'badge-comm' },
-  gas:   { label: 'Газопровод', defaultDepth: 2.0, color: '#ffc107', badge: 'badge-gas' },
-  water: { label: 'Водопровод', defaultDepth: 2.0, color: '#03a9f4', badge: 'badge-water' },
-  sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#795548', badge: 'badge-sewer' },
-  heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#ff5722', badge: 'badge-heat' }
+  power: { label: 'Электрокабель', defaultDepth: 0.7, color: '#ff0000', badge: 'badge-power' },
+  comm:  { label: 'Кабель связи', defaultDepth: 0.7, color: '#ba68c8', badge: 'badge-comm' },
+  gas:   { label: 'Газопровод', defaultDepth: 2.0, color: '#00008b', badge: 'badge-gas' },
+  water: { label: 'Водопровод', defaultDepth: 2.0, color: '#006400', badge: 'badge-water' },
+  sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#8b4513', badge: 'badge-sewer' },
+  heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'badge-heat' }
 };
 
 // МАТЕМАТИКА ИДЕАЛЬНОЙ ТРАЕКТОРИИ
@@ -477,13 +478,13 @@ function getTruePipeDepth(x, dHall, dEnt, dEx, L, R) {
     }
 }
 
-// УМНОЕ АВТО-СМЕЩЕНИЕ (ПОИСК БЛИЖАЙШЕЙ БЕЗОПАСНОЙ ГЛУБИНЫ)
+// УМНОЕ АВТО-СМЕЩЕНИЕ
 function snapToSafeDepth(targetD) {
     if (state.nets.length === 0) return targetD;
 
     const L = state.length;
     const R = state.radius;
-    const clearance = 0.58; // 0.5м норматив + 0.08м полудиаметр трубы 160мм
+    const clearance = 0.58; 
 
     function isValid(d) {
         if (d < Math.max(state.entryDepth, state.exitDepth)) return false;
@@ -502,7 +503,6 @@ function snapToSafeDepth(targetD) {
 
     if (isValid(targetD)) return targetD;
 
-    // Ищем вверх и вниз с шагом 5см до 25 метров глубины
     for (let step = 0.05; step <= 25.0; step += 0.05) {
         let up = targetD - step;
         let down = targetD + step;
@@ -594,7 +594,7 @@ function loadPreset(len) {
     state.asphalts = [{ start: 14, end: 38 }];
     state.nets = [
       { type: 'comm', name: 'Кабель связи', dist: 8, depth: 0.7 },
-      { type: 'power', name: 'КЛ 10кВ', dist: 18, depth: 0.7 },
+      { type: 'power', name: 'Электрокабель', dist: 18, depth: 0.7 },
       { type: 'water', name: 'Водопровод В1', dist: 22.5, depth: 2.0 },
       { type: 'gas', name: 'Газопровод с/д', dist: 27, depth: 2.0 },
       { type: 'sewer', name: 'Канализация К1', dist: 34, depth: 2.0 },
@@ -624,7 +624,6 @@ function triggerUpdate() {
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
 
-  // УМНОЕ СМЕЩЕНИЕ
   if (document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
       let safeDepth = snapToSafeDepth(userDepth);
       if (safeDepth !== null && Math.abs(safeDepth - userDepth) > 0.01) {
@@ -713,7 +712,7 @@ function addNetPrompt() {
   const type = prompt("Тип сети:\n1 - Газопровод (2.0м)\n2 - Электрокабель (0.7м)\n3 - Водопровод (2.0м)\n4 - Канализация (2.0м)\n5 - Теплотрасса (2.0м)\n6 - Связь/ВОЛС (0.7м)", "1");
   let netType = 'gas', netName = 'Газопровод', netDepth = 2.0;
 
-  if (type === '2') { netType = 'power'; netName = 'КЛ 10кВ'; netDepth = 0.7; }
+  if (type === '2') { netType = 'power'; netName = 'Электрокабель'; netDepth = 0.7; }
   else if (type === '3') { netType = 'water'; netName = 'Водопровод В1'; netDepth = 2.0; }
   else if (type === '4') { netType = 'sewer'; netName = 'Канализация К1'; netDepth = 2.0; }
   else if (type === '5') { netType = 'heat'; netName = 'Теплотрасса'; netDepth = 2.0; }
@@ -733,7 +732,6 @@ function autoOptimizeDepth() {
   let maxNetDepth = 0.5;
   state.nets.forEach(n => { if (n.depth > maxNetDepth) maxNetDepth = n.depth; });
   
-  // Просим пройти гарантированно под всеми коммуникациями
   let targetD = maxNetDepth + 0.58 + 0.15; 
   
   let safeD = snapToSafeDepth(targetD);
@@ -791,7 +789,7 @@ function renderSvg() {
     </g>
   `;
 
-  // ПОДГОТОВКА ЗОН АСФАЛЬТА И ГАЗОНА
+  // ЗОНЫ АСФАЛЬТА И ГАЗОНА
   let rawAsphalts = state.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
                                   .filter(a => a.start < a.end)
                                   .sort((a,b) => a.start - b.start);
@@ -818,7 +816,6 @@ function renderSvg() {
   });
   if (currentPos < L) grasses.push({ start: currentPos, end: L });
 
-  // ОТРИСОВКА ГАЗОНОВ
   grasses.forEach(g => {
     const w = toSvgX(g.end) - toSvgX(g.start);
     markup += `
@@ -827,7 +824,6 @@ function renderSvg() {
     `;
   });
 
-  // ОТРИСОВКА АСФАЛЬТОВ
   asphalts.forEach(a => {
     const w = toSvgX(a.end) - toSvgX(a.start);
     markup += `
@@ -838,18 +834,18 @@ function renderSvg() {
     `;
   });
 
-  // КОТЛОВАНЫ
+  // КОТЛОВАНЫ ФИОЛЕТОВЫЕ
   const pitWidthPx = 2.0 * scaleX;
   const pitDepthPx = 2.0 * scaleY;
   markup += `
-    <rect x="${toSvgX(0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#000" stroke-width="1.5" />
-    <line x1="${toSvgX(0)}" y1="${groundY}" x2="${toSvgX(0)}" y2="${groundY+pitDepthPx}" stroke="#c00" stroke-width="2.5" />
+    <rect x="${toSvgX(0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#9c27b0" stroke-width="1.5" />
+    <line x1="${toSvgX(0)}" y1="${groundY}" x2="${toSvgX(0)}" y2="${groundY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
     
-    <rect x="${toSvgX(L-2.0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#000" stroke-width="1.5" />
-    <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#c00" stroke-width="2.5" />
+    <rect x="${toSvgX(L-2.0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#9c27b0" stroke-width="1.5" />
+    <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
   `;
 
-  // ИДЕАЛЬНО ПЛАВНАЯ ТРАЕКТОРИЯ (Строится геометрически с шагом 0.5м для SVG)
+  // ИДЕАЛЬНО ПЛАВНАЯ ТРАЕКТОРИЯ ФИОЛЕТОВАЯ
   let pathD = `M ${toSvgX(2.0)} ${toSvgY(state.entryDepth)}`;
   for (let x = 2.0; x <= L - 2.0; x += 0.5) {
       let y = getTruePipeDepth(x, state.depthHall, state.entryDepth, state.exitDepth, L, R);
@@ -859,11 +855,11 @@ function renderSvg() {
   pathD += ` L ${toSvgX(L - 2.0)} ${toSvgY(yEx)}`;
 
   markup += `
-    <path d="${pathD}" fill="none" stroke="#2196F3" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="${pathD}" fill="none" stroke="#d32f2f" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
+    <path d="${pathD}" fill="none" stroke="#9c27b0" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // Высчитываем контрольные точки для выносок текста
+  // ВЫНОСКИ ТРАЕКТОРИИ
   let h1 = Math.max(0, state.depthHall - state.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, state.depthHall - state.exitDepth);
@@ -879,50 +875,64 @@ function renderSvg() {
   let yHoriz = toSvgY(state.depthHall);
 
   markup += `
-    <circle cx="${xPitStart}" cy="${yPitStart}" r="4.5" fill="#d32f2f" />
-    <circle cx="${toSvgX(xHorizStart)}" cy="${yHoriz}" r="3.5" fill="#d32f2f" />
-    <circle cx="${toSvgX(xHorizEnd)}" cy="${yHoriz}" r="3.5" fill="#d32f2f" />
-    <circle cx="${xPitEnd}" cy="${yPitEnd}" r="4.5" fill="#d32f2f" />
+    <circle cx="${xPitStart}" cy="${yPitStart}" r="4.5" fill="#9c27b0" />
+    <circle cx="${toSvgX(xHorizStart)}" cy="${yHoriz}" r="3.5" fill="#9c27b0" />
+    <circle cx="${toSvgX(xHorizEnd)}" cy="${yHoriz}" r="3.5" fill="#9c27b0" />
+    <circle cx="${xPitEnd}" cy="${yPitEnd}" r="4.5" fill="#9c27b0" />
     
-    <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#004d80" font-weight="bold" text-anchor="middle">Вход -${state.entryDepth.toFixed(2)}м</text>
-    <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#004d80" font-weight="bold" text-anchor="middle">Выход -${state.exitDepth.toFixed(2)}м</text>
+    <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход -${state.entryDepth.toFixed(2)}м</text>
+    <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход -${state.exitDepth.toFixed(2)}м</text>
     
-    <text x="${toSvgX(2.0 + L1/2)}" y="${yHoriz+30}" font-size="10" fill="#004d80" text-anchor="middle">L=${L1.toFixed(1)}м, R=${state.radius}м</text>
-    <text x="${toSvgX(L - 2.0 - L2/2)}" y="${yHoriz+30}" font-size="10" fill="#004d80" text-anchor="middle">L=${L2.toFixed(1)}м, R=${state.radius}м</text>
-    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#004d80" font-weight="bold" text-anchor="middle">${state.pipe} (горизонт: отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
-    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+34}" font-size="10" fill="#004d80" text-anchor="middle">L=${horizLen.toFixed(1)}м</text>
+    <text x="${toSvgX(2.0 + L1/2)}" y="${yHoriz+30}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${L1.toFixed(1)}м, R=${state.radius}м</text>
+    <text x="${toSvgX(L - 2.0 - L2/2)}" y="${yHoriz+30}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${L2.toFixed(1)}м, R=${state.radius}м</text>
+    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">${state.pipe} (горизонт: отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
+    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+34}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${horizLen.toFixed(1)}м</text>
   `;
 
-  // СЕТИ И РАСЧЕТ ЗАЗОРОВ БЕЗОПАСНОСТИ (НОРМАТИВ 0.5м)
-  state.nets.forEach((net, idx) => {
+  // СЕТИ И РАСЧЕТ ЗАЗОРОВ С УМНЫМ РАЗДВИГАНИЕМ ВЫНОСОК
+  let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
+  let slotLastX = [-999, -999, -999, -999, -999, -999, -999, -999, -999, -999];
+
+  drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
     const ny = toSvgY(net.depth);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
     
-    // Фактическая глубина трубы ровно в пикете сети
     let pipeYAtDist = getTruePipeDepth(net.dist, state.depthHall, state.entryDepth, state.exitDepth, L, R);
     const centerDist = Math.abs(pipeYAtDist - net.depth);
-    const deltaHVal = centerDist - 0.080; // В свету: отнимаем радиус ПНД 160
+    const deltaHVal = centerDist - 0.080; 
     const deltaH = deltaHVal.toFixed(2);
     
-    // Подсветка нарушения норматива 0.5м (0.49 для защиты от погрешности округления)
     const isUnderNorm = deltaHVal < 0.49; 
-    const clearanceColor = isUnderNorm ? '#d32f2f' : '#555';
-    const clearanceWeight = isUnderNorm ? 'bold' : 'normal';
-    
-    // Определяем, прошла труба выше или ниже сети
     const positionText = pipeYAtDist < net.depth ? 'над сетью' : 'под сетью';
 
-    const leaderY = 145 + (idx % 3) * 22;
+    // Умное раздвигание текста по высоте
+    let assignedSlot = 0;
+    for (let s = 0; s < slotLastX.length; s++) {
+        // Минимальное расстояние между выносками, чтобы текст не накладывался (160 пикселей)
+        if (nx - slotLastX[s] > 160) {
+            assignedSlot = s;
+            break;
+        }
+    }
+    slotLastX[assignedSlot] = nx;
+    
+    // Базовая высота первой выноски 110, каждая следующая опускается на 24 пикселя
+    const leaderY = 110 + assignedSlot * 24; 
+
+    // Если норматив не выдержан, текст будет красным, иначе цвет самой сети
+    const textFill = isUnderNorm ? '#d32f2f' : conf.color;
+    const textWeight = isUnderNorm ? 'bold' : 'normal';
 
     markup += `
-      <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : '#000'}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
+      <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
       
-      <line x1="${nx}" y1="${ny-6.5}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1" />
-      <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="#000" stroke-width="1" />
-      <text x="${nx+36}" y="${leaderY+2}" font-size="9" font-weight="bold">${net.name}</text>
-      <text x="${nx+36}" y="${leaderY+13}" font-size="8.5" fill="${clearanceColor}" font-weight="${clearanceWeight}">ПК ${net.dist.toFixed(1)} / Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}</text>
+      <line x1="${nx}" y1="${ny-6.5}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
+      <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
+      
+      <text x="${nx+36}" y="${leaderY+2}" font-size="9" font-weight="bold" fill="${conf.color}">${net.name}</text>
+      <text x="${nx+36}" y="${leaderY+13}" font-size="8.5" fill="${textFill}" font-weight="${textWeight}">ПК ${net.dist.toFixed(1)} / Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}</text>
     `;
   });
 
