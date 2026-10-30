@@ -670,7 +670,7 @@ function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) 
 function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); triggerUpdate(); }
 
-/* ЛОГИКА СЕТЕЙ */
+/* ЛОГИКА СЕТЕЙ (ЛЕВОЕ МЕНЮ) */
 function renderNetsList() {
   const container = document.getElementById('netsContainer');
   container.innerHTML = '';
@@ -708,20 +708,52 @@ function updateNetDist(i, val) { state.nets[i].dist = parseFloat(val) || 0; trig
 function updateNetDepth(i, val) { state.nets[i].depth = parseFloat(val) || 0.7; triggerUpdate(); }
 function removeNet(i) { state.nets.splice(i, 1); renderNetsList(); triggerUpdate(); }
 
+/* ПОШАГОВЫЙ МАСТЕР ДОБАВЛЕНИЯ СЕТЕЙ */
 function addNetPrompt() {
-  const type = prompt("Тип сети:\n1 - Газопровод (2.0м)\n2 - Электрокабель (0.7м)\n3 - Водопровод (2.0м)\n4 - Канализация (2.0м)\n5 - Теплотрасса (2.0м)\n6 - Связь/ВОЛС (0.7м)", "1");
-  let netType = 'gas', netName = 'Газопровод', netDepth = 2.0;
+  const wizardSteps = [
+    { id: 'power', defaultName: 'Электрокабель', defaultDepth: 0.7 },
+    { id: 'gas', defaultName: 'Газопровод', defaultDepth: 2.0 },
+    { id: 'water', defaultName: 'Водопровод', defaultDepth: 2.0 },
+    { id: 'sewer', defaultName: 'Канализация', defaultDepth: 2.0 },
+    { id: 'heat', defaultName: 'Теплотрасса', defaultDepth: 2.0 },
+    { id: 'comm', defaultName: 'Кабель связи', defaultDepth: 0.7 }
+  ];
 
-  if (type === '2') { netType = 'power'; netName = 'Электрокабель'; netDepth = 0.7; }
-  else if (type === '3') { netType = 'water'; netName = 'Водопровод В1'; netDepth = 2.0; }
-  else if (type === '4') { netType = 'sewer'; netName = 'Канализация К1'; netDepth = 2.0; }
-  else if (type === '5') { netType = 'heat'; netName = 'Теплотрасса'; netDepth = 2.0; }
-  else if (type === '6') { netType = 'comm'; netName = 'Кабель связи'; netDepth = 0.7; }
+  let addedAny = false;
 
-  const dist = parseFloat(prompt("Расстояние от точки входа (ПК в метрах):", (state.length/2).toFixed(1))) || 10;
-  state.nets.push({ type: netType, name: netName, dist: dist, depth: netDepth });
-  renderNetsList();
-  triggerUpdate();
+  for (let i = 0; i < wizardSteps.length; i++) {
+    let step = wizardSteps[i];
+    let countInput = prompt(`ШАГ ${i+1} из 6: ${step.defaultName}\n\nСколько пересечений типа "${step.defaultName}" на трассе?\n(Оставьте 0 и нажмите ОК, чтобы пропустить эту сеть)`, "0");
+    
+    // Если нажата "Отмена" - полностью выходим из мастера опроса
+    if (countInput === null) {
+        break; 
+    }
+    
+    let count = parseInt(countInput) || 0;
+    
+    for (let j = 0; j < count; j++) {
+       let distInput = prompt(`📍 Укажите пикет (ПК) для сети "${step.defaultName}" (${j + 1} из ${count}):\n\nВведите расстояние в метрах от начала (например, 15.5)`, "");
+       
+       if (distInput !== null && distInput.trim() !== "") {
+           // Заменяем запятую на точку для корректной математики
+           let dist = parseFloat(distInput.replace(',', '.')) || 0;
+           state.nets.push({
+               type: step.id,
+               name: step.defaultName + (count > 1 ? ` ${j + 1}` : ''),
+               dist: dist,
+               depth: step.defaultDepth
+           });
+           addedAny = true;
+       }
+    }
+  }
+
+  // Обновляем чертеж только если что-то было добавлено
+  if (addedAny) {
+    renderNetsList();
+    triggerUpdate();
+  }
 }
 
 function autoOptimizeDepth() {
