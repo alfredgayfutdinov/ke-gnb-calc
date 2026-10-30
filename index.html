@@ -442,7 +442,7 @@ let state = {
   nets: []
 };
 
-// ОБНОВЛЕННАЯ ПАЛИТРА СЕТЕЙ
+// ПАЛИТРА СЕТЕЙ
 const NET_TYPES = {
   power: { label: 'Электрокабель', defaultDepth: 0.7, color: '#ff0000', badge: 'badge-power' },
   comm:  { label: 'Кабель связи', defaultDepth: 0.7, color: '#ba68c8', badge: 'badge-comm' },
@@ -725,7 +725,6 @@ function addNetPrompt() {
     let step = wizardSteps[i];
     let countInput = prompt(`ШАГ ${i+1} из 6: ${step.defaultName}\n\nСколько пересечений типа "${step.defaultName}" на трассе?\n(Оставьте 0 и нажмите ОК, чтобы пропустить эту сеть)`, "0");
     
-    // Если нажата "Отмена" - полностью выходим из мастера опроса
     if (countInput === null) {
         break; 
     }
@@ -736,7 +735,6 @@ function addNetPrompt() {
        let distInput = prompt(`📍 Укажите пикет (ПК) для сети "${step.defaultName}" (${j + 1} из ${count}):\n\nВведите расстояние в метрах от начала (например, 15.5)`, "");
        
        if (distInput !== null && distInput.trim() !== "") {
-           // Заменяем запятую на точку для корректной математики
            let dist = parseFloat(distInput.replace(',', '.')) || 0;
            state.nets.push({
                type: step.id,
@@ -749,7 +747,6 @@ function addNetPrompt() {
     }
   }
 
-  // Обновляем чертеж только если что-то было добавлено
   if (addedAny) {
     renderNetsList();
     triggerUpdate();
@@ -921,9 +918,9 @@ function renderSvg() {
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+34}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${horizLen.toFixed(1)}м</text>
   `;
 
-  // СЕТИ И РАСЧЕТ ЗАЗОРОВ С УМНЫМ РАЗДВИГАНИЕМ ВЫНОСОК
+  // СЕТИ И РАСЧЕТ ЗАЗОРОВ С УМНЫМ РАЗДВИГАНИЕМ ВЫНОСОК (СТУПЕНЬКИ ВВЕРХ)
   let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
-  let slotLastX = [-999, -999, -999, -999, -999, -999, -999, -999, -999, -999];
+  let slotLastX = Array(15).fill(-999);
 
   drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
@@ -941,7 +938,6 @@ function renderSvg() {
     // Умное раздвигание текста по высоте
     let assignedSlot = 0;
     for (let s = 0; s < slotLastX.length; s++) {
-        // Минимальное расстояние между выносками, чтобы длинный текст не накладывался (увеличено до 380)
         if (nx - slotLastX[s] > 380) {
             assignedSlot = s;
             break;
@@ -949,8 +945,8 @@ function renderSvg() {
     }
     slotLastX[assignedSlot] = nx;
     
-    // Базовая высота первой выноски 110, каждая следующая опускается на 24 пикселя
-    const leaderY = 110 + assignedSlot * 24; 
+    // ВЫНОСКИ РАСТУТ ВВЕРХ! Стартовая высота 250 (чуть выше земли), каждая следующая строчка уходит ВВЕРХ на 24px
+    const leaderY = 250 - assignedSlot * 24; 
 
     // Если норматив не выдержан, текст будет красным, иначе цвет самой сети
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
@@ -958,9 +954,12 @@ function renderSvg() {
 
     markup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
       
-      <line x1="${nx}" y1="${ny-6.5}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
+      <!-- Подземная часть (пунктир от земли до трубы) -->
+      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny-6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
+      
+      <!-- Надземная часть (сплошная выноска от земли вверх) -->
+      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
       <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
       
       <text x="${nx+36}" y="${leaderY+2}" font-size="9" font-weight="bold" fill="${conf.color}">${net.name}</text>
