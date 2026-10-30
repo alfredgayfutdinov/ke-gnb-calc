@@ -424,7 +424,8 @@
         </div>
         
         <div class="svg-container">
-          <svg id="profileSvg" viewBox="0 0 1460 920">
+          <!-- Увеличен viewBox, чтобы вместить сетку -8м и нижние выноски -->
+          <svg id="profileSvg" viewBox="0 0 1460 1400">
             <defs>
               <pattern id="pitHatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#9c27b0" stroke-width="1.2" />
@@ -857,7 +858,7 @@ function renderSvg() {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м (Новый цвет и толщина)
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м (глубина до -8.00м)
   let gridLines = '';
   let gridTextsX = '';
   
@@ -867,36 +868,43 @@ function renderSvg() {
   
   xPts.forEach(x => {
       let px = toSvgX(x);
-      gridLines += `<line x1="${px}" y1="${groundY-120}" x2="${px}" y2="${groundY+300}" stroke-dasharray="3,3" />`;
-      gridTextsX += `<text x="${px}" y="${groundY+316}">${x}</text>`;
+      // Сетка от +2.00 до -8.00
+      gridLines += `<line x1="${px}" y1="${groundY-120}" x2="${px}" y2="${groundY+480}" stroke-dasharray="3,3" />`;
+      gridTextsX += `<text x="${px}" y="${groundY+496}">${x}</text>`;
   });
 
   markup += `
     <g stroke="rgb(128, 128, 128)" stroke-width="1.2">
       ${gridLines}
-      <line x1="${leftX-20}" y1="${groundY-120}" x2="${rightX+20}" y2="${groundY-120}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY-60}" x2="${rightX+20}" y2="${groundY-60}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY}" x2="${rightX+20}" y2="${groundY}" stroke="#000" stroke-width="1.5" />
-      <line x1="${leftX-20}" y1="${groundY+60}" x2="${rightX+20}" y2="${groundY+60}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY+120}" x2="${rightX+20}" y2="${groundY+120}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY+180}" x2="${rightX+20}" y2="${groundY+180}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY+240}" x2="${rightX+20}" y2="${groundY+240}" stroke-dasharray="3,3" />
-      <line x1="${leftX-20}" y1="${groundY+300}" x2="${rightX+20}" y2="${groundY+300}" stroke-dasharray="3,3" />
-    </g>
+      <!-- Горизонтальные линии от +2.00 до -8.00 -->
+  `;
+  for (let d = -2; d <= 8; d++) {
+      let gy = groundY + d * scaleY;
+      if (d === 0) {
+          markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke="#000" stroke-width="1.5" />`;
+      } else {
+          markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke-dasharray="3,3" />`;
+      }
+  }
+  markup += `</g>`;
+
+  // Подписи глубин
+  markup += `
     <g font-size="10.5" fill="#666" text-anchor="middle">
       ${gridTextsX}
     </g>
     <g font-size="11" fill="#444" text-anchor="end">
-      <text x="${leftX-28}" y="${groundY-116}">+2.00</text>
-      <text x="${leftX-28}" y="${groundY-56}">+1.00</text>
-      <text x="${leftX-28}" y="${groundY+4}" font-weight="bold" fill="#000">0.000 (Земля)</text>
-      <text x="${leftX-28}" y="${groundY+64}">-1.00</text>
-      <text x="${leftX-28}" y="${groundY+124}">-2.00</text>
-      <text x="${leftX-28}" y="${groundY+184}">-3.00</text>
-      <text x="${leftX-28}" y="${groundY+244}">-4.00</text>
-      <text x="${leftX-28}" y="${groundY+304}">-5.00</text>
+  `;
+  for (let d = -2; d <= 8; d++) {
+      let gy = groundY + d * scaleY;
+      let valStr = (-d > 0 ? "+" : "") + (-d).toFixed(2);
+      if (d === 0) valStr = "0.000 (Земля)";
+      let fw = (d === 0) ? 'font-weight="bold" fill="#000"' : '';
+      markup += `<text x="${leftX-28}" y="${gy+4}" ${fw}>${valStr}</text>`;
+  }
+  markup += `
     </g>
-    <text x="${leftX-28}" y="${groundY+316}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
+    <text x="${leftX-28}" y="${groundY+496}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
   `;
 
   // ЗОНЫ АСФАЛЬТА И ГАЗОНА (Убран пикетаж из подписей)
@@ -969,7 +977,7 @@ function renderSvg() {
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ТРАЕКТОРИИ (Без указания радиусов и длин)
+  // ВЫНОСКИ ТРАЕКТОРИИ
   let h1 = Math.max(0, state.depthHall - state.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, state.depthHall - state.exitDepth);
@@ -994,7 +1002,9 @@ function renderSvg() {
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
   `;
 
-  // ВЕРТИКАЛЬНЫЕ ВЫНОСКИ СЕТЕЙ (Без указания ПК в тексте, идеальная обрезка линии)
+  // ВЫНОСКИ СЕТЕЙ (РАЗДЕЛЯЕМ ЛИНИИ И ТЕКСТЫ ДЛЯ ПРАВИЛЬНОГО ПЕРЕКРЫТИЯ)
+  let linesMarkup = '';
+  let textsMarkup = '';
   let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
   let slotLastX = Array(15).fill(-999);
 
@@ -1006,12 +1016,11 @@ function renderSvg() {
     let pipeYAtDist = getTruePipeDepth(net.dist, state.depthHall, state.entryDepth, state.exitDepth, L, R);
     const centerDist = Math.abs(pipeYAtDist - net.depth);
     const deltaHVal = centerDist - 0.080; 
-    const deltaH = deltaHVal.toFixed(2);
+    const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
     
     const isUnderNorm = deltaHVal < 0.49; 
-    const positionText = pipeYAtDist < net.depth ? 'над' : 'под';
 
-    // Для вертикального текста ширина узкая, конфликты начинаются только если пикеты очень близки
+    // Сдвиг слоев (если выноски расположены очень плотно по горизонтали)
     let assignedSlot = 0;
     for (let s = 0; s < slotLastX.length; s++) {
         if (nx - slotLastX[s] > 20) {
@@ -1021,43 +1030,40 @@ function renderSvg() {
     }
     slotLastX[assignedSlot] = nx;
     
-    const textStartY = 285 - assignedSlot * 40; 
+    // Внизу сетки. Сетка кончается на -8.00 (y = 300 + 8*60 = 780).
+    // Текст начинается с y=810 и уходит вниз с шагом 160px
+    const textEndY = 810 + assignedSlot * 160; 
     
-    // Формируем текст (убрали ПК)
-    const paramStr = `Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 0.5м)' : ''}`;
+    // Формируем финальную строку: "Электрокабель, Δh=2,47м"
+    const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     
-    // Рассчитываем точную длину текста в пикселях (чтобы оборвать выносную линию)
-    const textLenPx = Math.max(net.name.length * 7, paramStr.length * 5.2) + 12; 
-    const lineEndY = textStartY - textLenPx;
-
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
 
-    markup += `
+    linesMarkup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      
-      <!-- Линия под землей (пунктир) -->
-      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny-6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
-      
-      <!-- Маска для текста (создает белый контур, стирающий сетку) -->
-      <text x="${nx - 4}" y="${textStartY}" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start" transform="rotate(-90 ${nx - 4} ${textStartY})">${net.name}</text>
-      <text x="${nx + 8}" y="${textStartY}" font-size="9" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start" transform="rotate(-90 ${nx + 8} ${textStartY})">${paramStr}</text>
+      <!-- Пунктир от земли до коммуникации -->
+      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
+      <!-- Сплошная выносная линия от коммуникации вниз ровно до текста -->
+      <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" />
+    `;
 
-      <!-- Основной текст сетей -->
-      <text x="${nx - 4}" y="${textStartY}" font-size="10.5" font-weight="bold" fill="${conf.color}" text-anchor="start" transform="rotate(-90 ${nx - 4} ${textStartY})">${net.name}</text>
-      <text x="${nx + 8}" y="${textStartY}" font-size="9" fill="${textFill}" font-weight="${textWeight}" text-anchor="start" transform="rotate(-90 ${nx + 8} ${textStartY})">${paramStr}</text>
-      
-      <!-- Вертикальная линия над землей (идет вверх ровно до конца текста) -->
-      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${lineEndY}" stroke="${conf.color}" stroke-width="1.2" />
+    textsMarkup += `
+      <!-- Белая маска текста, стирающая сетку и чужие выноски -->
+      <text x="${nx + 4}" y="${textEndY}" font-size="10.5" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
+      <!-- Сам текст -->
+      <text x="${nx + 4}" y="${textEndY}" font-size="10.5" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
     `;
   });
+
+  markup += linesMarkup + textsMarkup; // Тексты гарантированно поверх всех линий!
 
   // ПРИМЕЧАНИЯ
   markup += `
     <g font-size="10" fill="#333">
-      <text x="${leftX-20}" y="850" font-weight="bold">Примечания:</text>
-      <text x="${leftX-20}" y="866">1. Закрытый переход КЛ выполнить методом ГНБ установкой с тяговым усилием не менее 150 кН.</text>
-      <text x="${leftX-20}" y="880">2. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="${leftX-20}" y="1350" font-weight="bold">Примечания:</text>
+      <text x="${leftX-20}" y="1366">1. Закрытый переход КЛ выполнить методом ГНБ установкой с тяговым усилием не менее 150 кН.</text>
+      <text x="${leftX-20}" y="1380">2. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
     </g>
   `;
 
