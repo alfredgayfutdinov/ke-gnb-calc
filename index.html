@@ -490,7 +490,7 @@ function snapToSafeDepth(targetD) {
 
     const L = state.length;
     const R = state.radius;
-    const clearance = 0.58; // 0.5м в свету + 0.08м полудиаметр трубы 160мм
+    const clearance = 0.58; 
 
     function isValid(d) {
         if (d < Math.max(state.entryDepth, state.exitDepth)) return false;
@@ -808,9 +808,23 @@ function renderSvg() {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА
+  let gridLines = '';
+  let gridTextsX = '';
+  
+  let xPts = [];
+  for (let x = 0; x <= L; x += 5) xPts.push(x);
+  if (L % 5 !== 0) xPts.push(L);
+  
+  xPts.forEach(x => {
+      let px = toSvgX(x);
+      gridLines += `<line x1="${px}" y1="${groundY-120}" x2="${px}" y2="${groundY+300}" stroke-dasharray="3,3" />`;
+      gridTextsX += `<text x="${px}" y="${groundY+316}">${x}</text>`;
+  });
+
   markup += `
     <g stroke="#e2e2e2" stroke-width="0.8">
+      ${gridLines}
       <line x1="${leftX-20}" y1="${groundY-120}" x2="${rightX+20}" y2="${groundY-120}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY-60}" x2="${rightX+20}" y2="${groundY-60}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY}" x2="${rightX+20}" y2="${groundY}" stroke="#000" stroke-width="1.3" />
@@ -819,6 +833,9 @@ function renderSvg() {
       <line x1="${leftX-20}" y1="${groundY+180}" x2="${rightX+20}" y2="${groundY+180}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY+240}" x2="${rightX+20}" y2="${groundY+240}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY+300}" x2="${rightX+20}" y2="${groundY+300}" stroke-dasharray="3,3" />
+    </g>
+    <g font-size="10.5" fill="#666" text-anchor="middle">
+      ${gridTextsX}
     </g>
     <g font-size="11" fill="#444" text-anchor="end">
       <text x="${leftX-28}" y="${groundY-116}">+2.00</text>
@@ -830,6 +847,7 @@ function renderSvg() {
       <text x="${leftX-28}" y="${groundY+244}">-4.00</text>
       <text x="${leftX-28}" y="${groundY+304}">-5.00</text>
     </g>
+    <text x="${leftX-28}" y="${groundY+316}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
   `;
 
   // ЗОНЫ АСФАЛЬТА И ГАЗОНА
