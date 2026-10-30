@@ -388,9 +388,7 @@
       🖨️ Сохранить в PDF (Лист А3)
     </button>
     <div class="export-group">
-      <button class="btn-secondary" onclick="exportAutoCAD()">CAD (ПЛИНИЯ)</button>
-      <button class="btn-secondary" onclick="exportCSV()">Excel (CSV)</button>
-      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-глубина (Дно)</button>
+      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины (Дно)</button>
     </div>
   </div>
 </div>
@@ -569,7 +567,7 @@ function loadPreset(len) {
     state.exitDepth = 1.0;
     state.radius = 60;
     state.asphalts = [{ start: 20, end: 80 }];
-    state.nets = []; // <--- УБРАЛИ СЕТИ ПО УМОЛЧАНИЮ
+    state.nets = []; 
   } else if (len === 62) {
     state.length = 62;
     state.depthHall = 3.70;
@@ -962,52 +960,6 @@ function printPureSheet() {
       wrapper.style.transform = `scale(${savedZoom})`;
     }, 300);
   }, 50);
-}
-
-// Теперь в AutoCAD экспортируется та же математически плавная кривая
-function exportAutoCAD() {
-  let coords = [];
-  const L = state.length;
-  const R = state.radius;
-  
-  for (let x = 2.0; x <= L - 2.0; x += 0.5) {
-      let y = getTruePipeDepth(x, state.depthHall, state.entryDepth, state.exitDepth, L, R);
-      coords.push(`${x.toFixed(2)},-${y.toFixed(2)}`);
-  }
-  let yEx = getTruePipeDepth(L - 2.0, state.depthHall, state.entryDepth, state.exitDepth, L, R);
-  coords.push(`${(L - 2.0).toFixed(2)},-${yEx.toFixed(2)}`);
-
-  const cmd = `_PLINE\n` + coords.join('\n') + `\n`;
-  navigator.clipboard.writeText(cmd).then(() => {
-    alert("Цепочка координат (плавная кривая) скопирована!\nВставьте в AutoCAD/nanoCAD: вызовите команду ПЛИНИЯ (_PLINE) и нажмите Ctrl+V");
-  });
-}
-
-function exportCSV() {
-  let csv = "Пикетаж (м);Отметка земли (м);Отметка оси трубы (м);Глубина заложения (м);Объект/Сеть\n";
-  const L = state.length;
-  
-  let ptsSet = new Set();
-  for (let i = 0; i <= L; i += 2) ptsSet.add(i);
-  state.nets.forEach(n => ptsSet.add(Math.round(n.dist * 10) / 10));
-  let pts = Array.from(ptsSet).sort((a,b) => a - b);
-
-  pts.forEach(i => {
-    let d = getTruePipeDepth(i, state.depthHall, state.entryDepth, state.exitDepth, L, state.radius);
-    let note = "";
-    const net = state.nets.find(n => Math.abs(n.dist - i) < 1.0);
-    if (net) note = `${net.name} (гл. ${net.depth}м)`;
-    else if (i === 0) note = "Стартовый котлован";
-    else if (i === L) note = "Приемный котлован";
-
-    csv += `${i.toFixed(1)};0.000;-${d.toFixed(3)};${d.toFixed(2)};${note}\n`;
-  });
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `Профиль_ГНБ_L${L}m.csv`;
-  a.click();
 }
 
 window.onload = () => {
