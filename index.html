@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Генератор профилей ГНБ (КЛ 0,4-10 кВ) - Лист А3</title>
+<title>Генератор профилей ГНБ - Лист А3</title>
 <style>
   @page {
     size: A3 landscape;
@@ -333,9 +333,15 @@
     </div>
 
     <div class="section-title">Геометрия скважины</div>
-    <div class="form-group">
-      <label>Длина ГНБ L (м)</label>
-      <input type="number" id="inpLength" value="110" step="1" onchange="triggerUpdate()">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Номер ГНБ</label>
+        <input type="text" id="inpNumber" value="1" onchange="triggerUpdate()">
+      </div>
+      <div class="form-group">
+        <label>Длина ГНБ L (м)</label>
+        <input type="number" id="inpLength" value="110" step="1" onchange="triggerUpdate()">
+      </div>
     </div>
 
     <div class="form-row">
@@ -405,10 +411,10 @@
   <div class="sheet-wrapper" id="sheetWrapper">
     <div class="sheet" id="printSheet">
       <div class="frame">
-        <div class="title-block">
-          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ (КЛ 0,4-10 кВ)
+        <div class="title-block" id="mainTitleBlock">
+          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №1
           <div class="subtitle" id="sheetSubtitle">
-            Масштаб: горизонтальный 1:200, вертикальный 1:50 | 1хПНД 160мм | Длина перехода L = 110.0 м
+            Масштаб: горизонтальный 1:200, вертикальный 1:50 | Длина перехода L = 110.0 м
           </div>
         </div>
         
@@ -432,8 +438,8 @@
 
 <script>
 let state = {
+  hddNumber: "1",
   length: 110,
-  pipe: "1хПНД 160мм",
   depthHall: 3.80,
   entryDepth: 1.0,
   exitDepth: 1.0,
@@ -484,7 +490,7 @@ function snapToSafeDepth(targetD) {
 
     const L = state.length;
     const R = state.radius;
-    const clearance = 0.58; 
+    const clearance = 0.58; // 0.5м в свету + 0.08м полудиаметр трубы 160мм
 
     function isValid(d) {
         if (d < Math.max(state.entryDepth, state.exitDepth)) return false;
@@ -561,6 +567,7 @@ document.getElementById('viewportArea').addEventListener('wheel', function(e) {
 
 function loadPreset(len) {
   if (len === 110) {
+    state.hddNumber = "1";
     state.length = 110;
     state.depthHall = 3.80; 
     state.entryDepth = 1.0;
@@ -569,6 +576,7 @@ function loadPreset(len) {
     state.asphalts = [{ start: 20, end: 80 }];
     state.nets = []; 
   } else if (len === 62) {
+    state.hddNumber = "2";
     state.length = 62;
     state.depthHall = 3.70;
     state.entryDepth = 1.0;
@@ -586,6 +594,7 @@ function loadPreset(len) {
       { type: 'heat', name: 'Теплотрасса', dist: 56, depth: 2.0 }
     ];
   } else if (len === 48) {
+    state.hddNumber = "3";
     state.length = 48;
     state.depthHall = 3.80;
     state.entryDepth = 1.0;
@@ -602,7 +611,6 @@ function loadPreset(len) {
     ];
   }
   
-  document.getElementById('inpHall').value = state.depthHall;
   syncInputs();
   renderAsphaltsList();
   renderNetsList();
@@ -610,6 +618,7 @@ function loadPreset(len) {
 }
 
 function syncInputs() {
+  document.getElementById('inpNumber').value = state.hddNumber;
   document.getElementById('inpLength').value = state.length;
   document.getElementById('inpHall').value = state.depthHall;
   document.getElementById('inpEntryDepth').value = state.entryDepth;
@@ -618,6 +627,7 @@ function syncInputs() {
 }
 
 function triggerUpdate() {
+  state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
   let userDepth = parseFloat(document.getElementById('inpHall').value) || 3.5;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
@@ -777,8 +787,12 @@ function autoOptimizeDepth() {
 function renderSvg() {
   const L = state.length;
   const R = state.radius;
-  document.getElementById('sheetSubtitle').textContent = 
-    `Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | ${state.pipe} | Длина перехода L = ${L.toFixed(1)} м`;
+  
+  document.getElementById('mainTitleBlock').innerHTML = 
+    `ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №${state.hddNumber}
+     <div class="subtitle" id="sheetSubtitle">
+       Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м
+     </div>`;
 
   const svg = document.getElementById('svgContent');
   svg.innerHTML = '';
@@ -914,7 +928,7 @@ function renderSvg() {
     
     <text x="${toSvgX(2.0 + L1/2)}" y="${yHoriz+30}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${L1.toFixed(1)}м, R=${state.radius}м</text>
     <text x="${toSvgX(L - 2.0 - L2/2)}" y="${yHoriz+30}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${L2.toFixed(1)}м, R=${state.radius}м</text>
-    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">${state.pipe} (горизонт: отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
+    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+34}" font-size="10" fill="#6a1b9a" text-anchor="middle">L=${horizLen.toFixed(1)}м</text>
   `;
 
@@ -935,7 +949,6 @@ function renderSvg() {
     const isUnderNorm = deltaHVal < 0.49; 
     const positionText = pipeYAtDist < net.depth ? 'над сетью' : 'под сетью';
 
-    // Умное раздвигание текста по высоте
     let assignedSlot = 0;
     for (let s = 0; s < slotLastX.length; s++) {
         if (nx - slotLastX[s] > 380) {
@@ -945,20 +958,16 @@ function renderSvg() {
     }
     slotLastX[assignedSlot] = nx;
     
-    // ВЫНОСКИ РАСТУТ ВВЕРХ! Стартовая высота 250 (чуть выше земли), каждая следующая строчка уходит ВВЕРХ на 24px
     const leaderY = 250 - assignedSlot * 24; 
 
-    // Если норматив не выдержан, текст будет красным, иначе цвет самой сети
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
 
     markup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
       
-      <!-- Подземная часть (пунктир от земли до трубы) -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny-6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
       
-      <!-- Надземная часть (сплошная выноска от земли вверх) -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
       <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1.2" />
       
@@ -971,7 +980,7 @@ function renderSvg() {
   markup += `
     <g font-size="10" fill="#333">
       <text x="${leftX-20}" y="850" font-weight="bold">Примечания:</text>
-      <text x="${leftX-20}" y="866">1. Закрытый переход КЛ выполнить методом ГНБ установкой с тяговым усилием не менее 150 кН. Протягиваемая труба - ${state.pipe} (SDR 11).</text>
+      <text x="${leftX-20}" y="866">1. Закрытый переход КЛ выполнить методом ГНБ установкой с тяговым усилием не менее 150 кН.</text>
       <text x="${leftX-20}" y="880">2. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
     </g>
   `;
