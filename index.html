@@ -376,7 +376,7 @@
 
     <div class="section-title">
       <span>Пересекаемые сети</span>
-      <span id="netsCountBadge" style="color: #888; font-size: 11px;">10 сетей</span>
+      <span id="netsCountBadge" style="color: #888; font-size: 11px;">0 сетей</span>
     </div>
     
     <div id="netsContainer"></div>
@@ -441,18 +441,7 @@ let state = {
   exitDepth: 1.0,
   radius: 60,
   asphalts: [{ start: 20, end: 80 }],
-  nets: [
-    { type: 'gas', name: 'Газопровод d159', dist: 5, depth: 2.0 },
-    { type: 'power', name: 'КЛ 0.4-10кВ', dist: 10, depth: 0.7 },
-    { type: 'power', name: 'КЛ 10кВ', dist: 15, depth: 0.7 },
-    { type: 'water', name: 'Водопровод В1 d200', dist: 25, depth: 2.0 },
-    { type: 'power', name: 'КЛ 0.4кВ', dist: 30, depth: 0.7 },
-    { type: 'gas', name: 'Газопровод с/д', dist: 50, depth: 2.0 },
-    { type: 'sewer', name: 'Канализация К1 d250', dist: 60, depth: 2.0 },
-    { type: 'heat', name: 'Теплотрасса 2хd159 (в лотке)', dist: 70, depth: 2.0 },
-    { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 80, depth: 0.7 },
-    { type: 'power', name: 'КЛ 0.4кВ', dist: 100, depth: 0.7 }
-  ]
+  nets: []
 };
 
 const NET_TYPES = {
@@ -492,6 +481,8 @@ function getTruePipeDepth(x, dHall, dEnt, dEx, L, R) {
 
 // УМНОЕ АВТО-СМЕЩЕНИЕ (ПОИСК БЛИЖАЙШЕЙ БЕЗОПАСНОЙ ГЛУБИНЫ)
 function snapToSafeDepth(targetD) {
+    if (state.nets.length === 0) return targetD;
+
     const L = state.length;
     const R = state.radius;
     const clearance = 0.58; // 0.5м норматив + 0.08м полудиаметр трубы 160мм
@@ -573,23 +564,12 @@ document.getElementById('viewportArea').addEventListener('wheel', function(e) {
 function loadPreset(len) {
   if (len === 110) {
     state.length = 110;
-    state.depthHall = 3.80; // Стартовое значение (сразу сработает авто-смещение на ~1.40м)
+    state.depthHall = 3.80; 
     state.entryDepth = 1.0;
     state.exitDepth = 1.0;
     state.radius = 60;
     state.asphalts = [{ start: 20, end: 80 }];
-    state.nets = [
-      { type: 'gas', name: 'Газопровод d159', dist: 5, depth: 2.0 },
-      { type: 'power', name: 'КЛ 0.4-10кВ', dist: 10, depth: 0.7 },
-      { type: 'power', name: 'КЛ 10кВ', dist: 15, depth: 0.7 },
-      { type: 'water', name: 'Водопровод В1 d200', dist: 25, depth: 2.0 },
-      { type: 'power', name: 'КЛ 0.4кВ', dist: 30, depth: 0.7 },
-      { type: 'gas', name: 'Газопровод с/д', dist: 50, depth: 2.0 },
-      { type: 'sewer', name: 'Канализация К1 d250', dist: 60, depth: 2.0 },
-      { type: 'heat', name: 'Теплотрасса 2хd159 (в лотке)', dist: 70, depth: 2.0 },
-      { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 80, depth: 0.7 },
-      { type: 'power', name: 'КЛ 0.4кВ', dist: 100, depth: 0.7 }
-    ];
+    state.nets = []; // <--- УБРАЛИ СЕТИ ПО УМОЛЧАНИЮ
   } else if (len === 62) {
     state.length = 62;
     state.depthHall = 3.70;
@@ -628,7 +608,7 @@ function loadPreset(len) {
   syncInputs();
   renderAsphaltsList();
   renderNetsList();
-  triggerUpdate(); // Применяет авто-смещение сразу при загрузке шаблона
+  triggerUpdate(); 
 }
 
 function syncInputs() {
@@ -647,7 +627,7 @@ function triggerUpdate() {
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
 
   // УМНОЕ СМЕЩЕНИЕ
-  if (document.getElementById('chkAutoSnap').checked) {
+  if (document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
       let safeDepth = snapToSafeDepth(userDepth);
       if (safeDepth !== null && Math.abs(safeDepth - userDepth) > 0.01) {
           state.depthHall = +(safeDepth.toFixed(2));
@@ -748,6 +728,10 @@ function addNetPrompt() {
 }
 
 function autoOptimizeDepth() {
+  if (state.nets.length === 0) {
+      alert("Нет сетей для обхода!");
+      return;
+  }
   let maxNetDepth = 0.5;
   state.nets.forEach(n => { if (n.depth > maxNetDepth) maxNetDepth = n.depth; });
   
