@@ -424,7 +424,7 @@
         </div>
         
         <div class="svg-container">
-          <!-- Увеличен viewBox, чтобы вместить сетку -8м и нижние выноски -->
+          <!-- Увеличен viewBox, чтобы вместить все элементы снизу -->
           <svg id="profileSvg" viewBox="0 0 1460 1400">
             <defs>
               <pattern id="pitHatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
@@ -868,7 +868,6 @@ function renderSvg() {
   
   xPts.forEach(x => {
       let px = toSvgX(x);
-      // Сетка от +2.00 до -8.00
       gridLines += `<line x1="${px}" y1="${groundY-120}" x2="${px}" y2="${groundY+480}" stroke-dasharray="3,3" />`;
       gridTextsX += `<text x="${px}" y="${groundY+496}">${x}</text>`;
   });
@@ -876,7 +875,6 @@ function renderSvg() {
   markup += `
     <g stroke="rgb(128, 128, 128)" stroke-width="1.2">
       ${gridLines}
-      <!-- Горизонтальные линии от +2.00 до -8.00 -->
   `;
   for (let d = -2; d <= 8; d++) {
       let gy = groundY + d * scaleY;
@@ -907,7 +905,7 @@ function renderSvg() {
     <text x="${leftX-28}" y="${groundY+496}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
   `;
 
-  // ЗОНЫ АСФАЛЬТА И ГАЗОНА (Убран пикетаж из подписей)
+  // ЗОНЫ АСФАЛЬТА И ГАЗОНА
   let rawAsphalts = state.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
                                   .filter(a => a.start < a.end)
                                   .sort((a,b) => a.start - b.start);
@@ -977,7 +975,7 @@ function renderSvg() {
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ТРАЕКТОРИИ
+  // ВЫНОСКИ ТРАЕКТОРИИ 
   let h1 = Math.max(0, state.depthHall - state.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, state.depthHall - state.exitDepth);
@@ -1002,11 +1000,10 @@ function renderSvg() {
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
   `;
 
-  // ВЫНОСКИ СЕТЕЙ (РАЗДЕЛЯЕМ ЛИНИИ И ТЕКСТЫ ДЛЯ ПРАВИЛЬНОГО ПЕРЕКРЫТИЯ)
+  // ВЫНОСКИ СЕТЕЙ (СТРОГО НА ОДНОМ УРОВНЕ ВНИЗУ, БЕЗ СТУПЕНЕК)
   let linesMarkup = '';
   let textsMarkup = '';
   let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
-  let slotLastX = Array(15).fill(-999);
 
   drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
@@ -1020,21 +1017,10 @@ function renderSvg() {
     
     const isUnderNorm = deltaHVal < 0.49; 
 
-    // Сдвиг слоев (если выноски расположены очень плотно по горизонтали)
-    let assignedSlot = 0;
-    for (let s = 0; s < slotLastX.length; s++) {
-        if (nx - slotLastX[s] > 20) {
-            assignedSlot = s;
-            break;
-        }
-    }
-    slotLastX[assignedSlot] = nx;
+    // ЕДИНЫЙ УРОВЕНЬ: Выноски начинаются строго на отметке 830px (ниже сетки и текста пикетажа)
+    const textEndY = 830; 
     
-    // Внизу сетки. Сетка кончается на -8.00 (y = 300 + 8*60 = 780).
-    // Текст начинается с y=810 и уходит вниз с шагом 160px
-    const textEndY = 810 + assignedSlot * 160; 
-    
-    // Формируем финальную строку: "Электрокабель, Δh=2,47м"
+    // Формируем чистый текст: "Электрокабель, Δh=2,47м"
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
@@ -1042,21 +1028,24 @@ function renderSvg() {
 
     linesMarkup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      <!-- Пунктир от земли до коммуникации -->
+      
+      <!-- Пунктир от земли до трубы сети -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
-      <!-- Сплошная выносная линия от коммуникации вниз ровно до текста -->
+      
+      <!-- Сплошная линия от трубы строго вниз, обрывается ровно перед текстом -->
       <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" />
     `;
 
     textsMarkup += `
-      <!-- Белая маска текста, стирающая сетку и чужие выноски -->
+      <!-- Маска (ореол), которая закрашивает всё за буквами, чтобы линии соседних сетей не перечеркивали текст -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
-      <!-- Сам текст -->
+      
+      <!-- Основной текст -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
     `;
   });
 
-  markup += linesMarkup + textsMarkup; // Тексты гарантированно поверх всех линий!
+  markup += linesMarkup + textsMarkup; 
 
   // ПРИМЕЧАНИЯ
   markup += `
