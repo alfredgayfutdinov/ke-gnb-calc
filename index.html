@@ -335,28 +335,28 @@
     <div class="section-title">Геометрия скважины</div>
     <div class="form-group">
       <label>Длина ГНБ L (м)</label>
-      <input type="number" id="inpLength" value="110" step="1" onchange="updateProfile()">
+      <input type="number" id="inpLength" value="110" step="1" onchange="triggerUpdate()">
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label>Вход в котлован (гл., м)</label>
-        <input type="number" id="inpEntryDepth" value="1.0" step="0.1" onchange="updateProfile()">
+        <input type="number" id="inpEntryDepth" value="1.0" step="0.1" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
-        <label>Выход (гл., м)</label>
-        <input type="number" id="inpExitDepth" value="1.0" step="0.1" onchange="updateProfile()">
+        <label>Выход из скважины (гл., м)</label>
+        <input type="number" id="inpExitDepth" value="1.0" step="0.1" onchange="triggerUpdate()">
       </div>
     </div>
 
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
-        <label>Глубина горизонта (м)</label>
-        <input type="number" id="inpHall" value="3.80" step="0.05" onchange="updateProfile()">
+        <label>Базовый горизонт (м)</label>
+        <input type="number" id="inpHall" value="3.80" step="0.05" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
         <label>Радиус Rизг (м)</label>
-        <input type="number" id="inpRadius" value="60" step="5" onchange="updateProfile()">
+        <input type="number" id="inpRadius" value="60" step="5" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -383,7 +383,7 @@
     <div class="export-group">
       <button class="btn-secondary" onclick="exportAutoCAD()">CAD (ПЛИНИЯ)</button>
       <button class="btn-secondary" onclick="exportCSV()">Excel (CSV)</button>
-      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-глубина (≥1.0м)</button>
+      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-глубина (Дно)</button>
     </div>
   </div>
 </div>
@@ -445,7 +445,8 @@ let state = {
     { type: 'heat', name: 'Теплотрасса 2хd159 (в лотке)', dist: 70, depth: 2.0 },
     { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 80, depth: 0.7 },
     { type: 'power', name: 'КЛ 0.4кВ', dist: 100, depth: 0.7 }
-  ]
+  ],
+  profilePoints: [] // массив динамической траектории
 };
 
 const NET_TYPES = {
@@ -456,23 +457,6 @@ const NET_TYPES = {
   sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#795548', badge: 'badge-sewer' },
   heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#ff5722', badge: 'badge-heat' }
 };
-
-// Функция математического расчета фактической глубины трубы в любой точке трассы
-function getPipeDepthAt(dist) {
-  const L = state.length;
-  const lTrans = Math.min(18, (L - 10) * 0.25);
-  if (dist <= 2.0) return state.entryDepth;
-  if (dist >= L - 2.0) return state.exitDepth;
-  if (dist <= 2.0 + lTrans) {
-    const prog = (dist - 2.0) / lTrans;
-    return state.entryDepth + (state.depthHall - state.entryDepth) * prog;
-  }
-  if (dist >= L - 2.0 - lTrans) {
-    const prog = ((L - 2.0) - dist) / lTrans;
-    return state.exitDepth + (state.depthHall - state.exitDepth) * prog;
-  }
-  return state.depthHall;
-}
 
 /* СИСТЕМА УПРАВЛЕНИЯ ЗУМОМ */
 let currentZoom = 0.85;
@@ -576,7 +560,7 @@ function loadPreset(len) {
   syncInputs();
   renderAsphaltsList();
   renderNetsList();
-  renderSvg();
+  triggerUpdate();
 }
 
 function syncInputs() {
@@ -587,13 +571,105 @@ function syncInputs() {
   document.getElementById('inpRadius').value = state.radius;
 }
 
-function updateProfile() {
+function triggerUpdate() {
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
   state.depthHall = parseFloat(document.getElementById('inpHall').value) || 3.5;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
+  
+  calculateDynamicProfile();
   renderSvg();
+}
+
+/* ЛОГИКА ДИНАМИЧЕСКОГО ОГИБАНИЯ */
+function calculateDynamicProfile() {
+  const L = state.length;
+  const lTrans = Math.min(18, (L - 10) * 0.25);
+  const S = 0.20; // Максимальный уклон огибания (20%)
+  
+  let profile = [];
+  
+  // 1. Формируем базовую идеальную траекторию (без огибаний)
+  for (let x = 0; x <= L; x += 0.5) {
+    let y = state.depthHall;
+    if (x <= 2.0) y = state.entryDepth;
+    else if (x >= L - 2.0) y = state.exitDepth;
+    else if (x <= 2.0 + lTrans) {
+      const prog = (x - 2.0) / lTrans;
+      y = state.entryDepth + (state.depthHall - state.entryDepth) * prog;
+    }
+    else if (x >= L - 2.0 - lTrans) {
+      const prog = ((L - 2.0) - x) / lTrans;
+      y = state.exitDepth + (state.depthHall - state.exitDepth) * prog;
+    }
+    profile.push({ x: x, y: y });
+  }
+  if (L % 0.5 !== 0) profile.push({ x: L, y: state.exitDepth });
+
+  // 2. Огибаем сети. Требуемый зазор = 1.0м (норма) + 0.08м (радиус ПНД160) = 1.08м
+  const C = 1.08; 
+
+  // Делаем 3 прохода, чтобы учесть взаимное влияние нескольких близких сетей
+  for (let pass = 0; pass < 3; pass++) {
+    state.nets.forEach(net => {
+      const Xn = net.dist;
+      const Dn = net.depth;
+      
+      // Находим текущую глубину трубы над сетью
+      let bestIdx = 0, minDist = Infinity;
+      for (let i = 0; i < profile.length; i++) {
+        let d = Math.abs(profile[i].x - Xn);
+        if(d < minDist) { minDist = d; bestIdx = i; }
+      }
+      const Dcurr = profile[bestIdx].y;
+      
+      // Если расстояние нарушено
+      if (Math.abs(Dcurr - Dn) < C) {
+        const Dabove = Dn - C;
+        const Dbelow = Dn + C;
+        
+        // Решаем, куда обходить (вверх или вниз)
+        let goAbove = false;
+        if (Dabove >= 0.7) { // 0.7 - минимальная глубина от земли, чтобы труба не вылезла
+          if (Math.abs(Dcurr - Dabove) <= Math.abs(Dcurr - Dbelow)) {
+            goAbove = true;
+          }
+        }
+        
+        // Применяем изгиб (горку или яму) на весь профиль
+        for (let i = 0; i < profile.length; i++) {
+          if (profile[i].x <= 2.0 || profile[i].x >= L - 2.0) continue; // Не трогаем входы в котлованы
+          const px = profile[i].x;
+          const dx = Math.abs(px - Xn);
+          
+          if (goAbove) {
+            const reqY = Dabove + S * dx;
+            if (profile[i].y > reqY) profile[i].y = reqY;
+          } else {
+            const reqY = Dbelow - S * dx;
+            if (profile[i].y < reqY) profile[i].y = reqY;
+          }
+        }
+      }
+    });
+  }
+  
+  state.profilePoints = profile;
+}
+
+// Получение фактической глубины трубы в любой точке (с учетом изгибов)
+function getPipeDepthAt(dist) {
+  if (!state.profilePoints || state.profilePoints.length === 0) return 0;
+  for (let i = 0; i < state.profilePoints.length - 1; i++) {
+    const p1 = state.profilePoints[i];
+    const p2 = state.profilePoints[i+1];
+    if (dist >= p1.x && dist <= p2.x) {
+      const prog = (dist - p1.x) / (p2.x - p1.x);
+      return p1.y + (p2.y - p1.y) * prog;
+    }
+  }
+  return state.profilePoints[state.profilePoints.length-1].y;
 }
 
 /* ЛОГИКА УЧАСТКОВ АСФАЛЬТА */
@@ -620,12 +696,12 @@ function renderAsphaltsList() {
 function addAsphalt() {
   state.asphalts.push({ start: 0, end: 10 });
   renderAsphaltsList();
-  renderSvg();
+  triggerUpdate();
 }
 
-function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; renderSvg(); }
-function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; renderSvg(); }
-function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); renderSvg(); }
+function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; triggerUpdate(); }
+function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; triggerUpdate(); }
+function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); triggerUpdate(); }
 
 /* ЛОГИКА СЕТЕЙ */
 function renderNetsList() {
@@ -660,10 +736,10 @@ function renderNetsList() {
   });
 }
 
-function updateNetName(i, val) { state.nets[i].name = val; renderSvg(); }
-function updateNetDist(i, val) { state.nets[i].dist = parseFloat(val) || 0; renderSvg(); }
-function updateNetDepth(i, val) { state.nets[i].depth = parseFloat(val) || 0.7; renderSvg(); }
-function removeNet(i) { state.nets.splice(i, 1); renderNetsList(); renderSvg(); }
+function updateNetName(i, val) { state.nets[i].name = val; triggerUpdate(); }
+function updateNetDist(i, val) { state.nets[i].dist = parseFloat(val) || 0; triggerUpdate(); }
+function updateNetDepth(i, val) { state.nets[i].depth = parseFloat(val) || 0.7; triggerUpdate(); }
+function removeNet(i) { state.nets.splice(i, 1); renderNetsList(); triggerUpdate(); }
 
 function addNetPrompt() {
   const type = prompt("Тип сети:\n1 - Газопровод (2.0м)\n2 - Электрокабель (0.7м)\n3 - Водопровод (2.0м)\n4 - Канализация (2.0м)\n5 - Теплотрасса (2.0м)\n6 - Связь/ВОЛС (0.7м)", "1");
@@ -678,7 +754,7 @@ function addNetPrompt() {
   const dist = parseFloat(prompt("Расстояние от точки входа (ПК в метрах):", (state.length/2).toFixed(1))) || 10;
   state.nets.push({ type: netType, name: netName, dist: dist, depth: netDepth });
   renderNetsList();
-  renderSvg();
+  triggerUpdate();
 }
 
 function autoOptimizeDepth() {
@@ -686,14 +762,13 @@ function autoOptimizeDepth() {
   state.nets.forEach(n => {
     if (n.depth > maxNetDepth) maxNetDepth = n.depth;
   });
-  const requiredDepth = maxNetDepth + 1.0 + 0.080 + 0.15;
+  // Чтобы базовый горизонт гарантированно прошел ниже всех сетей
+  const requiredDepth = maxNetDepth + 1.0 + 0.080 + 0.15; 
   const safeDepth = Math.max(state.entryDepth, state.exitDepth) + 0.5;
   state.depthHall = +(Math.max(requiredDepth, safeDepth)).toFixed(2);
   document.getElementById('inpHall').value = state.depthHall;
-  renderSvg();
   
-  const minClearance = (state.depthHall - maxNetDepth - 0.080).toFixed(2);
-  alert(`Глубина пересчитана!\nОтметка горизонта скважины: -${state.depthHall} м.\nЗазор в свету до самой глубокой сети (${maxNetDepth} м): ${minClearance} м (норматив ≥1.0 м выдержан).`);
+  triggerUpdate();
 }
 
 function renderSvg() {
@@ -709,13 +784,13 @@ function renderSvg() {
   const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
-  const groundY = 210;
+  const groundY = 300;
   const scaleY = 60;
   const toSvgY = (absElev) => groundY - (absElev * scaleY);
 
   let markup = '';
 
-  // СЕТКА
+  // СЕТКА ВЫСОТ
   markup += `
     <g stroke="#e2e2e2" stroke-width="0.8">
       <line x1="${leftX-20}" y1="${groundY-120}" x2="${rightX+20}" y2="${groundY-120}" stroke-dasharray="3,3" />
@@ -725,6 +800,7 @@ function renderSvg() {
       <line x1="${leftX-20}" y1="${groundY+120}" x2="${rightX+20}" y2="${groundY+120}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY+180}" x2="${rightX+20}" y2="${groundY+180}" stroke-dasharray="3,3" />
       <line x1="${leftX-20}" y1="${groundY+240}" x2="${rightX+20}" y2="${groundY+240}" stroke-dasharray="3,3" />
+      <line x1="${leftX-20}" y1="${groundY+300}" x2="${rightX+20}" y2="${groundY+300}" stroke-dasharray="3,3" />
     </g>
     <g font-size="11" fill="#444" text-anchor="end">
       <text x="${leftX-28}" y="${groundY-116}">+2.00</text>
@@ -734,6 +810,7 @@ function renderSvg() {
       <text x="${leftX-28}" y="${groundY+124}">-2.00</text>
       <text x="${leftX-28}" y="${groundY+184}">-3.00</text>
       <text x="${leftX-28}" y="${groundY+244}">-4.00</text>
+      <text x="${leftX-28}" y="${groundY+304}">-5.00</text>
     </g>
   `;
 
@@ -790,45 +867,31 @@ function renderSvg() {
   markup += `
     <rect x="${toSvgX(0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#000" stroke-width="1.5" />
     <line x1="${toSvgX(0)}" y1="${groundY}" x2="${toSvgX(0)}" y2="${groundY+pitDepthPx}" stroke="#c00" stroke-width="2.5" />
-    <text x="${toSvgX(1.0)}" y="${groundY+pitDepthPx+16}" font-size="9.5" text-anchor="middle" font-weight="bold">Котлован 2.0х2.0х2.0м</text>
-
+    
     <rect x="${toSvgX(L-2.0)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch)" stroke="#000" stroke-width="1.5" />
     <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#c00" stroke-width="2.5" />
-    <text x="${toSvgX(L-1.0)}" y="${groundY+pitDepthPx+16}" font-size="9.5" text-anchor="middle" font-weight="bold">Котлован 2.0х2.0х2.0м</text>
   `;
 
-  // ТРАЕКТОРИЯ ГНБ
-  const xPitStart = toSvgX(2.0);
-  const yPitStart = toSvgY(-state.entryDepth);
-  const xPitEnd = toSvgX(L - 2.0);
-  const yPitEnd = toSvgY(-state.exitDepth);
-
-  const lTransition = Math.min(18, (L - 10) * 0.25);
-  const xHorizStart = toSvgX(2.0 + lTransition);
-  const xHorizEnd = toSvgX(L - 2.0 - lTransition);
-  const yHoriz = toSvgY(-state.depthHall);
-  const horizLen = (L - 4.0 - 2*lTransition).toFixed(1);
-
-  const pathD = `M ${xPitStart} ${yPitStart} Q ${toSvgX(2.0 + lTransition*0.6)} ${yHoriz} ${xHorizStart} ${yHoriz} L ${xHorizEnd} ${yHoriz} Q ${toSvgX(L - 2.0 - lTransition*0.6)} ${yHoriz} ${xPitEnd} ${yPitEnd}`;
-
-  markup += `
-    <path d="${pathD}" fill="none" stroke="#2196F3" stroke-width="9.5" stroke-linecap="round" />
-    <path d="${pathD}" fill="none" stroke="#d32f2f" stroke-width="1.8" stroke-dasharray="8,4" />
+  // ДИНАМИЧЕСКАЯ ТРАЕКТОРИЯ ГНБ (ПОЛИЛИНИЯ)
+  if (state.profilePoints.length > 0) {
+    let pathD = `M ${toSvgX(state.profilePoints[0].x)} ${toSvgY(-state.profilePoints[0].y)}`;
+    for (let i = 1; i < state.profilePoints.length; i++) {
+       pathD += ` L ${toSvgX(state.profilePoints[i].x)} ${toSvgY(-state.profilePoints[i].y)}`;
+    }
     
-    <circle cx="${xPitStart}" cy="${yPitStart}" r="4.5" fill="#d32f2f" />
-    <circle cx="${xHorizStart}" cy="${yHoriz}" r="3.5" fill="#d32f2f" />
-    <circle cx="${xHorizEnd}" cy="${yHoriz}" r="3.5" fill="#d32f2f" />
-    <circle cx="${xPitEnd}" cy="${yPitEnd}" r="4.5" fill="#d32f2f" />
-
-    <!-- ВЫНОСКИ ДЛЯ ХАРАКТЕРИСТИК ТРАЕКТОРИИ (ВМЕСТО НИЖНЕЙ ТАБЛИЦЫ) -->
-    <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#004d80" font-weight="bold" text-anchor="middle">Вход -${state.entryDepth.toFixed(2)}м</text>
-    <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#004d80" font-weight="bold" text-anchor="middle">Выход -${state.exitDepth.toFixed(2)}м</text>
-
-    <text x="${(xPitStart+xHorizStart)/2}" y="${yHoriz+30}" font-size="10" fill="#004d80" text-anchor="middle">L=${lTransition.toFixed(1)}м, R=${state.radius}м</text>
-    <text x="${(xHorizEnd+xPitEnd)/2}" y="${yHoriz+30}" font-size="10" fill="#004d80" text-anchor="middle">L=${lTransition.toFixed(1)}м, R=${state.radius}м</text>
-    <text x="${(xHorizStart+xHorizEnd)/2}" y="${yHoriz+20}" font-size="11.5" fill="#004d80" font-weight="bold" text-anchor="middle">${state.pipe} (горизонт: отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
-    <text x="${(xHorizStart+xHorizEnd)/2}" y="${yHoriz+34}" font-size="10" fill="#004d80" text-anchor="middle">L=${horizLen}м</text>
-  `;
+    markup += `
+      <path d="${pathD}" fill="none" stroke="#2196F3" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="${pathD}" fill="none" stroke="#d32f2f" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
+      
+      <circle cx="${toSvgX(2.0)}" cy="${toSvgY(-state.entryDepth)}" r="4.5" fill="#d32f2f" />
+      <circle cx="${toSvgX(L-2.0)}" cy="${toSvgY(-state.exitDepth)}" r="4.5" fill="#d32f2f" />
+      
+      <text x="${toSvgX(2.0)}" y="${toSvgY(-state.entryDepth) - 10}" font-size="10.5" fill="#004d80" font-weight="bold" text-anchor="middle">Вход -${state.entryDepth.toFixed(2)}м</text>
+      <text x="${toSvgX(L-2.0)}" y="${toSvgY(-state.exitDepth) - 10}" font-size="10.5" fill="#004d80" font-weight="bold" text-anchor="middle">Выход -${state.exitDepth.toFixed(2)}м</text>
+      
+      <text x="${toSvgX(L/2)}" y="${toSvgY(-state.depthHall) + 20}" font-size="11" fill="#004d80" font-weight="bold" text-anchor="middle">Траектория ГНБ с автоматическим огибанием (гл. база ${state.depthHall.toFixed(2)}м)</text>
+    `;
+  }
 
   // СЕТИ И РАСЧЕТ ЗАЗОРОВ БЕЗОПАСНОСТИ
   state.nets.forEach((net, idx) => {
@@ -836,15 +899,21 @@ function renderSvg() {
     const ny = toSvgY(-net.depth);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
     
+    // Фактическая глубина трубы ровно над/под сетью
     let pipeYAtDist = getPipeDepthAt(net.dist);
-    const deltaHVal = pipeYAtDist - net.depth - 0.080;
+    const centerDist = Math.abs(pipeYAtDist - net.depth);
+    const deltaHVal = centerDist - 0.080; // Расстояние от оболочки трубы 160мм
     const deltaH = deltaHVal.toFixed(2);
     
-    const isUnderNorm = deltaHVal < 1.0;
+    // Подсветка нарушения норматива 1.0 (за вычетом погрешности расчета)
+    const isUnderNorm = deltaHVal < 0.99; 
     const clearanceColor = isUnderNorm ? '#d32f2f' : '#555';
     const clearanceWeight = isUnderNorm ? 'bold' : 'normal';
+    
+    // Определяем, прошла труба выше или ниже сети для стрелки
+    const positionText = pipeYAtDist < net.depth ? 'над сетью' : 'под сетью';
 
-    const leaderY = 115 + (idx % 3) * 22;
+    const leaderY = 145 + (idx % 3) * 22;
 
     markup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : '#000'}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
@@ -853,7 +922,7 @@ function renderSvg() {
       <line x1="${nx}" y1="${ny-6.5}" x2="${nx}" y2="${leaderY+4}" stroke="${conf.color}" stroke-width="1" />
       <line x1="${nx}" y1="${leaderY+4}" x2="${nx+32}" y2="${leaderY+4}" stroke="#000" stroke-width="1" />
       <text x="${nx+36}" y="${leaderY+2}" font-size="9" font-weight="bold">${net.name}</text>
-      <text x="${nx+36}" y="${leaderY+13}" font-size="8.5" fill="${clearanceColor}" font-weight="${clearanceWeight}">ПК ${net.dist.toFixed(1)} / Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м ${isUnderNorm ? '(! < 1.0м)' : ''}</text>
+      <text x="${nx+36}" y="${leaderY+13}" font-size="8.5" fill="${clearanceColor}" font-weight="${clearanceWeight}">ПК ${net.dist.toFixed(1)} / Гл.${net.depth.toFixed(2)}м / Δh=${deltaH}м (${positionText}) ${isUnderNorm ? '(! < 1.0м)' : ''}</text>
     `;
   });
 
@@ -894,13 +963,10 @@ function printPureSheet() {
 }
 
 function exportAutoCAD() {
-  const L = state.length;
-  const lTransition = Math.min(18, (L - 10) * 0.25);
   let coords = [];
-  coords.push(`2.00,-${state.entryDepth.toFixed(2)}`);
-  coords.push(`${(2.0 + lTransition).toFixed(2)},-${state.depthHall.toFixed(2)}`);
-  coords.push(`${(L - 2.0 - lTransition).toFixed(2)},-${state.depthHall.toFixed(2)}`);
-  coords.push(`${(L - 2.0).toFixed(2)},-${state.exitDepth.toFixed(2)}`);
+  state.profilePoints.forEach(p => {
+    coords.push(`${p.x.toFixed(2)},-${p.y.toFixed(2)}`);
+  });
 
   const cmd = `_PLINE\n` + coords.join('\n') + `\n`;
   navigator.clipboard.writeText(cmd).then(() => {
@@ -910,8 +976,15 @@ function exportAutoCAD() {
 
 function exportCSV() {
   let csv = "Пикетаж (м);Отметка земли (м);Отметка оси трубы (м);Глубина заложения (м);Объект/Сеть\n";
+  
+  // Собираем точки для выгрузки (каждые 2 метра + точки сетей)
   const L = state.length;
-  for (let i = 0; i <= L; i += 2) {
+  let ptsSet = new Set();
+  for (let i = 0; i <= L; i += 2) ptsSet.add(i);
+  state.nets.forEach(n => ptsSet.add(Math.round(n.dist * 10) / 10));
+  let pts = Array.from(ptsSet).sort((a,b) => a - b);
+
+  pts.forEach(i => {
     let d = getPipeDepthAt(i);
     let note = "";
     const net = state.nets.find(n => Math.abs(n.dist - i) < 1.0);
@@ -920,7 +993,7 @@ function exportCSV() {
     else if (i === L) note = "Приемный котлован";
 
     csv += `${i.toFixed(1)};0.000;-${d.toFixed(3)};${d.toFixed(2)};${note}\n`;
-  }
+  });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
