@@ -396,6 +396,11 @@
     <div class="export-group">
       <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины (Дно)</button>
     </div>
+    <div class="export-group" style="margin-top: 4px;">
+      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить проект (.json)</button>
+      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Загрузить проект</button>
+      <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
+    </div>
   </div>
 </div>
 
@@ -457,6 +462,50 @@ const NET_TYPES = {
   sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#8b4513', badge: 'badge-sewer' },
   heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'badge-heat' }
 };
+
+// СОХРАНЕНИЕ ПРОЕКТА В JSON
+function saveProject() {
+    const dataStr = JSON.stringify(state, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ГНБ_${state.hddNumber}_L${state.length}m.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ЗАГРУЗКА ПРОЕКТА ИЗ JSON
+function loadProject(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const loadedState = JSON.parse(e.target.result);
+            if (loadedState && loadedState.length !== undefined) {
+                state = loadedState;
+                if (!state.hddNumber) state.hddNumber = "1";
+                if (!state.asphalts) state.asphalts = [];
+                if (!state.nets) state.nets = [];
+
+                syncInputs();
+                renderAsphaltsList();
+                renderNetsList();
+                triggerUpdate();
+            } else {
+                alert("Ошибка: Неверный формат файла.");
+            }
+        } catch (err) {
+            alert("Ошибка при чтении файла проекта!");
+        }
+        event.target.value = ''; // Сброс input для повторной загрузки
+    };
+    reader.readAsText(file);
+}
 
 // МАТЕМАТИКА ИДЕАЛЬНОЙ ТРАЕКТОРИИ
 function getTruePipeDepth(x, dHall, dEnt, dEx, L, R) {
@@ -993,7 +1042,7 @@ function renderSvg() {
     `;
   });
 
-  // ПРИМЕЧАНИЯ (Без указания параметров ПНД)
+  // ПРИМЕЧАНИЯ
   markup += `
     <g font-size="10" fill="#333">
       <text x="${leftX-20}" y="850" font-weight="bold">Примечания:</text>
