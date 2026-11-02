@@ -21,7 +21,6 @@
     overflow: hidden;
   }
 
-  /* ЛЕВАЯ ПАНЕЛЬ */
   .sidebar {
     width: 440px;
     min-width: 440px;
@@ -45,7 +44,6 @@
     color: #fff;
   }
   
-  /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
   .tabs-container {
     display: flex;
     background: #1a1a20;
@@ -90,9 +88,7 @@
     cursor: pointer;
     display: none;
   }
-  .tab-btn:hover .tab-del {
-    display: inline-block;
-  }
+  .tab-btn:hover .tab-del { display: inline-block; }
   .tab-add {
     background: transparent;
     color: #4da3ff;
@@ -103,9 +99,7 @@
     font-weight: bold;
     transition: background 0.2s;
   }
-  .tab-add:hover {
-    background: #2a2a35;
-  }
+  .tab-add:hover { background: #2a2a35; }
 
   .sidebar-body {
     padding: 16px 20px;
@@ -124,24 +118,16 @@
     justify-content: space-between;
     align-items: center;
   }
-  .form-group {
-    margin-bottom: 12px;
-  }
+  .form-group { margin-bottom: 12px; }
   .form-group label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color: #aaa;
     margin-bottom: 4px;
     white-space: nowrap;
   }
-  .form-row {
-    display: flex;
-    gap: 8px;
-  }
-  .form-row .form-group {
-    flex: 1;
-    margin-bottom: 0;
-  }
+  .form-row { display: flex; gap: 8px; }
+  .form-row .form-group { flex: 1; margin-bottom: 0; }
   input, select {
     width: 100%;
     background: #18181f;
@@ -152,9 +138,7 @@
     font-size: 13px;
     outline: none;
   }
-  input:focus, select:focus {
-    border-color: #007acc;
-  }
+  input:focus, select:focus { border-color: #007acc; }
 
   .net-item {
     background: #1e1e26;
@@ -245,10 +229,7 @@
   }
   .btn-danger:hover { background: rgba(255, 82, 82, 0.1); }
   
-  .export-group {
-    display: flex;
-    gap: 8px;
-  }
+  .export-group { display: flex; gap: 8px; }
   .btn-secondary {
     flex: 1;
     background: #333340;
@@ -261,7 +242,6 @@
   }
   .btn-secondary:hover { background: #3d3d4e; color: #fff; }
 
-  /* ПРАВАЯ ОБЛАСТЬ: ПРОСМОТР С ЗУМОМ */
   .viewport {
     flex: 1;
     height: 100%;
@@ -272,7 +252,6 @@
     user-select: none;
   }
   
-  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ */
   .zoom-toolbar {
     position: fixed;
     top: 16px;
@@ -306,14 +285,12 @@
     text-align: center;
   }
 
-  /* ОБЕРТКА МАСШТАБА ЧЕРТЕЖА */
   .sheet-wrapper {
     display: inline-block;
     transform-origin: top left;
     transition: transform 0.12s ease-out;
   }
   
-  /* ЧЕРТЕЖ: Принудительный ГОСТовский шрифт и курсив */
   .sheet {
     width: 1587px;
     height: 1122px;
@@ -368,7 +345,6 @@
     display: block;
   }
 
-  /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -401,48 +377,23 @@
     margin-top: 20px;
   }
 
-  /* СТИЛИ ДЛЯ ПЕЧАТИ */
-  #multiPrintArea {
-    display: none;
-  }
+  #multiPrintArea { display: none; }
+  
   @media print {
-    body {
-      background: #fff !important;
-    }
-    .sidebar, .zoom-toolbar, .modal-overlay {
-      display: none !important;
-      visibility: hidden !important;
-    }
-    .viewport {
-      padding: 0 !important;
-      margin: 0 !important;
-      background: #fff !important;
-      overflow: visible !important;
-    }
-    .sheet-wrapper {
-      transform: none !important;
-    }
+    body { background: #fff !important; }
+    .sidebar, .zoom-toolbar, .modal-overlay { display: none !important; visibility: hidden !important; }
+    .viewport { padding: 0 !important; margin: 0 !important; background: #fff !important; overflow: visible !important; }
+    .sheet-wrapper { transform: none !important; }
     
-    body.print-all-mode .viewport {
-      display: none !important;
-    }
-    body.print-all-mode #multiPrintArea {
-      display: block !important;
-    }
-    .print-page {
-      page-break-after: always;
-      break-after: page;
-    }
-    .print-page:last-child {
-      page-break-after: auto;
-      break-after: auto;
-    }
+    body.print-all-mode .viewport { display: none !important; }
+    body.print-all-mode #multiPrintArea { display: block !important; }
+    .print-page { page-break-after: always; break-after: page; }
+    .print-page:last-child { page-break-after: auto; break-after: auto; }
   }
 </style>
 </head>
 <body>
 
-<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ПОТОКОВОГО ДОБАВЛЕНИЯ СЕТЕЙ -->
 <div class="modal-overlay" id="singleNetModal">
   <div class="modal-box">
     <h3>Добавить пересекаемую коммуникацию</h3>
@@ -473,7 +424,6 @@
     <h2>⚡ Профили ГНБ (А3 ГОСТ)</h2>
   </div>
   
-  <!-- ПАНЕЛЬ ВКЛАДОК -->
   <div class="tabs-container" id="tabsContainer"></div>
 
   <div class="sidebar-body">
@@ -489,25 +439,30 @@
       </div>
     </div>
 
+    <!-- Рельеф -->
+    <div class="section-title">Отметки рельефа (ПК, Z)</div>
+    <div id="terrainContainer"></div>
+    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTerrainPoint()">+ Добавить точку рельефа</button>
+
+    <div class="section-title">Уровни и приямки</div>
     <div class="form-row">
       <div class="form-group">
-        <label>Вход в котлован (гл., м)</label>
+        <label>Вход (Глуб. от земли)</label>
         <input type="number" id="inpEntryDepth" value="1.0" step="0.1" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
-        <label>Выход из скважины (гл., м)</label>
+        <label>Выход (Глуб. от земли)</label>
         <input type="number" id="inpExitDepth" value="1.0" step="0.1" onchange="triggerUpdate()">
       </div>
     </div>
 
-    <!-- Обновленный блок с глубиной приямка -->
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
-        <label>Горизонт (м)</label>
-        <input type="number" id="inpHall" value="3.00" step="0.05" onchange="triggerUpdate()">
+        <label>Отметка горизонта (Z)</label>
+        <input type="number" id="inpHall" value="97.00" step="0.05" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
-        <label>Радиус Rизг (м)</label>
+        <label>Радиус изгиба (м)</label>
         <input type="number" id="inpRadius" value="50" step="5" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
@@ -523,20 +478,14 @@
       </label>
     </div>
 
-    <!-- АСФАЛЬТ -->
-    <div class="section-title">
-      <span>Зоны асфальта (проезжая часть)</span>
-    </div>
+    <div class="section-title">Зоны асфальта (Горизонтальные)</div>
     <div id="asphaltsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
     
-    <!-- ДЕРЕВЬЯ -->
-    <div class="section-title">
-      <span>Деревья (Зеленые насаждения)</span>
-    </div>
+    <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
-    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Все участки вне асфальта автоматически оформляются газоном. Деревья высаживаются поверх газона.</div>
+    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
 
     <div class="section-title">
       <span>Пересекаемые сети</span>
@@ -554,12 +503,9 @@
       <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
     </div>
 
-    <button class="btn-primary" onclick="printPureSheet()">
-      🖨️ Сохранить в PDF текущий профиль
-    </button>
-    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">
-      🖨️ Сохранить все профили ГНБ
-    </button>
+    <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
+    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили ГНБ</button>
+    
     <div class="export-group" style="margin-top: 8px;">
       <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины</button>
     </div>
@@ -573,13 +519,12 @@
 
 <div class="viewport" id="viewportArea">
   <div class="zoom-toolbar">
-    <button class="btn-zoom" onclick="zoomIn()" title="Приблизить">+</button>
-    <button class="btn-zoom" onclick="zoomOut()" title="Отдалить">−</button>
+    <button class="btn-zoom" onclick="zoomIn()">+</button>
+    <button class="btn-zoom" onclick="zoomOut()">−</button>
     <span class="zoom-val" id="zoomValLabel">85%</span>
-    <button class="btn-zoom" onclick="resetZoom(1.0)" title="Масштаб 1:1">100%</button>
-    <button class="btn-zoom" onclick="fitToScreen()" title="Вписать в экран">По размеру</button>
+    <button class="btn-zoom" onclick="resetZoom(1.0)">100%</button>
+    <button class="btn-zoom" onclick="fitToScreen()">По размеру</button>
   </div>
-  
   <div class="sheet-wrapper" id="sheetWrapper"></div>
 </div>
 
@@ -603,17 +548,111 @@ function getDefaultProfile(numStr) {
   return {
     hddNumber: numStr,
     length: 60,
-    depthHall: 3.00,
+    depthHall: 97.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
     radius: 50,
     pitDepth: 2.0,
+    terrain: [ {x: 0, z: 100.00}, {x: 60, z: 100.00} ],
     asphalts: [],
     trees: [],
     nets: []
   };
 }
 
+/* МАТЕМАТИКА РЕЛЬЕФА */
+function getNaturalElevation(x, terrainPts) {
+    if (!terrainPts || terrainPts.length === 0) return 100.0;
+    if (x <= terrainPts[0].x) return terrainPts[0].z;
+    if (x >= terrainPts[terrainPts.length-1].x) return terrainPts[terrainPts.length-1].z;
+    for (let i = 0; i < terrainPts.length - 1; i++) {
+        let p1 = terrainPts[i];
+        let p2 = terrainPts[i+1];
+        if (x >= p1.x && x <= p2.x) {
+            if (p2.x === p1.x) return p1.z;
+            let ratio = (x - p1.x) / (p2.x - p1.x);
+            return p1.z + ratio * (p2.z - p1.z);
+        }
+    }
+    return 100.0;
+}
+
+// Возвращает Z рельефа с учетом плоского горизонтального асфальта
+function getElevationAt(x, asphalts, terrainPts) {
+    for (let a of asphalts) {
+        if (x > a.start && x <= a.end) {
+            return getNaturalElevation(a.start, terrainPts);
+        }
+    }
+    return getNaturalElevation(x, terrainPts);
+}
+
+function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, asphalts, terrain) {
+    let zEnt = getElevationAt(0, asphalts, terrain) - entryDepth;
+    let zEx = getElevationAt(L, asphalts, terrain) - exitDepth;
+
+    if (x <= 0) return zEnt;
+    if (x >= L) return zEx;
+
+    let h1 = Math.max(0, zEnt - zHall);
+    let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
+    let h2 = Math.max(0, zEx - zHall);
+    let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
+
+    let xHorizStart = L1;
+    let xHorizEnd = L - L2;
+
+    if (xHorizStart > xHorizEnd) return zHall; 
+
+    if (x < xHorizStart) {
+        let dx = xHorizStart - x;
+        return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
+    } else if (x > xHorizEnd) {
+        let dx = x - xHorizEnd;
+        return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
+    } else {
+        return zHall;
+    }
+}
+
+function snapToSafeDepth(targetZ) {
+    if (state.nets.length === 0) return targetZ;
+
+    const L = state.length;
+    const R = state.radius;
+    const clearance = 0.58; 
+
+    function isValid(zH) {
+        let zEnt = getElevationAt(0, state.asphalts, state.terrain) - state.entryDepth;
+        let zEx = getElevationAt(L, state.asphalts, state.terrain) - state.exitDepth;
+        
+        if (zH > zEnt || zH > zEx) return false;
+        
+        let h1 = zEnt - zH;
+        let L1 = Math.sqrt(Math.max(0, 2*R*h1 - h1*h1));
+        let h2 = zEx - zH;
+        let L2 = Math.sqrt(Math.max(0, 2*R*h2 - h2*h2));
+        if (L1 + L2 > L) return false;
+
+        for (let net of state.nets) {
+            let pipeZ = getTruePipeDepth(net.dist, zH, state.entryDepth, state.exitDepth, L, R, state.asphalts, state.terrain);
+            let netZ = getElevationAt(net.dist, state.asphalts, state.terrain) - net.depth;
+            if (Math.abs(pipeZ - netZ) < clearance) return false;
+        }
+        return true;
+    }
+
+    if (isValid(targetZ)) return targetZ;
+
+    for (let step = 0; step <= 25.0; step += 0.05) {
+        let testZ = targetZ - step; // Идем вниз по абсолютной отметке
+        if (isValid(testZ)) return testZ;
+    }
+    return null;
+}
+
+
+/* ЛОГИКА ВКЛАДОК И ДАННЫХ */
 function renderTabs() {
   const container = document.getElementById('tabsContainer');
   container.innerHTML = '';
@@ -628,11 +667,7 @@ function renderTabs() {
           const delBtn = document.createElement('span');
           delBtn.className = 'tab-del';
           delBtn.innerHTML = '×';
-          delBtn.title = "Удалить профиль";
-          delBtn.onclick = (e) => {
-              e.stopPropagation();
-              deleteTab(idx);
-          };
+          delBtn.onclick = (e) => { e.stopPropagation(); deleteTab(idx); };
           btn.appendChild(delBtn);
       }
       container.appendChild(btn);
@@ -641,7 +676,6 @@ function renderTabs() {
   const addBtn = document.createElement('button');
   addBtn.className = 'tab-add';
   addBtn.innerHTML = '+';
-  addBtn.title = 'Добавить новый прокол';
   addBtn.onclick = addNewTab;
   container.appendChild(addBtn);
 }
@@ -649,8 +683,13 @@ function renderTabs() {
 function switchTab(idx) {
   activeProfileIdx = idx;
   state = profiles[activeProfileIdx];
+  // Защита и сортировка рельефа
+  if(!state.terrain || state.terrain.length === 0) state.terrain = [ {x:0, z:100.0}, {x:state.length, z:100.0} ];
+  state.terrain.sort((a,b) => a.x - b.x);
+  
   renderTabs(); 
   syncInputs();
+  renderTerrainList();
   renderAsphaltsList();
   renderTreesList();
   renderNetsList();
@@ -661,9 +700,7 @@ function addNewTab() {
   let nextNum = 1;
   profiles.forEach(p => {
       let num = parseInt(p.hddNumber);
-      if (!isNaN(num) && num >= nextNum) {
-          nextNum = num + 1;
-      }
+      if (!isNaN(num) && num >= nextNum) nextNum = num + 1;
   });
   profiles.push(getDefaultProfile(nextNum.toString()));
   switchTab(profiles.length - 1);
@@ -673,76 +710,55 @@ function deleteTab(idx) {
   if (profiles.length <= 1) return;
   if (confirm(`Вы действительно хотите удалить вкладку ГНБ №${profiles[idx].hddNumber}?`)) {
       profiles.splice(idx, 1);
-      if (activeProfileIdx >= profiles.length) {
-          activeProfileIdx = profiles.length - 1;
-      } else if (activeProfileIdx > idx) {
-          activeProfileIdx--; 
-      }
+      if (activeProfileIdx >= profiles.length) activeProfileIdx = profiles.length - 1;
+      else if (activeProfileIdx > idx) activeProfileIdx--; 
       switchTab(activeProfileIdx);
   }
 }
 
 function resetData(confirmPrompt = true) {
-  if (confirmPrompt && !confirm(`Вы уверены, что хотите очистить ГНБ №${state.hddNumber}? Все трубы и сети на этой вкладке будут удалены.`)) {
-    return;
-  }
-  let currentNum = state.hddNumber;
-  profiles[activeProfileIdx] = getDefaultProfile(currentNum);
+  if (confirmPrompt && !confirm(`Очистить ГНБ №${state.hddNumber}? Все данные на этой вкладке будут удалены.`)) return;
+  profiles[activeProfileIdx] = getDefaultProfile(state.hddNumber);
   state = profiles[activeProfileIdx];
-  
-  syncInputs();
-  renderAsphaltsList();
-  renderTreesList();
-  renderNetsList();
-  triggerUpdate();
+  switchTab(activeProfileIdx);
 }
 
 function resetAllData() {
-  if (confirm("Вы уверены, что хотите БЕЗВОЗВРАТНО удалить ВСЕ вкладки и полностью очистить проект?")) {
+  if (confirm("Вы уверены, что хотите БЕЗВОЗВРАТНО удалить ВСЕ вкладки и очистить проект?")) {
     profiles = [getDefaultProfile("1")];
     activeProfileIdx = 0;
-    
     localStorage.removeItem('gnbProfilesArray');
     localStorage.removeItem('gnbActiveIndex');
-    
     switchTab(0);
   }
 }
 
 function saveProject() {
-    const dataToSave = {
-        version: "2.0",
-        profiles: profiles,
-        activeIndex: activeProfileIdx
-    };
-    const dataStr = JSON.stringify(dataToSave, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
+    const dataToSave = { version: "2.1", profiles: profiles, activeIndex: activeProfileIdx };
+    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
     a.download = `Проект_ГНБ_(${profiles.length}_шт).json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
 
 function loadProject(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            const loadedState = JSON.parse(e.target.result);
-            if (loadedState.profiles) {
-                profiles = loadedState.profiles;
-                activeProfileIdx = loadedState.activeIndex || 0;
-            } else if (loadedState.length !== undefined) {
-                profiles = [loadedState];
+            const loaded = JSON.parse(e.target.result);
+            if (loaded.profiles) {
+                profiles = loaded.profiles;
+                activeProfileIdx = loaded.activeIndex || 0;
+            } else if (loaded.length !== undefined) {
+                profiles = [loaded];
                 activeProfileIdx = 0;
             } else {
-                alert("Ошибка: Неверный формат файла.");
+                alert("Неверный формат файла.");
                 return;
             }
             
@@ -752,158 +768,57 @@ function loadProject(event) {
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
+                // Миграция старых файлов без рельефа
+                if (!p.terrain) {
+                    p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ];
+                    if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) {
+                        p.depthHall = 100.0 - p.depthHall; // конвертация старой глубины в абсолютную отметку
+                    }
+                }
             });
-            
             if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
             switchTab(activeProfileIdx);
-        } catch (err) {
-            alert("Ошибка при чтении файла проекта!");
-        }
+        } catch (err) { alert("Ошибка при чтении файла проекта!"); }
         event.target.value = ''; 
     };
     reader.readAsText(file);
 }
 
-// Теперь трасса начинается строго в X = 0 и заканчивается строго в X = L.
-function getTruePipeDepth(x, dHall, dEnt, dEx, L, R) {
-    if (x <= 0) return dEnt;
-    if (x >= L) return dEx;
-
-    let h1 = Math.max(0, dHall - dEnt);
-    let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
-    let h2 = Math.max(0, dHall - dEx);
-    let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
-
-    let xHorizStart = L1;
-    let xHorizEnd = L - L2;
-
-    if (xHorizStart > xHorizEnd) return dHall; 
-
-    if (x < xHorizStart) {
-        let dx = xHorizStart - x;
-        return dHall - R + Math.sqrt(Math.max(0, R * R - dx * dx));
-    } else if (x > xHorizEnd) {
-        let dx = x - xHorizEnd;
-        return dHall - R + Math.sqrt(Math.max(0, R * R - dx * dx));
-    } else {
-        return dHall;
-    }
-}
-
-function snapToSafeDepth(targetD) {
-    if (state.nets.length === 0) return targetD;
-
-    const L = state.length;
-    const R = state.radius;
-    const clearance = 0.58; 
-
-    function isValid(d) {
-        if (d < Math.max(state.entryDepth, state.exitDepth)) return false;
-        let h1 = d - state.entryDepth;
-        let L1 = Math.sqrt(Math.max(0, 2*R*h1 - h1*h1));
-        let h2 = d - state.exitDepth;
-        let L2 = Math.sqrt(Math.max(0, 2*R*h2 - h2*h2));
-        if (L1 + L2 >= L) return false;
-
-        for (let net of state.nets) {
-            let pipeY = getTruePipeDepth(net.dist, d, state.entryDepth, state.exitDepth, L, R);
-            if (Math.abs(pipeY - net.depth) < clearance) return false;
-        }
-        return true;
-    }
-
-    if (isValid(targetD)) return targetD;
-
-    for (let step = 0.05; step <= 25.0; step += 0.05) {
-        let up = targetD - step;
-        let down = targetD + step;
-
-        if (up >= Math.max(state.entryDepth, state.exitDepth) && isValid(up)) return up;
-        if (isValid(down)) return down;
-    }
-    return null;
-}
-
-let currentZoom = 0.85;
-
-function applyZoom() {
-  const wrapper = document.getElementById('sheetWrapper');
-  wrapper.style.transform = `scale(${currentZoom})`;
-  document.getElementById('zoomValLabel').textContent = Math.round(currentZoom * 100) + '%';
-}
-
-function zoomIn() {
-  currentZoom = Math.min(2.5, currentZoom + 0.1);
-  applyZoom();
-}
-
-function zoomOut() {
-  currentZoom = Math.max(0.3, currentZoom - 0.1);
-  applyZoom();
-}
-
-function resetZoom(val = 1.0) {
-  currentZoom = val;
-  applyZoom();
-}
-
-function fitToScreen() {
-  const vp = document.getElementById('viewportArea');
-  const availableW = vp.clientWidth - 48;
-  const availableH = vp.clientHeight - 48;
-  const sheetW = 1587;
-  const sheetH = 1122;
-
-  const ratioW = availableW / sheetW;
-  const ratioH = availableH / sheetH;
-  currentZoom = +(Math.min(ratioW, ratioH)).toFixed(2);
-  currentZoom = Math.max(0.3, Math.min(1.5, currentZoom));
-  applyZoom();
-}
-
-document.getElementById('viewportArea').addEventListener('wheel', function(e) {
-  if (e.ctrlKey || e.metaKey) {
-    e.preventDefault();
-    if (e.deltaY < 0) zoomIn();
-    else zoomOut();
-  }
-}, { passive: false });
-
 function syncInputs() {
   document.getElementById('inpNumber').value = state.hddNumber;
   document.getElementById('inpLength').value = state.length;
-  document.getElementById('inpHall').value = state.depthHall;
+  document.getElementById('inpHall').value = state.depthHall.toFixed(2);
   document.getElementById('inpEntryDepth').value = state.entryDepth;
   document.getElementById('inpExitDepth').value = state.exitDepth;
   document.getElementById('inpRadius').value = state.radius;
-  document.getElementById('inpPitDepth').value = state.pitDepth !== undefined ? state.pitDepth : 2.0;
+  document.getElementById('inpPitDepth').value = state.pitDepth;
 }
 
 function triggerUpdate() {
   let oldNumber = state.hddNumber;
   state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
-  let userDepth = parseFloat(document.getElementById('inpHall').value) || 3.5;
+  let userZ = parseFloat(document.getElementById('inpHall').value) || 97.00;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
   state.pitDepth = parseFloat(document.getElementById('inpPitDepth').value) || 2.0;
 
+  state.terrain.sort((a,b) => a.x - b.x);
+
   if (document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
-      let safeDepth = snapToSafeDepth(userDepth);
-      if (safeDepth !== null && Math.abs(safeDepth - userDepth) > 0.01) {
-          state.depthHall = +(safeDepth.toFixed(2));
-          document.getElementById('inpHall').value = state.depthHall;
+      let safeZ = snapToSafeDepth(userZ);
+      if (safeZ !== null && Math.abs(safeZ - userZ) > 0.01) {
+          state.depthHall = +(safeZ.toFixed(2));
+          document.getElementById('inpHall').value = state.depthHall.toFixed(2);
       } else {
-          state.depthHall = userDepth;
+          state.depthHall = userZ;
       }
   } else {
-      state.depthHall = userDepth;
+      state.depthHall = userZ;
   }
 
-  if (oldNumber !== state.hddNumber) {
-      renderTabs(); 
-  }
+  if (oldNumber !== state.hddNumber) renderTabs(); 
 
   localStorage.setItem('gnbProfilesArray', JSON.stringify(profiles));
   localStorage.setItem('gnbActiveIndex', activeProfileIdx);
@@ -911,6 +826,44 @@ function triggerUpdate() {
   renderSvg();
 }
 
+/* РЕЛЬЕФ */
+function renderTerrainList() {
+  const container = document.getElementById('terrainContainer');
+  container.innerHTML = '';
+  state.terrain.forEach((pt, index) => {
+    const div = document.createElement('div');
+    div.className = 'form-row';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.5" value="${pt.x}" onchange="updateTerrainX(${index}, this.value)" placeholder="ПК">
+      </div>
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.01" value="${pt.z}" onchange="updateTerrainZ(${index}, this.value)" placeholder="Z">
+      </div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeTerrain(${index})" ${state.terrain.length<=2 ? 'disabled' : ''}>✕</button>
+    `;
+    container.appendChild(div);
+  });
+}
+function addTerrainPoint() {
+  let last = state.terrain[state.terrain.length - 1];
+  state.terrain.push({ x: last.x + 10, z: last.z });
+  state.terrain.sort((a,b) => a.x - b.x);
+  renderTerrainList();
+  triggerUpdate();
+}
+function updateTerrainX(i, val) { state.terrain[i].x = parseFloat(val) || 0; triggerUpdate(); }
+function updateTerrainZ(i, val) { state.terrain[i].z = parseFloat(val) || 0; triggerUpdate(); }
+function removeTerrain(i) {
+  if (state.terrain.length > 2) {
+    state.terrain.splice(i, 1);
+    renderTerrainList();
+    triggerUpdate();
+  }
+}
+
+/* АСФАЛЬТ */
 function renderAsphaltsList() {
   const container = document.getElementById('asphaltsContainer');
   container.innerHTML = '';
@@ -930,17 +883,12 @@ function renderAsphaltsList() {
     container.appendChild(div);
   });
 }
-
-function addAsphalt() {
-  state.asphalts.push({ start: 0, end: 10 });
-  renderAsphaltsList();
-  triggerUpdate();
-}
-
+function addAsphalt() { state.asphalts.push({ start: 0, end: 10 }); renderAsphaltsList(); triggerUpdate(); }
 function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; triggerUpdate(); }
 function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); triggerUpdate(); }
 
+/* ДЕРЕВЬЯ */
 function renderTreesList() {
   const container = document.getElementById('treesContainer');
   container.innerHTML = '';
@@ -960,24 +908,17 @@ function renderTreesList() {
     container.appendChild(div);
   });
 }
-
-function addTree() {
-  state.trees.push({ start: 10, end: 30 });
-  renderTreesList();
-  triggerUpdate();
-}
-
+function addTree() { state.trees.push({ start: 10, end: 30 }); renderTreesList(); triggerUpdate(); }
 function updateTreeStart(i, val) { state.trees[i].start = parseFloat(val) || 0; triggerUpdate(); }
 function updateTreeEnd(i, val) { state.trees[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeTree(i) { state.trees.splice(i, 1); renderTreesList(); triggerUpdate(); }
 
+/* СЕТИ */
 function renderNetsList() {
   const container = document.getElementById('netsContainer');
   container.innerHTML = '';
   document.getElementById('netsCountBadge').textContent = state.nets.length + ' сетей';
-
   state.nets.sort((a,b) => a.dist - b.dist);
-
   state.nets.forEach((net, index) => {
     const div = document.createElement('div');
     div.className = 'net-item';
@@ -1002,7 +943,6 @@ function renderNetsList() {
     container.appendChild(div);
   });
 }
-
 function updateNetName(i, val) { state.nets[i].name = val; triggerUpdate(); }
 function updateNetDist(i, val) { state.nets[i].dist = parseFloat(val) || 0; triggerUpdate(); }
 function updateNetDepth(i, val) { state.nets[i].depth = parseFloat(val) || 0.7; triggerUpdate(); }
@@ -1017,39 +957,25 @@ function addNetPrompt() {
     { id: 'heat', defaultName: 'Теплотрасса', defaultDepth: 2.0 },
     { id: 'comm', defaultName: 'Кабель связи', defaultDepth: 0.7 }
   ];
-
   let addedAny = false;
-
-  for (let i = 0; i < wizardSteps.length; i++) {
-    let step = wizardSteps[i];
-    let countInput = prompt(`ШАГ ${i+1} из 6: ${step.defaultName}\n\nСколько пересечений типа "${step.defaultName}" на трассе?\n(Оставьте 0 и нажмите ОК, чтобы пропустить эту сеть)`, "0");
-    
-    if (countInput === null) {
-        break; 
-    }
-    
+  for (let step of wizardSteps) {
+    let countInput = prompt(`ШАГ: ${step.defaultName}\nСколько пересечений на трассе? (0 чтобы пропустить)`, "0");
+    if (countInput === null) break; 
     let count = parseInt(countInput) || 0;
-    
     for (let j = 0; j < count; j++) {
-       let distInput = prompt(`📍 Укажите пикет (ПК) для сети "${step.defaultName}" (${j + 1} из ${count}):\n\nВведите расстояние в метрах от начала (например, 15.5)`, "");
-       
+       let distInput = prompt(`📍 Пикет (ПК) для "${step.defaultName}" (${j + 1}/${count}):`, "");
        if (distInput !== null && distInput.trim() !== "") {
-           let dist = parseFloat(distInput.replace(',', '.')) || 0;
            state.nets.push({
                type: step.id,
                name: step.defaultName + (count > 1 ? ` ${j + 1}` : ''),
-               dist: dist,
+               dist: parseFloat(distInput.replace(',', '.')) || 0,
                depth: step.defaultDepth
            });
            addedAny = true;
        }
     }
   }
-
-  if (addedAny) {
-    renderNetsList();
-    triggerUpdate();
-  }
+  if (addedAny) { renderNetsList(); triggerUpdate(); }
 }
 
 function openSingleNetModal() {
@@ -1057,79 +983,90 @@ function openSingleNetModal() {
   document.getElementById('modalNetDist').value = ''; 
   document.getElementById('modalNetDist').focus();
 }
-
-function closeSingleNetModal() {
-  document.getElementById('singleNetModal').style.display = 'none';
-}
-
+function closeSingleNetModal() { document.getElementById('singleNetModal').style.display = 'none'; }
 function confirmSingleNet() {
   const type = document.getElementById('modalNetType').value;
-  const distInput = document.getElementById('modalNetDist').value;
-  const dist = parseFloat(distInput.replace(',', '.')) || 0;
-  
+  const dist = parseFloat(document.getElementById('modalNetDist').value.replace(',', '.')) || 0;
   const conf = NET_TYPES[type];
-
   const sameTypeCount = state.nets.filter(n => n.type === type).length;
-  const nameSuffix = sameTypeCount > 0 ? ` ${sameTypeCount + 1}` : '';
-
   state.nets.push({
     type: type,
-    name: conf.label + nameSuffix,
+    name: conf.label + (sameTypeCount > 0 ? ` ${sameTypeCount + 1}` : ''),
     dist: dist,
     depth: conf.defaultDepth
   });
-
   document.getElementById('modalNetDist').value = '';
   document.getElementById('modalNetDist').focus();
-
   renderNetsList();
   triggerUpdate();
 }
-
 document.getElementById('modalNetDist').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        confirmSingleNet();
-    }
+    if (e.key === 'Enter') confirmSingleNet();
 });
 
 function autoOptimizeDepth() {
-  if (state.nets.length === 0) {
-      alert("Нет сетей для обхода!");
-      return;
-  }
-  let maxNetDepth = 0.5;
-  state.nets.forEach(n => { if (n.depth > maxNetDepth) maxNetDepth = n.depth; });
-  
-  let targetD = maxNetDepth + 0.58 + 0.15; 
-  
-  let safeD = snapToSafeDepth(targetD);
-  if (safeD) {
-      state.depthHall = +(safeD.toFixed(2));
-      document.getElementById('inpHall').value = state.depthHall;
+  if (state.nets.length === 0) { alert("Нет сетей для обхода!"); return; }
+  let targetZ = state.depthHall; // Текущий
+  let safeZ = snapToSafeDepth(targetZ + 1.0); // пробуем чуть приподнять и начать поиск
+  if (safeZ) {
+      state.depthHall = +(safeZ.toFixed(2));
+      document.getElementById('inpHall').value = state.depthHall.toFixed(2);
       triggerUpdate();
-      alert(`Горизонт перенесен ПОД все сети на отметку: -${state.depthHall} м.`);
+      alert(`Горизонт перенесен на безопасную отметку: Z = ${state.depthHall} м.`);
   } else {
-      alert("Не удалось найти безопасную глубину ниже всех сетей. Попробуйте уменьшить радиус.");
+      alert("Не удалось найти безопасную отметку ниже всех сетей. Проверьте радиус.");
   }
 }
 
+let currentZoom = 0.85;
+function applyZoom() {
+  document.getElementById('sheetWrapper').style.transform = `scale(${currentZoom})`;
+  document.getElementById('zoomValLabel').textContent = Math.round(currentZoom * 100) + '%';
+}
+function zoomIn() { currentZoom = Math.min(2.5, currentZoom + 0.1); applyZoom(); }
+function zoomOut() { currentZoom = Math.max(0.3, currentZoom - 0.1); applyZoom(); }
+function resetZoom(val = 1.0) { currentZoom = val; applyZoom(); }
+function fitToScreen() {
+  const vp = document.getElementById('viewportArea');
+  const ratioW = (vp.clientWidth - 48) / 1587;
+  const ratioH = (vp.clientHeight - 48) / 1122;
+  currentZoom = Math.max(0.3, Math.min(1.5, +(Math.min(ratioW, ratioH)).toFixed(2)));
+  applyZoom();
+}
+document.getElementById('viewportArea').addEventListener('wheel', function(e) {
+  if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (e.deltaY < 0) zoomIn(); else zoomOut(); }
+}, { passive: false });
+
+
+/* ГЕНЕРАЦИЯ SVG ЧЕРТЕЖА */
 function getProfileHtml(s, isMultiPrint) {
   const L = s.length;
   const R = s.radius;
   
-  const leftX = 80;
-  const rightX = 1380;
+  // Расчет границ рельефа для центрирования сетки
+  let allZ = [];
+  s.terrain.forEach(p => allZ.push(p.z));
+  allZ.push(s.depthHall);
+  s.nets.forEach(n => allZ.push(getElevationAt(n.dist, s.asphalts, s.terrain) - n.depth));
+  
+  let maxZ = Math.ceil(Math.max(...allZ)) + 1;
+  let minZ = Math.floor(Math.min(...allZ)) - 1;
+  
+  const leftX = 140;
+  const rightX = 1440;
   const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
-  const groundY = 300;
   const scaleY = 60;
-  const toSvgY = (absElev) => groundY + absElev * scaleY;
+  const startY = 200; // Отступ сверху для сетки
+  const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
+  
+  let gridBottomY = toSvgY(minZ);
 
   let markup = '';
 
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА
   let gridLines = '';
-  let gridTextsX = '';
   
   let xPts = [];
   for (let x = 0; x <= L; x += 5) xPts.push(x);
@@ -1137,56 +1074,41 @@ function getProfileHtml(s, isMultiPrint) {
   
   xPts.forEach(x => {
       let px = toSvgX(x);
-      gridLines += `<line x1="${px}" y1="${groundY-120}" x2="${px}" y2="${groundY+480}" stroke-dasharray="3,3" />`;
-      gridTextsX += `<text x="${px}" y="${groundY+496}">${x}</text>`;
+      gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${gridBottomY}" stroke-dasharray="3,3" />`;
   });
 
-  markup += `
-    <g stroke="rgb(128, 128, 128)" stroke-width="1.2">
-      ${gridLines}
-  `;
-  for (let d = -2; d <= 8; d++) {
-      let gy = groundY + d * scaleY;
-      if (d === 0) {
-          markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke="#000" stroke-width="1.5" />`;
-      } else {
-          markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke-dasharray="3,3" />`;
-      }
+  markup += `<g stroke="rgb(128, 128, 128)" stroke-width="1.2">${gridLines}`;
+  for (let z = minZ; z <= maxZ; z++) {
+      let gy = toSvgY(z);
+      markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke-dasharray="3,3" />`;
   }
   markup += `</g>`;
 
-  markup += `
-    <g font-size="10.5" fill="#666" text-anchor="middle">
-      ${gridTextsX}
-    </g>
-    <g font-size="11" fill="#444" text-anchor="end">
-  `;
-  for (let d = -2; d <= 8; d++) {
-      let gy = groundY + d * scaleY;
-      let valStr = (-d > 0 ? "+" : "") + (-d).toFixed(2);
-      if (d === 0) valStr = "0.000 (Земля)";
-      let fw = (d === 0) ? 'font-weight="bold" fill="#000"' : '';
-      markup += `<text x="${leftX-28}" y="${gy+4}" ${fw}>${valStr}</text>`;
+  // Подписи глубин (Z) слева
+  markup += `<g font-size="11" fill="#444" text-anchor="end">`;
+  for (let z = minZ; z <= maxZ; z++) {
+      let gy = toSvgY(z);
+      markup += `<text x="${leftX-28}" y="${gy+4}">${z.toFixed(2)}</text>`;
   }
-  markup += `
-    </g>
-    <text x="${leftX-28}" y="${groundY+496}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
-  `;
+  markup += `</g>`;
 
+  // ПУТЬ РЕЛЬЕФА (ЧЕРНАЯ ЛИНИЯ)
+  let groundPathD = `M ${toSvgX(0)} ${toSvgY(getElevationAt(0, s.asphalts, s.terrain))}`;
+  for (let x = 0.5; x <= L; x += 0.5) {
+      groundPathD += ` L ${toSvgX(x)} ${toSvgY(getElevationAt(x, s.asphalts, s.terrain))}`;
+  }
+  markup += `<path d="${groundPathD}" fill="none" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />`;
+
+  // ЗОНЫ АСФАЛЬТА И ГАЗОНА
   let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
-                              .filter(a => a.start < a.end)
-                              .sort((a,b) => a.start - b.start);
+                              .filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
   
   let asphalts = [];
   if (rawAsphalts.length > 0) {
       let current = rawAsphalts[0];
       for (let i = 1; i < rawAsphalts.length; i++) {
-          if (rawAsphalts[i].start <= current.end) {
-              current.end = Math.max(current.end, rawAsphalts[i].end);
-          } else {
-              asphalts.push(current);
-              current = rawAsphalts[i];
-          }
+          if (rawAsphalts[i].start <= current.end) current.end = Math.max(current.end, rawAsphalts[i].end);
+          else { asphalts.push(current); current = rawAsphalts[i]; }
       }
       asphalts.push(current);
   }
@@ -1200,141 +1122,170 @@ function getProfileHtml(s, isMultiPrint) {
   if (currentPos < L) grasses.push({ start: currentPos, end: L });
 
   grasses.forEach(g => {
-    const w = toSvgX(g.end) - toSvgX(g.start);
+    let grassPath = `M ${toSvgX(g.start)} ${toSvgY(getElevationAt(g.start, s.asphalts, s.terrain))}`;
+    for (let x = g.start + 0.5; x <= g.end; x += 0.5) grassPath += ` L ${toSvgX(x)} ${toSvgY(getElevationAt(x, s.asphalts, s.terrain))}`;
+    
     markup += `
-      <rect x="${toSvgX(g.start)}" y="${groundY-8}" width="${w}" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Газон</text>
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#28a745">Газон</text>
+      <path d="${grassPath}" fill="none" stroke="#d4edda" stroke-width="8" transform="translate(0, -4)" />
+      <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" />
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getElevationAt((g.start+g.end)/2, s.asphalts, s.terrain)) - 15}" text-anchor="middle" font-size="11" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getElevationAt((g.start+g.end)/2, s.asphalts, s.terrain)) - 15}" text-anchor="middle" font-size="11" font-weight="bold" fill="#28a745">Газон</text>
     `;
   });
 
   asphalts.forEach(a => {
+    const y = toSvgY(getElevationAt(a.start, s.asphalts, s.terrain));
     const w = toSvgX(a.end) - toSvgX(a.start);
     markup += `
-      <rect x="${toSvgX(a.start)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
-      <rect x="${toSvgX(a.start)}" y="${groundY-10}" width="${w}" height="10" fill="url(#asphaltHatch)" stroke="#111" stroke-width="1.8" />
-      <rect x="${toSvgX(a.end)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
-      <text x="${toSvgX((a.start+a.end)/2)}" y="${groundY-18}" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">Асфальтобетон</text>
+      <rect x="${toSvgX(a.start)-2}" y="${y-16}" width="4" height="16" fill="#333" />
+      <rect x="${toSvgX(a.start)}" y="${y-10}" width="${w}" height="10" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.8" />
+      <rect x="${toSvgX(a.end)-2}" y="${y-16}" width="4" height="16" fill="#333" />
+      <text x="${toSvgX((a.start+a.end)/2)}" y="${y-18}" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">Асфальтобетон</text>
     `;
   });
 
   let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
-                        .filter(t => t.start < t.end)
-                        .sort((a,b) => a.start - b.start);
+                        .filter(t => t.start < t.end).sort((a,b) => a.start - b.start);
 
   rawTrees.forEach(t => {
-      let treeMarkup = '';
       for(let px = t.start; px <= t.end; px += 4) {
           let tx = toSvgX(px);
-          let ty = groundY - 8;
-          treeMarkup += `
+          let ty = toSvgY(getElevationAt(px, s.asphalts, s.terrain)) - 6;
+          markup += `
             <line x1="${tx}" y1="${ty}" x2="${tx}" y2="${ty-14}" stroke="#795548" stroke-width="2.5" />
             <circle cx="${tx}" cy="${ty-18}" r="6.5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
             <circle cx="${tx-5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
             <circle cx="${tx+5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
           `;
       }
+      let midX = (t.start+t.end)/2;
+      let midY = toSvgY(getElevationAt(midX, s.asphalts, s.terrain)) - 35;
       markup += `
-        ${treeMarkup}
-        <text x="${toSvgX((t.start+t.end)/2)}" y="${groundY-32}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Зеленые насаждения</text>
-        <text x="${toSvgX((t.start+t.end)/2)}" y="${groundY-32}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
+        <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="11" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Зеленые насаждения</text>
+        <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
       `;
   });
 
-  // КОТЛОВАНЫ (смещены наружу от 0 и L)
+  // КОТЛОВАНЫ
   const pitWidthPx = 1.5 * scaleX; 
   const pitDepthPx = (s.pitDepth !== undefined ? s.pitDepth : 2.0) * scaleY;
+  const startPitY = toSvgY(getElevationAt(0, s.asphalts, s.terrain));
+  const endPitY = toSvgY(getElevationAt(L, s.asphalts, s.terrain));
+  
   markup += `
-    <rect x="${toSvgX(-1.5)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
-    <line x1="${toSvgX(0)}" y1="${groundY}" x2="${toSvgX(0)}" y2="${groundY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
+    <rect x="${toSvgX(-1.5)}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
+    <line x1="${toSvgX(0)}" y1="${startPitY}" x2="${toSvgX(0)}" y2="${startPitY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
     
-    <rect x="${toSvgX(L)}" y="${groundY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
-    <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
+    <rect x="${toSvgX(L)}" y="${endPitY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
+    <line x1="${toSvgX(L)}" y1="${endPitY}" x2="${toSvgX(L)}" y2="${endPitY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
   `;
 
-  // ТРАЕКТОРИЯ (теперь строго от 0 до L)
-  let pathD = `M ${toSvgX(0)} ${toSvgY(s.entryDepth)}`;
-  for (let x = 0; x <= L; x += 0.5) {
-      let y = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R);
-      pathD += ` L ${toSvgX(x)} ${toSvgY(y)}`;
+  // ТРАЕКТОРИЯ
+  let pathD = `M ${toSvgX(0)} ${toSvgY(getElevationAt(0, s.asphalts, s.terrain) - s.entryDepth)}`;
+  for (let x = 0.5; x <= L; x += 0.5) {
+      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, s.asphalts, s.terrain);
+      pathD += ` L ${toSvgX(x)} ${toSvgY(zPipe)}`;
   }
-  let yEx = getTruePipeDepth(L, s.depthHall, s.entryDepth, s.exitDepth, L, R);
-  pathD += ` L ${toSvgX(L)} ${toSvgY(yEx)}`;
-
   markup += `
     <path d="${pathD}" fill="none" stroke="#9c27b0" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
   // ВЫНОСКИ ТРАЕКТОРИИ
-  let h1 = Math.max(0, s.depthHall - s.entryDepth);
+  let zEnt = getElevationAt(0, s.asphalts, s.terrain) - s.entryDepth;
+  let zEx = getElevationAt(L, s.asphalts, s.terrain) - s.exitDepth;
+  let h1 = Math.max(0, zEnt - s.depthHall);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
-  let h2 = Math.max(0, s.depthHall - s.exitDepth);
+  let h2 = Math.max(0, zEx - s.depthHall);
   let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
-  let xHorizStart = L1;
-  let xHorizEnd = L - L2;
-  let horizLen = Math.max(0, xHorizEnd - xHorizStart);
-
-  let xPitStart = toSvgX(0);
-  let yPitStart = toSvgY(s.entryDepth);
-  let xPitEnd = toSvgX(L);
-  let yPitEnd = toSvgY(s.exitDepth);
-  let yHoriz = toSvgY(s.depthHall);
-
+  
   markup += `
-    <circle cx="${xPitStart}" cy="${yPitStart}" r="4.5" fill="#9c27b0" />
-    <circle cx="${xPitEnd}" cy="${yPitEnd}" r="4.5" fill="#9c27b0" />
+    <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#9c27b0" />
+    <circle cx="${toSvgX(L)}" cy="${toSvgY(zEx)}" r="4.5" fill="#9c27b0" />
     
-    <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход -${s.entryDepth.toFixed(2)}м</text>
-    <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход -${s.exitDepth.toFixed(2)}м</text>
-    
-    <text x="${toSvgX(L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${s.depthHall.toFixed(3)}м, гл. ${s.depthHall.toFixed(2)}м)</text>
+    <text x="${toSvgX(0)}" y="${toSvgY(zEnt) - 10}" font-size="11" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход (Z: ${zEnt.toFixed(2)}м)</text>
+    <text x="${toSvgX(L)}" y="${toSvgY(zEx) - 10}" font-size="11" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход (Z: ${zEx.toFixed(2)}м)</text>
+    <text x="${toSvgX(L1 + Math.max(0, L - L2 - L1)/2)}" y="${toSvgY(s.depthHall)+20}" font-size="12" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>
   `;
 
+  // ВЫНОСКИ СЕТЕЙ
   let linesMarkup = '';
   let textsMarkup = '';
   let drawNets = [...s.nets].sort((a, b) => a.dist - b.dist);
 
   drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
-    const ny = toSvgY(net.depth);
+    const zGr = getElevationAt(net.dist, s.asphalts, s.terrain);
+    const nz = zGr - net.depth;
+    const ny = toSvgY(nz);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
     
-    let pipeYAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R);
-    const centerDist = Math.abs(pipeYAtDist - net.depth);
+    let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, s.asphalts, s.terrain);
+    const centerDist = Math.abs(pipeZAtDist - nz);
     const deltaHVal = centerDist - 0.080; 
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
-    
     const isUnderNorm = deltaHVal < 0.49; 
-    const textEndY = 830; 
     
+    const textEndY = gridBottomY + 20; // Выноска идет до подвала
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
 
     linesMarkup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
+      <line x1="${nx}" y1="${toSvgY(zGr)}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
       <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" />
     `;
 
     textsMarkup += `
-      <text x="${nx + 4}" y="${textEndY}" font-size="10.5" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
-      <text x="${nx + 4}" y="${textEndY}" font-size="10.5" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
+      <text x="${nx + 4}" y="${textEndY}" font-size="11" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
+      <text x="${nx + 4}" y="${textEndY}" font-size="11" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
     `;
   });
-
   markup += linesMarkup + textsMarkup; 
 
-  let netsCount = s.nets.length;
+  // ПОДВАЛ-ТАБЛИЦА (СТРОГО ПО ГОСТ)
+  let footerY = gridBottomY + 110;
+  markup += `
+    <g stroke="#000" stroke-width="1.5">
+      <line x1="${leftX-90}" y1="${footerY}" x2="${rightX+20}" y2="${footerY}" />
+      <line x1="${leftX-90}" y1="${footerY+25}" x2="${rightX+20}" y2="${footerY+25}" />
+      <line x1="${leftX-90}" y1="${footerY+50}" x2="${rightX+20}" y2="${footerY+50}" />
+      <line x1="${leftX-90}" y1="${footerY+75}" x2="${rightX+20}" y2="${footerY+75}" />
+      <line x1="${leftX-90}" y1="${footerY}" x2="${leftX-90}" y2="${footerY+75}" />
+      <line x1="${leftX}" y1="${footerY}" x2="${leftX}" y2="${footerY+75}" />
+      <line x1="${rightX+20}" y1="${footerY}" x2="${rightX+20}" y2="${footerY+75}" />
+    </g>
+    <g font-size="12" fill="#000" font-weight="bold">
+      <text x="${leftX-80}" y="${footerY+17}">Отметки земли, м</text>
+      <text x="${leftX-80}" y="${footerY+42}">Отметки оси трубы, м</text>
+      <text x="${leftX-80}" y="${footerY+67}">Пикет (ПК), м</text>
+    </g>
+    <g font-size="11" fill="#000" text-anchor="middle">
+  `;
+  xPts.forEach(x => {
+      let px = toSvgX(x);
+      let zGround = getElevationAt(x, s.asphalts, s.terrain).toFixed(2);
+      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, s.asphalts, s.terrain).toFixed(2);
+      markup += `
+        <line x1="${px}" y1="${footerY}" x2="${px}" y2="${footerY+75}" stroke="#aaa" stroke-width="1" />
+        <text x="${px}" y="${footerY+17}" transform="rotate(-90 ${px} ${footerY+17}) translate(5,-4)">${zGround}</text>
+        <text x="${px}" y="${footerY+42}" transform="rotate(-90 ${px} ${footerY+42}) translate(5,-4)">${zPipe}</text>
+        <text x="${px}" y="${footerY+67}">${x}</text>
+      `;
+  });
+  markup += `</g>`;
+
+  // ПРИМЕЧАНИЯ
+  let notesY = footerY + 110;
   markup += `
     <g font-size="14" fill="#333">
-      <text x="${leftX-20}" y="1270" font-weight="bold">Примечания:</text>
-      <text x="${leftX-20}" y="1290">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
-      <text x="${leftX-20}" y="1310">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="${leftX-20}" y="1330">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="${leftX-20}" y="1350">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
-      <text x="${leftX-20}" y="1370">5. Количество пересечений - ${netsCount}.</text>
+      <text x="${leftX-20}" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="${leftX-20}" y="${notesY+20}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="${leftX-20}" y="${notesY+40}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="${leftX-20}" y="${notesY+60}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="${leftX-20}" y="${notesY+80}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+      <text x="${leftX-20}" y="${notesY+100}">5. Количество пересечений - ${s.nets.length}.</text>
     </g>
   `;
 
@@ -1348,7 +1299,7 @@ function getProfileHtml(s, isMultiPrint) {
           </div>
         </div>
         <div class="svg-container">
-          <svg viewBox="0 0 1460 1400">
+          <svg viewBox="0 0 1560 1400">
             <defs>
               <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#9c27b0" stroke-width="1.2" />
@@ -1357,7 +1308,7 @@ function getProfileHtml(s, isMultiPrint) {
                 <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
               </pattern>
             </defs>
-            ${markup.replace(/url\(#pitHatch\)/g, `url(#pitHatch_${s.hddNumber})`).replace(/url\(#asphaltHatch\)/g, `url(#asphaltHatch_${s.hddNumber})`)}
+            ${markup}
           </svg>
         </div>
       </div>
@@ -1372,21 +1323,16 @@ function renderSvg() {
 function printPureSheet() {
   const savedZoom = currentZoom;
   document.getElementById('sheetWrapper').style.transform = 'none';
-
   setTimeout(() => {
     window.print();
-    setTimeout(() => {
-      document.getElementById('sheetWrapper').style.transform = `scale(${savedZoom})`;
-    }, 300);
+    setTimeout(() => { document.getElementById('sheetWrapper').style.transform = `scale(${savedZoom})`; }, 300);
   }, 50);
 }
 
 function printAllSheets() {
   const multiArea = document.getElementById('multiPrintArea');
   multiArea.innerHTML = profiles.map(p => getProfileHtml(p, true)).join('');
-  
   document.body.classList.add('print-all-mode');
-  
   setTimeout(() => {
     window.print();
     setTimeout(() => {
@@ -1404,7 +1350,6 @@ window.onload = () => {
     try {
       profiles = JSON.parse(savedArr);
       activeProfileIdx = parseInt(savedIdx) || 0;
-      
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       
       profiles.forEach(p => {
@@ -1413,14 +1358,13 @@ window.onload = () => {
           if (!p.asphalts) p.asphalts = [];
           if (!p.trees) p.trees = [];
           if (!p.nets) p.nets = [];
+          if (!p.terrain) {
+              p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ];
+              if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall;
+          }
       });
-      
       switchTab(activeProfileIdx);
-    } catch(e) {
-      console.error("Ошибка загрузки памяти браузера", e);
-      profiles = [getDefaultProfile("1")];
-      switchTab(0);
-    }
+    } catch(e) { profiles = [getDefaultProfile("1")]; switchTab(0); }
   } else {
     profiles = [getDefaultProfile("1")];
     switchTab(0);
