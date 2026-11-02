@@ -35,7 +35,6 @@
   .sidebar-header {
     padding: 16px 20px;
     background: #1a1a20;
-    border-bottom: 1px solid #383844;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -45,6 +44,69 @@
     font-size: 16px;
     color: #fff;
   }
+  
+  /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
+  .tabs-container {
+    display: flex;
+    background: #1a1a20;
+    border-bottom: 1px solid #383844;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs-container::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 10px 16px;
+    background: #1a1a20;
+    color: #888;
+    border: none;
+    border-right: 1px solid #383844;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .tab-btn.active {
+    color: #4da3ff;
+    background: #25252d;
+    border-bottom: 2px solid #4da3ff;
+  }
+  .tab-btn:hover:not(.active) {
+    color: #eee;
+    background: #2a2a35;
+  }
+  .tab-del {
+    color: #ff5252;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 4px;
+    margin-right: -4px;
+    cursor: pointer;
+    display: none;
+  }
+  .tab-btn:hover .tab-del {
+    display: inline-block;
+  }
+  .tab-add {
+    background: transparent;
+    color: #4da3ff;
+    border: none;
+    font-size: 18px;
+    padding: 0 16px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  .tab-add:hover {
+    background: #2a2a35;
+  }
+
   .sidebar-body {
     padding: 16px 20px;
     overflow-y: auto;
@@ -381,7 +443,12 @@
 
 <div class="sidebar">
   <div class="sidebar-header">
-    <h2>⚡ Профиль ГНБ (А3 ГОСТ)</h2>
+    <h2>⚡ Профили ГНБ (А3 ГОСТ)</h2>
+  </div>
+  
+  <!-- ПАНЕЛЬ ВКЛАДОК -->
+  <div class="tabs-container" id="tabsContainer">
+    <!-- Вкладки генерируются динамически -->
   </div>
 
   <div class="sidebar-body">
@@ -455,7 +522,7 @@
 
   <div class="sidebar-footer">
     <button class="btn-danger" style="margin-bottom: 12px;" onclick="resetData()">
-      🗑 Сброс данных
+      🗑 Очистить текущий ГНБ
     </button>
     <button class="btn-primary" onclick="printPureSheet()">
       🖨️ Сохранить в PDF (Лист А3)
@@ -464,7 +531,7 @@
       <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины</button>
     </div>
     <div class="export-group" style="margin-top: 4px;">
-      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить проект (.json)</button>
+      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить весь проект (.json)</button>
       <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Загрузить проект</button>
       <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
     </div>
@@ -509,17 +576,10 @@
 </div>
 
 <script>
-let state = {
-  hddNumber: "1",
-  length: 60,
-  depthHall: 3.00,
-  entryDepth: 1.0,
-  exitDepth: 1.0,
-  radius: 50,
-  asphalts: [],
-  trees: [],
-  nets: []
-};
+// Глобальный менеджер проектов
+let profiles = [];
+let activeProfileIdx = 0;
+let state = null;
 
 // ПАЛИТРА СЕТЕЙ
 const NET_TYPES = {
@@ -531,13 +591,10 @@ const NET_TYPES = {
   heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'badge-heat' }
 };
 
-// СБРОС ДАННЫХ
-function resetData(confirmPrompt = true) {
-  if (confirmPrompt && !confirm("Вы уверены, что хотите очистить холст и сбросить все данные?")) {
-    return;
-  }
-  state = {
-    hddNumber: "1",
+// Фабрика чистого профиля
+function getDefaultProfile(numStr) {
+  return {
+    hddNumber: numStr,
     length: 60,
     depthHall: 3.00,
     entryDepth: 1.0,
@@ -547,6 +604,85 @@ function resetData(confirmPrompt = true) {
     trees: [],
     nets: []
   };
+}
+
+/* ЛОГИКА ВКЛАДОК */
+function renderTabs() {
+  const container = document.getElementById('tabsContainer');
+  container.innerHTML = '';
+  
+  profiles.forEach((p, idx) => {
+      const btn = document.createElement('div');
+      btn.className = `tab-btn ${idx === activeProfileIdx ? 'active' : ''}`;
+      btn.onclick = () => switchTab(idx);
+      btn.innerHTML = `ГНБ №${p.hddNumber}`;
+      
+      if (profiles.length > 1) {
+          const delBtn = document.createElement('span');
+          delBtn.className = 'tab-del';
+          delBtn.innerHTML = '×';
+          delBtn.title = "Удалить профиль";
+          delBtn.onclick = (e) => {
+              e.stopPropagation();
+              deleteTab(idx);
+          };
+          btn.appendChild(delBtn);
+      }
+      container.appendChild(btn);
+  });
+  
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tab-add';
+  addBtn.innerHTML = '+';
+  addBtn.title = 'Добавить новый прокол';
+  addBtn.onclick = addNewTab;
+  container.appendChild(addBtn);
+}
+
+function switchTab(idx) {
+  activeProfileIdx = idx;
+  state = profiles[activeProfileIdx];
+  syncInputs();
+  renderAsphaltsList();
+  renderTreesList();
+  renderNetsList();
+  triggerUpdate();
+}
+
+function addNewTab() {
+  let nextNum = 1;
+  profiles.forEach(p => {
+      let num = parseInt(p.hddNumber);
+      if (!isNaN(num) && num >= nextNum) {
+          nextNum = num + 1;
+      }
+  });
+  profiles.push(getDefaultProfile(nextNum.toString()));
+  switchTab(profiles.length - 1);
+}
+
+function deleteTab(idx) {
+  if (profiles.length <= 1) return;
+  if (confirm(`Вы действительно хотите удалить вкладку ГНБ №${profiles[idx].hddNumber}?`)) {
+      profiles.splice(idx, 1);
+      if (activeProfileIdx >= profiles.length) {
+          activeProfileIdx = profiles.length - 1;
+      } else if (activeProfileIdx > idx) {
+          activeProfileIdx--; // Смещаем индекс, если удалили вкладку левее активной
+      }
+      switchTab(activeProfileIdx);
+  }
+}
+
+// СБРОС ТЕКУЩЕЙ ВКЛАДКИ
+function resetData(confirmPrompt = true) {
+  if (confirmPrompt && !confirm(`Вы уверены, что хотите очистить ГНБ №${state.hddNumber}? Все трубы и сети на этой вкладке будут удалены.`)) {
+    return;
+  }
+  let currentNum = state.hddNumber;
+  profiles[activeProfileIdx] = getDefaultProfile(currentNum);
+  state = profiles[activeProfileIdx];
+  
   syncInputs();
   renderAsphaltsList();
   renderTreesList();
@@ -556,12 +692,17 @@ function resetData(confirmPrompt = true) {
 
 // СОХРАНЕНИЕ ПРОЕКТА В JSON
 function saveProject() {
-    const dataStr = JSON.stringify(state, null, 2);
+    const dataToSave = {
+        version: "2.0",
+        profiles: profiles,
+        activeIndex: activeProfileIdx
+    };
+    const dataStr = JSON.stringify(dataToSave, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ГНБ_${state.hddNumber}_L${state.length}m.json`;
+    a.download = `Проект_ГНБ_(${profiles.length}_шт).json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -577,21 +718,29 @@ function loadProject(event) {
     reader.onload = function(e) {
         try {
             const loadedState = JSON.parse(e.target.result);
-            if (loadedState && loadedState.length !== undefined) {
-                state = loadedState;
-                if (!state.hddNumber) state.hddNumber = "1";
-                if (!state.asphalts) state.asphalts = [];
-                if (!state.trees) state.trees = []; 
-                if (!state.nets) state.nets = [];
-
-                syncInputs();
-                renderAsphaltsList();
-                renderTreesList();
-                renderNetsList();
-                triggerUpdate();
+            if (loadedState.profiles) {
+                // Новый формат (Мульти-вкладки)
+                profiles = loadedState.profiles;
+                activeProfileIdx = loadedState.activeIndex || 0;
+            } else if (loadedState.length !== undefined) {
+                // Поддержка старых сохранений (1 прокол без вкладок)
+                profiles = [loadedState];
+                activeProfileIdx = 0;
             } else {
                 alert("Ошибка: Неверный формат файла.");
+                return;
             }
+            
+            // Восстановление отсутствующих полей для защиты от багов
+            profiles.forEach(p => {
+                if (!p.hddNumber) p.hddNumber = "1";
+                if (!p.asphalts) p.asphalts = [];
+                if (!p.trees) p.trees = []; 
+                if (!p.nets) p.nets = [];
+            });
+            
+            if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
+            switchTab(activeProfileIdx);
         } catch (err) {
             alert("Ошибка при чтении файла проекта!");
         }
@@ -717,6 +866,7 @@ function syncInputs() {
 }
 
 function triggerUpdate() {
+  let oldNumber = state.hddNumber;
   state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
   let userDepth = parseFloat(document.getElementById('inpHall').value) || 3.5;
@@ -736,8 +886,14 @@ function triggerUpdate() {
       state.depthHall = userDepth;
   }
 
-  // Сохраняем в localStorage при каждом изменении
-  localStorage.setItem('gnbState', JSON.stringify(state));
+  // Обновляем текст вкладки динамически, если пользователь изменил номер прокола
+  if (oldNumber !== state.hddNumber) {
+      renderTabs(); 
+  }
+
+  // Сохраняем в localStorage весь массив при каждом изменении
+  localStorage.setItem('gnbProfilesArray', JSON.stringify(profiles));
+  localStorage.setItem('gnbActiveIndex', activeProfileIdx);
 
   renderSvg();
 }
@@ -1217,29 +1373,38 @@ function printPureSheet() {
   }, 50);
 }
 
-// Загрузка состояния из localStorage при открытии страницы
+// ЗАГРУЗКА ИЗ LOCALSTORAGE ПРИ ОТКРЫТИИ
 window.onload = () => {
-  const saved = localStorage.getItem('gnbState');
-  if (saved) {
+  const savedArr = localStorage.getItem('gnbProfilesArray');
+  const savedIdx = localStorage.getItem('gnbActiveIndex');
+  
+  if (savedArr) {
     try {
-      state = JSON.parse(saved);
-      if (!state.hddNumber) state.hddNumber = "1";
-      if (!state.asphalts) state.asphalts = [];
-      if (!state.trees) state.trees = [];
-      if (!state.nets) state.nets = [];
+      profiles = JSON.parse(savedArr);
+      activeProfileIdx = parseInt(savedIdx) || 0;
       
-      syncInputs();
-      renderAsphaltsList();
-      renderTreesList();
-      renderNetsList();
-      triggerUpdate();
+      if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
+      
+      // Защита старых сейвов
+      profiles.forEach(p => {
+          if (!p.hddNumber) p.hddNumber = "1";
+          if (!p.asphalts) p.asphalts = [];
+          if (!p.trees) p.trees = [];
+          if (!p.nets) p.nets = [];
+      });
+      
+      switchTab(activeProfileIdx);
     } catch(e) {
-      console.error("Ошибка чтения localStorage", e);
-      resetData(false);
+      console.error("Ошибка загрузки памяти браузера", e);
+      profiles = [getDefaultProfile("1")];
+      switchTab(0);
     }
   } else {
-    resetData(false);
+    profiles = [getDefaultProfile("1")];
+    switchTab(0);
   }
+  
+  renderTabs();
   fitToScreen();
 };
 </script>
