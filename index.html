@@ -428,7 +428,7 @@
   </div>
 </div>
 
-<!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ) -->
+<!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ И РЕЛЬЕФ) -->
 <div class="sidebar left-sidebar">
   <div class="sidebar-header" style="border-bottom: none;">
     <h2>⚡ Профили ГНБ (А3 ГОСТ)</h2>
@@ -468,16 +468,23 @@
 
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
+        <label>Приямок Вход (м)</label>
+        <input type="number" id="inpPitDepthEntry" value="2.0" step="0.1" onchange="triggerUpdate()">
+      </div>
+      <div class="form-group">
+        <label>Приямок Выход (м)</label>
+        <input type="number" id="inpPitDepthExit" value="2.0" step="0.1" onchange="triggerUpdate()">
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top: 8px;">
+      <div class="form-group">
         <label>Отметка горизонта (Z)</label>
         <input type="number" id="inpHall" value="95.00" step="0.05" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
         <label>Радиус изгиба (м)</label>
         <input type="number" id="inpRadius" value="50" step="5" onchange="triggerUpdate()">
-      </div>
-      <div class="form-group">
-        <label>Глуб. приямка (м)</label>
-        <input type="number" id="inpPitDepth" value="2.0" step="0.1" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -487,16 +494,6 @@
         Авто-смещение при нарушении (зазор 0.5м)
       </label>
     </div>
-
-    <!-- АСФАЛЬТ И ДЕРЕВЬЯ -->
-    <div class="section-title">Зоны асфальта (Горизонтальные)</div>
-    <div id="asphaltsContainer"></div>
-    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
-    
-    <div class="section-title">Деревья (По рельефу)</div>
-    <div id="treesContainer"></div>
-    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
-    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
   </div>
 </div>
 
@@ -519,6 +516,16 @@
   </div>
 
   <div class="sidebar-body">
+    <!-- АСФАЛЬТ И ДЕРЕВЬЯ -->
+    <div class="section-title">Зоны асфальта (Горизонтальные)</div>
+    <div id="asphaltsContainer"></div>
+    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
+    
+    <div class="section-title">Деревья (По рельефу)</div>
+    <div id="treesContainer"></div>
+    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
+    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
+
     <div class="section-title">
       <span>Пересекаемые сети</span>
       <span id="netsCountBadge" style="color: #888; font-size: 11px;">0 сетей</span>
@@ -574,7 +581,8 @@ function getDefaultProfile(numStr) {
     entryDepth: 1.0,
     exitDepth: 1.0,
     radius: 50,
-    pitDepth: 2.0,
+    pitDepthEntry: 2.0,
+    pitDepthExit: 2.0,
     terrain: [ {x: 0, z: 100.00}, {x: 60, z: 100.00} ],
     asphalts: [],
     trees: [],
@@ -781,7 +789,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.1", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.2", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -811,7 +819,11 @@ function loadProject(event) {
             
             profiles.forEach(p => {
                 if (!p.hddNumber) p.hddNumber = "1";
-                if (p.pitDepth === undefined) p.pitDepth = 2.0;
+                
+                // Миграция со старых версий, где был один приямок
+                if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
+                if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
+
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
@@ -835,7 +847,9 @@ function syncInputs() {
   document.getElementById('inpEntryDepth').value = state.entryDepth;
   document.getElementById('inpExitDepth').value = state.exitDepth;
   document.getElementById('inpRadius').value = state.radius;
-  document.getElementById('inpPitDepth').value = state.pitDepth;
+  
+  document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
+  document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
 }
 
 function triggerUpdate() {
@@ -846,7 +860,9 @@ function triggerUpdate() {
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
-  state.pitDepth = parseFloat(document.getElementById('inpPitDepth').value) || 2.0;
+  
+  state.pitDepthEntry = parseFloat(document.getElementById('inpPitDepthEntry').value) || 2.0;
+  state.pitDepthExit = parseFloat(document.getElementById('inpPitDepthExit').value) || 2.0;
 
   state.terrain.sort((a,b) => a.x - b.x);
 
@@ -1111,10 +1127,9 @@ function getProfileHtml(s, isMultiPrint) {
   let gridBottomY = toSvgY(minZ);
 
   let markup = '';
-
   let gridLines = '';
-  
   let xPts = [];
+  
   for (let x = 0; x <= L; x += 5) xPts.push(x);
   if (L % 5 !== 0) xPts.push(L);
   
@@ -1209,17 +1224,21 @@ function getProfileHtml(s, isMultiPrint) {
       `;
   });
 
+  // КОТЛОВАНЫ С РАЗНЫМИ ГЛУБИНАМИ
   const pitWidthPx = 1.5 * scaleX; 
-  const pitDepthPx = (s.pitDepth !== undefined ? s.pitDepth : 2.0) * scaleY;
+  const pitDepthEntryPx = (s.pitDepthEntry !== undefined ? s.pitDepthEntry : 2.0) * scaleY;
+  const pitDepthExitPx = (s.pitDepthExit !== undefined ? s.pitDepthExit : 2.0) * scaleY;
   const startPitY = toSvgY(getNaturalElevation(0, effTerrain));
   const endPitY = toSvgY(getNaturalElevation(L, effTerrain));
   
   markup += `
-    <rect x="${toSvgX(-1.5)}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
-    <line x1="${toSvgX(0)}" y1="${startPitY}" x2="${toSvgX(0)}" y2="${startPitY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
+    <!-- Приямок вход -->
+    <rect x="${toSvgX(-1.5)}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthEntryPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
+    <line x1="${toSvgX(0)}" y1="${startPitY}" x2="${toSvgX(0)}" y2="${startPitY+pitDepthEntryPx}" stroke="#9c27b0" stroke-width="2.5" />
     
-    <rect x="${toSvgX(L)}" y="${endPitY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
-    <line x1="${toSvgX(L)}" y1="${endPitY}" x2="${toSvgX(L)}" y2="${endPitY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
+    <!-- Приямок выход -->
+    <rect x="${toSvgX(L)}" y="${endPitY}" width="${pitWidthPx}" height="${pitDepthExitPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
+    <line x1="${toSvgX(L)}" y1="${endPitY}" x2="${toSvgX(L)}" y2="${endPitY+pitDepthExitPx}" stroke="#9c27b0" stroke-width="2.5" />
   `;
 
   let pathD = `M ${toSvgX(0)} ${toSvgY(getNaturalElevation(0, effTerrain) - s.entryDepth)}`;
@@ -1286,7 +1305,10 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  let notesY = gridBottomY + 60;
+  // ПРИМЕЧАНИЯ ЖЕСТКО ПРИВЯЗАННЫЕ К ЛЕВОМУ НИЖНЕМУ УГЛУ
+  // У нас SVG viewBox: 0 0 1560 1400.
+  // Зафиксируем Y примечаний на отметке 1270.
+  let notesY = 1270;
   markup += `
     <g font-size="14" fill="#333">
       <text x="${leftX-20}" y="${notesY}" font-weight="bold">Примечания:</text>
@@ -1294,7 +1316,7 @@ function getProfileHtml(s, isMultiPrint) {
       <text x="${leftX-20}" y="${notesY+40}">2. Приближение к коммуникациям - в допустимых пределах;</text>
       <text x="${leftX-20}" y="${notesY+60}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
       <text x="${leftX-20}" y="${notesY+80}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
-      <text x="${leftX-20}" y="${notesY+100}">5. Количество пересечений - ${s.nets.length}.</text>
+      <text x="${leftX-20}" y="${notesY+100}">5. Количество пересечений - <tspan font-weight="bold">${s.nets.length}</tspan>.</text>
     </g>
   `;
 
@@ -1363,7 +1385,8 @@ window.onload = () => {
       
       profiles.forEach(p => {
           if (!p.hddNumber) p.hddNumber = "1";
-          if (p.pitDepth === undefined) p.pitDepth = 2.0;
+          if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
+          if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (!p.asphalts) p.asphalts = [];
           if (!p.trees) p.trees = [];
           if (!p.nets) p.nets = [];
