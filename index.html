@@ -13,7 +13,7 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "ISOCPEUR", "GOST 2.304 type A", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     background: #1e1e24;
     color: #e0e0e0;
     display: flex;
@@ -21,7 +21,7 @@
     overflow: hidden;
   }
 
-  /* ЛЕВАЯ ПАНЕЛЬ */
+  /* ЛЕВАЯ ПАНЕЛЬ (Оставляем стандартный шрифт для удобства чтения меню, ГОСТ только на чертеже) */
   .sidebar {
     width: 440px;
     min-width: 440px;
@@ -312,6 +312,7 @@
     transition: transform 0.12s ease-out;
   }
   
+  /* ЧЕРТЕЖ: Принудительный ГОСТовский шрифт и курсив */
   .sheet {
     width: 1587px;
     height: 1122px;
@@ -322,9 +323,15 @@
     position: relative;
     padding: 38px 19px 19px 76px;
     box-sizing: border-box;
-    font-family: "ISOCPEUR", "GOST 2.304 type A", "Segoe UI", Arial, sans-serif;
+    font-family: "ISOCPEUR", "GOST 2.304 type A", Arial, sans-serif !important;
+    font-style: italic !important;
     color: #000;
   }
+  svg text {
+    font-family: "ISOCPEUR", "GOST 2.304 type A", Arial, sans-serif !important;
+    font-style: italic !important;
+  }
+
   .frame {
     width: 100%;
     height: 100%;
@@ -338,13 +345,13 @@
   .title-block {
     text-align: center;
     font-weight: bold;
-    font-size: 17px;
+    font-size: 18px;
     letter-spacing: 0.5px;
     margin-bottom: 6px;
     color: #000;
   }
   .subtitle {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: normal;
     color: #333;
     margin-top: 3px;
@@ -434,7 +441,7 @@
 </head>
 <body>
 
-<!-- МОДАЛЬНОЕ ОКНО -->
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ПОТОКОВОГО ДОБАВЛЕНИЯ СЕТЕЙ -->
 <div class="modal-overlay" id="singleNetModal">
   <div class="modal-box">
     <h3>Добавить пересекаемую коммуникацию</h3>
@@ -536,9 +543,11 @@
   </div>
 
   <div class="sidebar-footer">
-    <button class="btn-danger" style="margin-bottom: 12px;" onclick="resetData()">
-      🗑 Очистить текущий ГНБ
-    </button>
+    <div class="export-group" style="margin-bottom: 12px;">
+      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetData()">🗑 Очистить текущий</button>
+      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
+    </div>
+
     <button class="btn-primary" onclick="printPureSheet()">
       🖨️ Сохранить в PDF текущий профиль
     </button>
@@ -578,10 +587,10 @@ let state = null;
 const NET_TYPES = {
   power: { label: 'Электрокабель', defaultDepth: 0.7, color: '#ff0000', badge: 'badge-power' },
   comm:  { label: 'Кабель связи', defaultDepth: 0.7, color: '#ba68c8', badge: 'badge-comm' },
-  gas:   { label: 'Газопровод', defaultDepth: 2.0, color: '#00008b', badge: 'badge-gas' },
-  water: { label: 'Водопровод', defaultDepth: 2.0, color: '#006400', badge: 'badge-water' },
-  sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#8b4513', badge: 'badge-sewer' },
-  heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'badge-heat' }
+  gas:   { label: 'Газопровод', defaultDepth: 2.0, color: '#00008b', badge: 'gas' },
+  water: { label: 'Водопровод', defaultDepth: 2.0, color: '#006400', badge: 'water' },
+  sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#8b4513', badge: 'sewer' },
+  heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'heat' }
 };
 
 function getDefaultProfile(numStr) {
@@ -598,7 +607,6 @@ function getDefaultProfile(numStr) {
   };
 }
 
-/* ЛОГИКА ВКЛАДОК */
 function renderTabs() {
   const container = document.getElementById('tabsContainer');
   container.innerHTML = '';
@@ -634,7 +642,7 @@ function renderTabs() {
 function switchTab(idx) {
   activeProfileIdx = idx;
   state = profiles[activeProfileIdx];
-  renderTabs(); // <-- ОБНОВЛЯЕТ ИНТЕРФЕЙС ВКЛАДОК
+  renderTabs(); 
   syncInputs();
   renderAsphaltsList();
   renderTreesList();
@@ -667,7 +675,6 @@ function deleteTab(idx) {
   }
 }
 
-// СБРОС ТЕКУЩЕЙ ВКЛАДКИ
 function resetData(confirmPrompt = true) {
   if (confirmPrompt && !confirm(`Вы уверены, что хотите очистить ГНБ №${state.hddNumber}? Все трубы и сети на этой вкладке будут удалены.`)) {
     return;
@@ -683,7 +690,18 @@ function resetData(confirmPrompt = true) {
   triggerUpdate();
 }
 
-// СОХРАНЕНИЕ ПРОЕКТА В JSON
+function resetAllData() {
+  if (confirm("Вы уверены, что хотите БЕЗВОЗВРАТНО удалить ВСЕ вкладки и полностью очистить проект?")) {
+    profiles = [getDefaultProfile("1")];
+    activeProfileIdx = 0;
+    
+    localStorage.removeItem('gnbProfilesArray');
+    localStorage.removeItem('gnbActiveIndex');
+    
+    switchTab(0);
+  }
+}
+
 function saveProject() {
     const dataToSave = {
         version: "2.0",
@@ -702,7 +720,6 @@ function saveProject() {
     URL.revokeObjectURL(url);
 }
 
-// ЗАГРУЗКА ПРОЕКТА ИЗ JSON
 function loadProject(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -883,7 +900,6 @@ function triggerUpdate() {
   renderSvg();
 }
 
-/* ЛОГИКА УЧАСТКОВ АСФАЛЬТА */
 function renderAsphaltsList() {
   const container = document.getElementById('asphaltsContainer');
   container.innerHTML = '';
@@ -914,7 +930,6 @@ function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) 
 function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); triggerUpdate(); }
 
-/* ЛОГИКА УЧАСТКОВ ДЕРЕВЬЕВ */
 function renderTreesList() {
   const container = document.getElementById('treesContainer');
   container.innerHTML = '';
@@ -945,7 +960,6 @@ function updateTreeStart(i, val) { state.trees[i].start = parseFloat(val) || 0; 
 function updateTreeEnd(i, val) { state.trees[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeTree(i) { state.trees.splice(i, 1); renderTreesList(); triggerUpdate(); }
 
-/* ЛОГИКА СЕТЕЙ */
 function renderNetsList() {
   const container = document.getElementById('netsContainer');
   container.innerHTML = '';
@@ -1088,7 +1102,6 @@ function autoOptimizeDepth() {
   }
 }
 
-// ГЕНЕРАЦИЯ HTML-БЛОКА ДЛЯ ОДНОГО ПРОФИЛЯ
 function getProfileHtml(s, isMultiPrint) {
   const L = s.length;
   const R = s.radius;
@@ -1104,7 +1117,6 @@ function getProfileHtml(s, isMultiPrint) {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА
   let gridLines = '';
   let gridTextsX = '';
   
@@ -1132,7 +1144,6 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  // Подписи глубин
   markup += `
     <g font-size="10.5" fill="#666" text-anchor="middle">
       ${gridTextsX}
@@ -1151,7 +1162,6 @@ function getProfileHtml(s, isMultiPrint) {
     <text x="${leftX-28}" y="${groundY+496}" font-size="10.5" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
   `;
 
-  // ЗОНЫ АСФАЛЬТА И ГАЗОНА
   let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
                               .filter(a => a.start < a.end)
                               .sort((a,b) => a.start - b.start);
@@ -1197,7 +1207,6 @@ function getProfileHtml(s, isMultiPrint) {
     `;
   });
 
-  // ОТРИСОВКА ДЕРЕВЬЕВ
   let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
                         .filter(t => t.start < t.end)
                         .sort((a,b) => a.start - b.start);
@@ -1221,7 +1230,6 @@ function getProfileHtml(s, isMultiPrint) {
       `;
   });
 
-  // КОТЛОВАНЫ
   const pitWidthPx = 2.0 * scaleX;
   const pitDepthPx = 2.0 * scaleY;
   markup += `
@@ -1232,7 +1240,6 @@ function getProfileHtml(s, isMultiPrint) {
     <line x1="${toSvgX(L)}" y1="${groundY}" x2="${toSvgX(L)}" y2="${groundY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
   `;
 
-  // ТРАЕКТОРИЯ 
   let pathD = `M ${toSvgX(2.0)} ${toSvgY(s.entryDepth)}`;
   for (let x = 2.0; x <= L - 2.0; x += 0.5) {
       let y = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R);
@@ -1246,7 +1253,6 @@ function getProfileHtml(s, isMultiPrint) {
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ТРАЕКТОРИИ
   let h1 = Math.max(0, s.depthHall - s.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, s.depthHall - s.exitDepth);
@@ -1271,7 +1277,6 @@ function getProfileHtml(s, isMultiPrint) {
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${s.depthHall.toFixed(3)}м, гл. ${s.depthHall.toFixed(2)}м)</text>
   `;
 
-  // ВЫНОСКИ СЕТЕЙ
   let linesMarkup = '';
   let textsMarkup = '';
   let drawNets = [...s.nets].sort((a, b) => a.dist - b.dist);
@@ -1307,12 +1312,15 @@ function getProfileHtml(s, isMultiPrint) {
 
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ
+  let netsCount = s.nets.length;
   markup += `
-    <g font-size="10" fill="#333">
-      <text x="${leftX-20}" y="1350" font-weight="bold">Примечания:</text>
-      <text x="${leftX-20}" y="1366">1. Закрытый переход КЛ выполнить методом ГНБ установкой с тяговым усилием не менее 150 кН.</text>
-      <text x="${leftX-20}" y="1380">2. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+    <g font-size="14" fill="#333">
+      <text x="${leftX-20}" y="1270" font-weight="bold">Примечания:</text>
+      <text x="${leftX-20}" y="1290">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="${leftX-20}" y="1310">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="${leftX-20}" y="1330">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="${leftX-20}" y="1350">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+      <text x="${leftX-20}" y="1370">5. Количество пересечений - ${netsCount}.</text>
     </g>
   `;
 
@@ -1359,7 +1367,6 @@ function printPureSheet() {
   }, 50);
 }
 
-// ПЕЧАТЬ ВСЕХ ВКЛАДОК ОДНИМ ФАЙЛОМ
 function printAllSheets() {
   const multiArea = document.getElementById('multiPrintArea');
   multiArea.innerHTML = profiles.map(p => getProfileHtml(p, true)).join('');
@@ -1375,7 +1382,6 @@ function printAllSheets() {
   }, 50);
 }
 
-// ЗАГРУЗКА ИЗ LOCALSTORAGE ПРИ ОТКРЫТИИ
 window.onload = () => {
   const savedArr = localStorage.getItem('gnbProfilesArray');
   const savedIdx = localStorage.getItem('gnbActiveIndex');
@@ -1387,7 +1393,6 @@ window.onload = () => {
       
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       
-      // Защита старых сейвов
       profiles.forEach(p => {
           if (!p.hddNumber) p.hddNumber = "1";
           if (!p.asphalts) p.asphalts = [];
