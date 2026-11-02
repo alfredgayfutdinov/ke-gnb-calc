@@ -434,12 +434,20 @@
       </label>
     </div>
 
+    <!-- АСФАЛЬТ -->
     <div class="section-title">
       <span>Зоны асфальта (проезжая часть)</span>
     </div>
     <div id="asphaltsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
-    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Все участки вне асфальта автоматически оформляются газоном.</div>
+    
+    <!-- ДЕРЕВЬЯ -->
+    <div class="section-title">
+      <span>Деревья (Зеленые насаждения)</span>
+    </div>
+    <div id="treesContainer"></div>
+    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
+    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Все участки вне асфальта автоматически оформляются газоном. Деревья высаживаются поверх газона.</div>
 
     <div class="section-title">
       <span>Пересекаемые сети</span>
@@ -513,7 +521,8 @@ let state = {
   entryDepth: 1.0,
   exitDepth: 1.0,
   radius: 60,
-  asphalts: [{ start: 20, end: 80 }],
+  asphalts: [{ start: 0, end: 10 }, { start: 50, end: 110 }],
+  trees: [{ start: 20, end: 40 }],
   nets: []
 };
 
@@ -554,10 +563,12 @@ function loadProject(event) {
                 state = loadedState;
                 if (!state.hddNumber) state.hddNumber = "1";
                 if (!state.asphalts) state.asphalts = [];
+                if (!state.trees) state.trees = []; // поддержка старых сохранений
                 if (!state.nets) state.nets = [];
 
                 syncInputs();
                 renderAsphaltsList();
+                renderTreesList();
                 renderNetsList();
                 triggerUpdate();
             } else {
@@ -686,7 +697,8 @@ function loadPreset(len) {
     state.entryDepth = 1.0;
     state.exitDepth = 1.0;
     state.radius = 60;
-    state.asphalts = [{ start: 20, end: 80 }];
+    state.asphalts = [{ start: 0, end: 10 }, { start: 50, end: 110 }];
+    state.trees = [{ start: 20, end: 40 }];
     state.nets = []; 
   } else if (len === 62) {
     state.hddNumber = "2";
@@ -696,6 +708,7 @@ function loadPreset(len) {
     state.exitDepth = 1.0;
     state.radius = 50;
     state.asphalts = [{ start: 15, end: 45 }];
+    state.trees = [];
     state.nets = [
       { type: 'power', name: 'Электрокабель', dist: 6, depth: 0.7 },
       { type: 'gas', name: 'Газопровод', dist: 8, depth: 2.0 },
@@ -714,6 +727,7 @@ function loadPreset(len) {
     state.exitDepth = 1.0;
     state.radius = 50;
     state.asphalts = [{ start: 14, end: 38 }];
+    state.trees = [];
     state.nets = [
       { type: 'comm', name: 'Кабель связи', dist: 8, depth: 0.7 },
       { type: 'power', name: 'Электрокабель', dist: 18, depth: 0.7 },
@@ -726,6 +740,7 @@ function loadPreset(len) {
   
   syncInputs();
   renderAsphaltsList();
+  renderTreesList();
   renderNetsList();
   triggerUpdate(); 
 }
@@ -792,6 +807,37 @@ function addAsphalt() {
 function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; triggerUpdate(); }
 function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); triggerUpdate(); }
+
+/* ЛОГИКА УЧАСТКОВ ДЕРЕВЬЕВ */
+function renderTreesList() {
+  const container = document.getElementById('treesContainer');
+  container.innerHTML = '';
+  state.trees.forEach((t, index) => {
+    const div = document.createElement('div');
+    div.className = 'form-row';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.5" value="${t.start}" onchange="updateTreeStart(${index}, this.value)" placeholder="От (м)">
+      </div>
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.5" value="${t.end}" onchange="updateTreeEnd(${index}, this.value)" placeholder="До (м)">
+      </div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeTree(${index})">✕</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function addTree() {
+  state.trees.push({ start: 10, end: 30 });
+  renderTreesList();
+  triggerUpdate();
+}
+
+function updateTreeStart(i, val) { state.trees[i].start = parseFloat(val) || 0; triggerUpdate(); }
+function updateTreeEnd(i, val) { state.trees[i].end = parseFloat(val) || 0; triggerUpdate(); }
+function removeTree(i) { state.trees.splice(i, 1); renderTreesList(); triggerUpdate(); }
 
 /* ЛОГИКА СЕТЕЙ (ЛЕВОЕ МЕНЮ) */
 function renderNetsList() {
@@ -889,13 +935,11 @@ function closeSingleNetModal() {
 
 function confirmSingleNet() {
   const type = document.getElementById('modalNetType').value;
-  // Поддерживаем как точку, так и запятую при вводе
   const distInput = document.getElementById('modalNetDist').value;
   const dist = parseFloat(distInput.replace(',', '.')) || 0;
   
   const conf = NET_TYPES[type];
 
-  // Считаем сколько сетей такого типа уже добавлено, чтобы назначить имя (Электрокабель 2, Электрокабель 3)
   const sameTypeCount = state.nets.filter(n => n.type === type).length;
   const nameSuffix = sameTypeCount > 0 ? ` ${sameTypeCount + 1}` : '';
 
@@ -906,7 +950,6 @@ function confirmSingleNet() {
     depth: conf.defaultDepth
   });
 
-  // Очищаем поле для ввода следующей сети и оставляем курсор в нем
   document.getElementById('modalNetDist').value = '';
   document.getElementById('modalNetDist').focus();
 
@@ -914,7 +957,6 @@ function confirmSingleNet() {
   triggerUpdate();
 }
 
-// Позволяем нажимать Enter в поле ввода для быстрого добавления
 document.getElementById('modalNetDist').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         confirmSingleNet();
@@ -966,7 +1008,7 @@ function renderSvg() {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м (глубина до -8.00м)
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м
   let gridLines = '';
   let gridTextsX = '';
   
@@ -1044,6 +1086,10 @@ function renderSvg() {
     const w = toSvgX(g.end) - toSvgX(g.start);
     markup += `
       <rect x="${toSvgX(g.start)}" y="${groundY-8}" width="${w}" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />
+      
+      <!-- Белая маска для текста "Газон" -->
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Газон</text>
+      <!-- Сам текст "Газон" -->
       <text x="${toSvgX((g.start+g.end)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#28a745">Газон</text>
     `;
   });
@@ -1056,6 +1102,34 @@ function renderSvg() {
       <rect x="${toSvgX(a.end)-2}" y="${groundY-16}" width="4" height="16" fill="#333" />
       <text x="${toSvgX((a.start+a.end)/2)}" y="${groundY-18}" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">Асфальтобетон</text>
     `;
+  });
+
+  // ОТРИСОВКА ДЕРЕВЬЕВ
+  let rawTrees = state.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
+                            .filter(t => t.start < t.end)
+                            .sort((a,b) => a.start - b.start);
+
+  rawTrees.forEach(t => {
+      let treeMarkup = '';
+      // Высаживаем деревья каждые 4 метра внутри выбранной зоны
+      for(let px = t.start; px <= t.end; px += 4) {
+          let tx = toSvgX(px);
+          let ty = groundY - 8;
+          treeMarkup += `
+            <!-- Ствол -->
+            <line x1="${tx}" y1="${ty}" x2="${tx}" y2="${ty-14}" stroke="#795548" stroke-width="2.5" />
+            <!-- Крона из кругов -->
+            <circle cx="${tx}" cy="${ty-18}" r="6.5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
+            <circle cx="${tx-5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
+            <circle cx="${tx+5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
+          `;
+      }
+      markup += `
+        ${treeMarkup}
+        <!-- Текст над деревьями -->
+        <text x="${toSvgX((t.start+t.end)/2)}" y="${groundY-32}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Зеленые насаждения</text>
+        <text x="${toSvgX((t.start+t.end)/2)}" y="${groundY-32}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
+      `;
   });
 
   // КОТЛОВАНЫ
@@ -1126,7 +1200,6 @@ function renderSvg() {
     const isUnderNorm = deltaHVal < 0.49; 
 
     const textEndY = 830; 
-    
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
@@ -1134,10 +1207,8 @@ function renderSvg() {
 
     linesMarkup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      
       <!-- Пунктир от земли до трубы сети -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
-      
       <!-- Сплошная линия от трубы строго вниз, обрывается ровно перед текстом -->
       <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" />
     `;
@@ -1145,7 +1216,6 @@ function renderSvg() {
     textsMarkup += `
       <!-- Маска (ореол) -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
-      
       <!-- Основной текст -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
     `;
