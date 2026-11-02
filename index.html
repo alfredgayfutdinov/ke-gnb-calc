@@ -393,6 +393,10 @@
     margin-top: 20px;
   }
 
+  /* СТИЛИ ДЛЯ ПЕЧАТИ (ПАКЕТНОЙ И ОДИНОЧНОЙ) */
+  #multiPrintArea {
+    display: none;
+  }
   @media print {
     body {
       background: #fff !important;
@@ -409,6 +413,22 @@
     }
     .sheet-wrapper {
       transform: none !important;
+    }
+    
+    /* Для печати всех профилей */
+    body.print-all-mode .viewport {
+      display: none !important;
+    }
+    body.print-all-mode #multiPrintArea {
+      display: block !important;
+    }
+    .print-page {
+      page-break-after: always;
+      break-after: page;
+    }
+    .print-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
     }
   }
 </style>
@@ -447,9 +467,7 @@
   </div>
   
   <!-- ПАНЕЛЬ ВКЛАДОК -->
-  <div class="tabs-container" id="tabsContainer">
-    <!-- Вкладки генерируются динамически -->
-  </div>
+  <div class="tabs-container" id="tabsContainer"></div>
 
   <div class="sidebar-body">
     <div class="section-title">Геометрия скважины</div>
@@ -512,10 +530,8 @@
       <span>Пересекаемые сети</span>
       <span id="netsCountBadge" style="color: #888; font-size: 11px;">0 сетей</span>
     </div>
-    
     <div id="netsContainer"></div>
     
-    <!-- ДВЕ КНОПКИ ДЛЯ ДОБАВЛЕНИЯ СЕТЕЙ -->
     <button class="btn-add-net" onclick="addNetPrompt()">+ Добавить сети (Пошаговый мастер)</button>
     <button class="btn-add-net" style="margin-top: 8px;" onclick="openSingleNetModal()">+ Добавить пересекаемую коммуникацию</button>
   </div>
@@ -525,7 +541,10 @@
       🗑 Очистить текущий ГНБ
     </button>
     <button class="btn-primary" onclick="printPureSheet()">
-      🖨️ Сохранить в PDF (Лист А3)
+      🖨️ Сохранить в PDF текущий профиль
+    </button>
+    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">
+      🖨️ Сохранить все профили ГНБ
     </button>
     <div class="export-group" style="margin-top: 8px;">
       <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины</button>
@@ -546,34 +565,13 @@
     <button class="btn-zoom" onclick="resetZoom(1.0)" title="Масштаб 1:1">100%</button>
     <button class="btn-zoom" onclick="fitToScreen()" title="Вписать в экран">По размеру</button>
   </div>
-
-  <div class="sheet-wrapper" id="sheetWrapper">
-    <div class="sheet" id="printSheet">
-      <div class="frame">
-        <div class="title-block" id="mainTitleBlock">
-          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №1
-          <div class="subtitle" id="sheetSubtitle">
-            Масштаб: горизонтальный 1:200, вертикальный 1:50 | Длина перехода L = 60.0 м
-          </div>
-        </div>
-        
-        <div class="svg-container">
-          <svg id="profileSvg" viewBox="0 0 1460 1400">
-            <defs>
-              <pattern id="pitHatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="8" stroke="#9c27b0" stroke-width="1.2" />
-              </pattern>
-              <pattern id="asphaltHatch" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
-              </pattern>
-            </defs>
-            <g id="svgContent"></g>
-          </svg>
-        </div>
-      </div>
-    </div>
-  </div>
+  
+  <!-- Сюда динамически инжектится текущий профиль -->
+  <div class="sheet-wrapper" id="sheetWrapper"></div>
 </div>
+
+<!-- Скрытый контейнер для печати ВСЕХ профилей сразу -->
+<div id="multiPrintArea"></div>
 
 <script>
 // Глобальный менеджер проектов
@@ -668,7 +666,7 @@ function deleteTab(idx) {
       if (activeProfileIdx >= profiles.length) {
           activeProfileIdx = profiles.length - 1;
       } else if (activeProfileIdx > idx) {
-          activeProfileIdx--; // Смещаем индекс, если удалили вкладку левее активной
+          activeProfileIdx--; 
       }
       switchTab(activeProfileIdx);
   }
@@ -719,11 +717,9 @@ function loadProject(event) {
         try {
             const loadedState = JSON.parse(e.target.result);
             if (loadedState.profiles) {
-                // Новый формат (Мульти-вкладки)
                 profiles = loadedState.profiles;
                 activeProfileIdx = loadedState.activeIndex || 0;
             } else if (loadedState.length !== undefined) {
-                // Поддержка старых сохранений (1 прокол без вкладок)
                 profiles = [loadedState];
                 activeProfileIdx = 0;
             } else {
@@ -731,7 +727,6 @@ function loadProject(event) {
                 return;
             }
             
-            // Восстановление отсутствующих полей для защиты от багов
             profiles.forEach(p => {
                 if (!p.hddNumber) p.hddNumber = "1";
                 if (!p.asphalts) p.asphalts = [];
@@ -886,12 +881,10 @@ function triggerUpdate() {
       state.depthHall = userDepth;
   }
 
-  // Обновляем текст вкладки динамически, если пользователь изменил номер прокола
   if (oldNumber !== state.hddNumber) {
       renderTabs(); 
   }
 
-  // Сохраняем в localStorage весь массив при каждом изменении
   localStorage.setItem('gnbProfilesArray', JSON.stringify(profiles));
   localStorage.setItem('gnbActiveIndex', activeProfileIdx);
 
@@ -1105,19 +1098,11 @@ function autoOptimizeDepth() {
   }
 }
 
-function renderSvg() {
-  const L = state.length;
-  const R = state.radius;
+// ГЕНЕРАЦИЯ HTML-БЛОКА ДЛЯ ОДНОГО ПРОФИЛЯ
+function getProfileHtml(s, isMultiPrint) {
+  const L = s.length;
+  const R = s.radius;
   
-  document.getElementById('mainTitleBlock').innerHTML = 
-    `ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №${state.hddNumber}
-     <div class="subtitle" id="sheetSubtitle">
-       Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м
-     </div>`;
-
-  const svg = document.getElementById('svgContent');
-  svg.innerHTML = '';
-
   const leftX = 80;
   const rightX = 1380;
   const scaleX = (rightX - leftX) / L;
@@ -1129,7 +1114,7 @@ function renderSvg() {
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА С ШАГОМ 5м
+  // СЕТКА ВЫСОТ И ПИКЕТАЖА
   let gridLines = '';
   let gridTextsX = '';
   
@@ -1177,9 +1162,9 @@ function renderSvg() {
   `;
 
   // ЗОНЫ АСФАЛЬТА И ГАЗОНА
-  let rawAsphalts = state.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
-                                  .filter(a => a.start < a.end)
-                                  .sort((a,b) => a.start - b.start);
+  let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
+                              .filter(a => a.start < a.end)
+                              .sort((a,b) => a.start - b.start);
   
   let asphalts = [];
   if (rawAsphalts.length > 0) {
@@ -1223,9 +1208,9 @@ function renderSvg() {
   });
 
   // ОТРИСОВКА ДЕРЕВЬЕВ
-  let rawTrees = state.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
-                            .filter(t => t.start < t.end)
-                            .sort((a,b) => a.start - b.start);
+  let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
+                        .filter(t => t.start < t.end)
+                        .sort((a,b) => a.start - b.start);
 
   rawTrees.forEach(t => {
       let treeMarkup = '';
@@ -1258,12 +1243,12 @@ function renderSvg() {
   `;
 
   // ТРАЕКТОРИЯ 
-  let pathD = `M ${toSvgX(2.0)} ${toSvgY(state.entryDepth)}`;
+  let pathD = `M ${toSvgX(2.0)} ${toSvgY(s.entryDepth)}`;
   for (let x = 2.0; x <= L - 2.0; x += 0.5) {
-      let y = getTruePipeDepth(x, state.depthHall, state.entryDepth, state.exitDepth, L, R);
+      let y = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R);
       pathD += ` L ${toSvgX(x)} ${toSvgY(y)}`;
   }
-  let yEx = getTruePipeDepth(L - 2.0, state.depthHall, state.entryDepth, state.exitDepth, L, R);
+  let yEx = getTruePipeDepth(L - 2.0, s.depthHall, s.entryDepth, s.exitDepth, L, R);
   pathD += ` L ${toSvgX(L - 2.0)} ${toSvgY(yEx)}`;
 
   markup += `
@@ -1272,65 +1257,60 @@ function renderSvg() {
   `;
 
   // ВЫНОСКИ ТРАЕКТОРИИ
-  let h1 = Math.max(0, state.depthHall - state.entryDepth);
+  let h1 = Math.max(0, s.depthHall - s.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
-  let h2 = Math.max(0, state.depthHall - state.exitDepth);
+  let h2 = Math.max(0, s.depthHall - s.exitDepth);
   let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
   let xHorizStart = 2.0 + L1;
   let xHorizEnd = L - 2.0 - L2;
   let horizLen = Math.max(0, xHorizEnd - xHorizStart);
 
   let xPitStart = toSvgX(2.0);
-  let yPitStart = toSvgY(state.entryDepth);
+  let yPitStart = toSvgY(s.entryDepth);
   let xPitEnd = toSvgX(L - 2.0);
-  let yPitEnd = toSvgY(state.exitDepth);
-  let yHoriz = toSvgY(state.depthHall);
+  let yPitEnd = toSvgY(s.exitDepth);
+  let yHoriz = toSvgY(s.depthHall);
 
   markup += `
     <circle cx="${xPitStart}" cy="${yPitStart}" r="4.5" fill="#9c27b0" />
     <circle cx="${xPitEnd}" cy="${yPitEnd}" r="4.5" fill="#9c27b0" />
     
-    <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход -${state.entryDepth.toFixed(2)}м</text>
-    <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход -${state.exitDepth.toFixed(2)}м</text>
+    <text x="${xPitStart}" y="${yPitStart - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход -${s.entryDepth.toFixed(2)}м</text>
+    <text x="${xPitEnd}" y="${yPitEnd - 10}" font-size="10.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход -${s.exitDepth.toFixed(2)}м</text>
     
-    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
+    <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${s.depthHall.toFixed(3)}м, гл. ${s.depthHall.toFixed(2)}м)</text>
   `;
 
   // ВЫНОСКИ СЕТЕЙ
   let linesMarkup = '';
   let textsMarkup = '';
-  let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
+  let drawNets = [...s.nets].sort((a, b) => a.dist - b.dist);
 
   drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
     const ny = toSvgY(net.depth);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
     
-    let pipeYAtDist = getTruePipeDepth(net.dist, state.depthHall, state.entryDepth, state.exitDepth, L, R);
+    let pipeYAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R);
     const centerDist = Math.abs(pipeYAtDist - net.depth);
     const deltaHVal = centerDist - 0.080; 
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
     
     const isUnderNorm = deltaHVal < 0.49; 
-
     const textEndY = 830; 
-    const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     
+    const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
 
     linesMarkup += `
       <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      <!-- Пунктир от земли до трубы сети -->
       <line x1="${nx}" y1="${groundY}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
-      <!-- Сплошная линия от трубы строго вниз, обрывается ровно перед текстом -->
       <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" />
     `;
 
     textsMarkup += `
-      <!-- Маска (ореол) -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
-      <!-- Основной текст -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
     `;
   });
@@ -1346,29 +1326,61 @@ function renderSvg() {
     </g>
   `;
 
-  svg.innerHTML = markup;
+  return `
+    <div class="sheet ${isMultiPrint ? 'print-page' : ''}">
+      <div class="frame">
+        <div class="title-block">
+          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №${s.hddNumber}
+          <div class="subtitle">
+            Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м
+          </div>
+        </div>
+        <div class="svg-container">
+          <svg viewBox="0 0 1460 1400">
+            <defs>
+              <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="0" x2="0" y2="8" stroke="#9c27b0" stroke-width="1.2" />
+              </pattern>
+              <pattern id="asphaltHatch_${s.hddNumber}" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
+              </pattern>
+            </defs>
+            ${markup.replace(/url\(#pitHatch\)/g, `url(#pitHatch_${s.hddNumber})`).replace(/url\(#asphaltHatch\)/g, `url(#asphaltHatch_${s.hddNumber})`)}
+          </svg>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSvg() {
+  document.getElementById('sheetWrapper').innerHTML = getProfileHtml(state, false);
 }
 
 function printPureSheet() {
-  const sidebar = document.querySelector('.sidebar');
-  const viewport = document.querySelector('.viewport');
-  const wrapper = document.getElementById('sheetWrapper');
-
   const savedZoom = currentZoom;
-  wrapper.style.transform = 'none';
-
-  sidebar.style.setProperty('display', 'none', 'important');
-  viewport.style.setProperty('padding', '0', 'important');
-  viewport.style.setProperty('background', '#fff', 'important');
+  document.getElementById('sheetWrapper').style.transform = 'none';
 
   setTimeout(() => {
     window.print();
-
     setTimeout(() => {
-      sidebar.style.removeProperty('display');
-      viewport.style.removeProperty('padding');
-      viewport.style.removeProperty('background');
-      wrapper.style.transform = `scale(${savedZoom})`;
+      document.getElementById('sheetWrapper').style.transform = `scale(${savedZoom})`;
+    }, 300);
+  }, 50);
+}
+
+// ПЕЧАТЬ ВСЕХ ВКЛАДОК ОДНИМ ФАЙЛОМ
+function printAllSheets() {
+  const multiArea = document.getElementById('multiPrintArea');
+  multiArea.innerHTML = profiles.map(p => getProfileHtml(p, true)).join('');
+  
+  document.body.classList.add('print-all-mode');
+  
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-all-mode');
+      multiArea.innerHTML = '';
     }, 300);
   }, 50);
 }
