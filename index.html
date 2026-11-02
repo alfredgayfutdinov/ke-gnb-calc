@@ -21,6 +21,7 @@
     overflow: hidden;
   }
 
+  /* ЛЕВАЯ ПАНЕЛЬ */
   .sidebar {
     width: 440px;
     min-width: 440px;
@@ -44,6 +45,7 @@
     color: #fff;
   }
   
+  /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
   .tabs-container {
     display: flex;
     background: #1a1a20;
@@ -291,6 +293,7 @@
     transition: transform 0.12s ease-out;
   }
   
+  /* ЧЕРТЕЖ: Принудительный ГОСТовский шрифт и курсив */
   .sheet {
     width: 1587px;
     height: 1122px;
@@ -345,6 +348,7 @@
     display: block;
   }
 
+  /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -459,7 +463,7 @@
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
         <label>Отметка горизонта (Z)</label>
-        <input type="number" id="inpHall" value="97.00" step="0.05" onchange="triggerUpdate()">
+        <input type="number" id="inpHall" value="95.00" step="0.05" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
         <label>Радиус изгиба (м)</label>
@@ -478,10 +482,12 @@
       </label>
     </div>
 
+    <!-- АСФАЛЬТ -->
     <div class="section-title">Зоны асфальта (Горизонтальные)</div>
     <div id="asphaltsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
     
+    <!-- ДЕРЕВЬЯ -->
     <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
@@ -507,7 +513,8 @@
     <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили ГНБ</button>
     
     <div class="export-group" style="margin-top: 8px;">
-      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины</button>
+      <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта на 5.0м</button>
+      <button class="btn-secondary" onclick="autoOptimizeDepth()">Углубить под сети</button>
     </div>
     <div class="export-group" style="margin-top: 4px;">
       <button class="btn-secondary" onclick="saveProject()">💾 Сохранить весь проект (.json)</button>
@@ -548,7 +555,7 @@ function getDefaultProfile(numStr) {
   return {
     hddNumber: numStr,
     length: 60,
-    depthHall: 97.00,
+    depthHall: 95.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
     radius: 50,
@@ -560,7 +567,7 @@ function getDefaultProfile(numStr) {
   };
 }
 
-/* МАТЕМАТИКА РЕЛЬЕФА */
+/* МАТЕМАТИКА РЕЛЬЕФА (НОВАЯ ГИБРИДНАЯ МОДЕЛЬ БЕЗ ИЗЛОМОВ) */
 function getNaturalElevation(x, terrainPts) {
     if (!terrainPts || terrainPts.length === 0) return 100.0;
     if (x <= terrainPts[0].x) return terrainPts[0].z;
@@ -577,19 +584,38 @@ function getNaturalElevation(x, terrainPts) {
     return 100.0;
 }
 
-// Возвращает Z рельефа с учетом плоского горизонтального асфальта
-function getElevationAt(x, asphalts, terrainPts) {
-    for (let a of asphalts) {
-        if (x > a.start && x <= a.end) {
-            return getNaturalElevation(a.start, terrainPts);
+function getEffectiveTerrain(asphalts, terrainPts) {
+    let pts = [];
+    terrainPts.forEach(p => pts.push({x: p.x, z: p.z}));
+    asphalts.forEach(a => {
+        pts.push({x: a.start, z: getNaturalElevation(a.start, terrainPts)});
+        pts.push({x: a.end, z: getNaturalElevation(a.end, terrainPts)});
+    });
+    pts.sort((a,b) => a.x - b.x);
+    let unique = [pts[0]];
+    for(let i=1; i<pts.length; i++) {
+        if(Math.abs(pts[i].x - unique[unique.length-1].x) > 0.001) {
+            unique.push(pts[i]);
         }
     }
-    return getNaturalElevation(x, terrainPts);
+    
+    let eff = [];
+    for(let i=0; i<unique.length; i++) {
+        let pt = {x: unique[i].x, z: unique[i].z};
+        for(let a of asphalts) {
+            if (pt.x > a.start && pt.x <= a.end) {
+                // Внутри зоны асфальта Z фиксируется по начальной точке асфальта (горизонтальная плита)
+                pt.z = getNaturalElevation(a.start, terrainPts);
+            }
+        }
+        eff.push(pt);
+    }
+    return eff; // Возвращает непрерывный массив точек рельефа без отвесных скал
 }
 
-function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, asphalts, terrain) {
-    let zEnt = getElevationAt(0, asphalts, terrain) - entryDepth;
-    let zEx = getElevationAt(L, asphalts, terrain) - exitDepth;
+function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, effTerrain) {
+    let zEnt = getNaturalElevation(0, effTerrain) - entryDepth;
+    let zEx = getNaturalElevation(L, effTerrain) - exitDepth;
 
     if (x <= 0) return zEnt;
     if (x >= L) return zEx;
@@ -621,10 +647,11 @@ function snapToSafeDepth(targetZ) {
     const L = state.length;
     const R = state.radius;
     const clearance = 0.58; 
+    let eff = getEffectiveTerrain(state.asphalts, state.terrain);
 
     function isValid(zH) {
-        let zEnt = getElevationAt(0, state.asphalts, state.terrain) - state.entryDepth;
-        let zEx = getElevationAt(L, state.asphalts, state.terrain) - state.exitDepth;
+        let zEnt = getNaturalElevation(0, eff) - state.entryDepth;
+        let zEx = getNaturalElevation(L, eff) - state.exitDepth;
         
         if (zH > zEnt || zH > zEx) return false;
         
@@ -635,8 +662,8 @@ function snapToSafeDepth(targetZ) {
         if (L1 + L2 > L) return false;
 
         for (let net of state.nets) {
-            let pipeZ = getTruePipeDepth(net.dist, zH, state.entryDepth, state.exitDepth, L, R, state.asphalts, state.terrain);
-            let netZ = getElevationAt(net.dist, state.asphalts, state.terrain) - net.depth;
+            let pipeZ = getTruePipeDepth(net.dist, zH, state.entryDepth, state.exitDepth, L, R, eff);
+            let netZ = getNaturalElevation(net.dist, eff) - net.depth;
             if (Math.abs(pipeZ - netZ) < clearance) return false;
         }
         return true;
@@ -645,12 +672,20 @@ function snapToSafeDepth(targetZ) {
     if (isValid(targetZ)) return targetZ;
 
     for (let step = 0; step <= 25.0; step += 0.05) {
-        let testZ = targetZ - step; // Идем вниз по абсолютной отметке
+        let testZ = targetZ - step; // Уходим глубже
         if (isValid(testZ)) return testZ;
     }
     return null;
 }
 
+// Автоподгон глубины на 5 метров от самой низкой точки рельефа
+function autoSetDepth5m() {
+  if (!state) return;
+  let eff = getEffectiveTerrain(state.asphalts, state.terrain);
+  let minZ = Math.min(...eff.map(p => p.z));
+  state.depthHall = minZ - 5.0;
+  document.getElementById('inpHall').value = state.depthHall.toFixed(2);
+}
 
 /* ЛОГИКА ВКЛАДОК И ДАННЫХ */
 function renderTabs() {
@@ -683,7 +718,6 @@ function renderTabs() {
 function switchTab(idx) {
   activeProfileIdx = idx;
   state = profiles[activeProfileIdx];
-  // Защита и сортировка рельефа
   if(!state.terrain || state.terrain.length === 0) state.terrain = [ {x:0, z:100.0}, {x:state.length, z:100.0} ];
   state.terrain.sort((a,b) => a.x - b.x);
   
@@ -768,12 +802,9 @@ function loadProject(event) {
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
-                // Миграция старых файлов без рельефа
                 if (!p.terrain) {
                     p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ];
-                    if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) {
-                        p.depthHall = 100.0 - p.depthHall; // конвертация старой глубины в абсолютную отметку
-                    }
+                    if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall;
                 }
             });
             if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
@@ -798,7 +829,7 @@ function triggerUpdate() {
   let oldNumber = state.hddNumber;
   state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
-  let userZ = parseFloat(document.getElementById('inpHall').value) || 97.00;
+  let userZ = parseFloat(document.getElementById('inpHall').value) || 95.00;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
@@ -850,14 +881,16 @@ function addTerrainPoint() {
   let last = state.terrain[state.terrain.length - 1];
   state.terrain.push({ x: last.x + 10, z: last.z });
   state.terrain.sort((a,b) => a.x - b.x);
+  autoSetDepth5m();
   renderTerrainList();
   triggerUpdate();
 }
-function updateTerrainX(i, val) { state.terrain[i].x = parseFloat(val) || 0; triggerUpdate(); }
-function updateTerrainZ(i, val) { state.terrain[i].z = parseFloat(val) || 0; triggerUpdate(); }
+function updateTerrainX(i, val) { state.terrain[i].x = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
+function updateTerrainZ(i, val) { state.terrain[i].z = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
 function removeTerrain(i) {
   if (state.terrain.length > 2) {
     state.terrain.splice(i, 1);
+    autoSetDepth5m();
     renderTerrainList();
     triggerUpdate();
   }
@@ -883,10 +916,10 @@ function renderAsphaltsList() {
     container.appendChild(div);
   });
 }
-function addAsphalt() { state.asphalts.push({ start: 0, end: 10 }); renderAsphaltsList(); triggerUpdate(); }
-function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; triggerUpdate(); }
-function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; triggerUpdate(); }
-function removeAsphalt(i) { state.asphalts.splice(i, 1); renderAsphaltsList(); triggerUpdate(); }
+function addAsphalt() { state.asphalts.push({ start: 0, end: 10 }); autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
+function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
+function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
+function removeAsphalt(i) { state.asphalts.splice(i, 1); autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
 
 /* ДЕРЕВЬЯ */
 function renderTreesList() {
@@ -1006,8 +1039,8 @@ document.getElementById('modalNetDist').addEventListener('keypress', function(e)
 
 function autoOptimizeDepth() {
   if (state.nets.length === 0) { alert("Нет сетей для обхода!"); return; }
-  let targetZ = state.depthHall; // Текущий
-  let safeZ = snapToSafeDepth(targetZ + 1.0); // пробуем чуть приподнять и начать поиск
+  let targetZ = state.depthHall; 
+  let safeZ = snapToSafeDepth(targetZ + 1.0); 
   if (safeZ) {
       state.depthHall = +(safeZ.toFixed(2));
       document.getElementById('inpHall').value = state.depthHall.toFixed(2);
@@ -1043,11 +1076,12 @@ function getProfileHtml(s, isMultiPrint) {
   const L = s.length;
   const R = s.radius;
   
-  // Расчет границ рельефа для центрирования сетки
+  let effTerrain = getEffectiveTerrain(s.asphalts, s.terrain);
+  
   let allZ = [];
-  s.terrain.forEach(p => allZ.push(p.z));
+  effTerrain.forEach(p => allZ.push(p.z));
   allZ.push(s.depthHall);
-  s.nets.forEach(n => allZ.push(getElevationAt(n.dist, s.asphalts, s.terrain) - n.depth));
+  s.nets.forEach(n => allZ.push(getNaturalElevation(n.dist, effTerrain) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ)) - 1;
@@ -1058,14 +1092,13 @@ function getProfileHtml(s, isMultiPrint) {
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
   const scaleY = 60;
-  const startY = 200; // Отступ сверху для сетки
+  const startY = 200; 
   const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
   
   let gridBottomY = toSvgY(minZ);
 
   let markup = '';
 
-  // СЕТКА ВЫСОТ И ПИКЕТАЖА
   let gridLines = '';
   
   let xPts = [];
@@ -1084,7 +1117,6 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  // Подписи глубин (Z) слева
   markup += `<g font-size="11" fill="#444" text-anchor="end">`;
   for (let z = minZ; z <= maxZ; z++) {
       let gy = toSvgY(z);
@@ -1092,14 +1124,12 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  // ПУТЬ РЕЛЬЕФА (ЧЕРНАЯ ЛИНИЯ)
-  let groundPathD = `M ${toSvgX(0)} ${toSvgY(getElevationAt(0, s.asphalts, s.terrain))}`;
+  let groundPathD = `M ${toSvgX(0)} ${toSvgY(getNaturalElevation(0, effTerrain))}`;
   for (let x = 0.5; x <= L; x += 0.5) {
-      groundPathD += ` L ${toSvgX(x)} ${toSvgY(getElevationAt(x, s.asphalts, s.terrain))}`;
+      groundPathD += ` L ${toSvgX(x)} ${toSvgY(getNaturalElevation(x, effTerrain))}`;
   }
   markup += `<path d="${groundPathD}" fill="none" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />`;
 
-  // ЗОНЫ АСФАЛЬТА И ГАЗОНА
   let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
                               .filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
   
@@ -1122,19 +1152,19 @@ function getProfileHtml(s, isMultiPrint) {
   if (currentPos < L) grasses.push({ start: currentPos, end: L });
 
   grasses.forEach(g => {
-    let grassPath = `M ${toSvgX(g.start)} ${toSvgY(getElevationAt(g.start, s.asphalts, s.terrain))}`;
-    for (let x = g.start + 0.5; x <= g.end; x += 0.5) grassPath += ` L ${toSvgX(x)} ${toSvgY(getElevationAt(x, s.asphalts, s.terrain))}`;
+    let grassPath = `M ${toSvgX(g.start)} ${toSvgY(getNaturalElevation(g.start, effTerrain))}`;
+    for (let x = g.start + 0.5; x <= g.end; x += 0.5) grassPath += ` L ${toSvgX(x)} ${toSvgY(getNaturalElevation(x, effTerrain))}`;
     
     markup += `
       <path d="${grassPath}" fill="none" stroke="#d4edda" stroke-width="8" transform="translate(0, -4)" />
       <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" />
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getElevationAt((g.start+g.end)/2, s.asphalts, s.terrain)) - 15}" text-anchor="middle" font-size="11" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getElevationAt((g.start+g.end)/2, s.asphalts, s.terrain)) - 15}" text-anchor="middle" font-size="11" font-weight="bold" fill="#28a745">Газон</text>
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getNaturalElevation((g.start+g.end)/2, effTerrain)) - 15}" text-anchor="middle" font-size="11" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getNaturalElevation((g.start+g.end)/2, effTerrain)) - 15}" text-anchor="middle" font-size="11" font-weight="bold" fill="#28a745">Газон</text>
     `;
   });
 
   asphalts.forEach(a => {
-    const y = toSvgY(getElevationAt(a.start, s.asphalts, s.terrain));
+    const y = toSvgY(getNaturalElevation(a.start, effTerrain));
     const w = toSvgX(a.end) - toSvgX(a.start);
     markup += `
       <rect x="${toSvgX(a.start)-2}" y="${y-16}" width="4" height="16" fill="#333" />
@@ -1150,7 +1180,7 @@ function getProfileHtml(s, isMultiPrint) {
   rawTrees.forEach(t => {
       for(let px = t.start; px <= t.end; px += 4) {
           let tx = toSvgX(px);
-          let ty = toSvgY(getElevationAt(px, s.asphalts, s.terrain)) - 6;
+          let ty = toSvgY(getNaturalElevation(px, effTerrain)) - 6;
           markup += `
             <line x1="${tx}" y1="${ty}" x2="${tx}" y2="${ty-14}" stroke="#795548" stroke-width="2.5" />
             <circle cx="${tx}" cy="${ty-18}" r="6.5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
@@ -1159,18 +1189,17 @@ function getProfileHtml(s, isMultiPrint) {
           `;
       }
       let midX = (t.start+t.end)/2;
-      let midY = toSvgY(getElevationAt(midX, s.asphalts, s.terrain)) - 35;
+      let midY = toSvgY(getNaturalElevation(midX, effTerrain)) - 35;
       markup += `
         <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="11" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Зеленые насаждения</text>
         <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
       `;
   });
 
-  // КОТЛОВАНЫ
   const pitWidthPx = 1.5 * scaleX; 
   const pitDepthPx = (s.pitDepth !== undefined ? s.pitDepth : 2.0) * scaleY;
-  const startPitY = toSvgY(getElevationAt(0, s.asphalts, s.terrain));
-  const endPitY = toSvgY(getElevationAt(L, s.asphalts, s.terrain));
+  const startPitY = toSvgY(getNaturalElevation(0, effTerrain));
+  const endPitY = toSvgY(getNaturalElevation(L, effTerrain));
   
   markup += `
     <rect x="${toSvgX(-1.5)}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#9c27b0" stroke-width="1.5" />
@@ -1180,20 +1209,21 @@ function getProfileHtml(s, isMultiPrint) {
     <line x1="${toSvgX(L)}" y1="${endPitY}" x2="${toSvgX(L)}" y2="${endPitY+pitDepthPx}" stroke="#9c27b0" stroke-width="2.5" />
   `;
 
-  // ТРАЕКТОРИЯ
-  let pathD = `M ${toSvgX(0)} ${toSvgY(getElevationAt(0, s.asphalts, s.terrain) - s.entryDepth)}`;
+  let pathD = `M ${toSvgX(0)} ${toSvgY(getNaturalElevation(0, effTerrain) - s.entryDepth)}`;
   for (let x = 0.5; x <= L; x += 0.5) {
-      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, s.asphalts, s.terrain);
+      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, effTerrain);
       pathD += ` L ${toSvgX(x)} ${toSvgY(zPipe)}`;
   }
+  let yEx = getTruePipeDepth(L, s.depthHall, s.entryDepth, s.exitDepth, L, R, effTerrain);
+  pathD += ` L ${toSvgX(L)} ${toSvgY(yEx)}`;
+
   markup += `
     <path d="${pathD}" fill="none" stroke="#9c27b0" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ТРАЕКТОРИИ
-  let zEnt = getElevationAt(0, s.asphalts, s.terrain) - s.entryDepth;
-  let zEx = getElevationAt(L, s.asphalts, s.terrain) - s.exitDepth;
+  let zEnt = getNaturalElevation(0, effTerrain) - s.entryDepth;
+  let zEx = getNaturalElevation(L, effTerrain) - s.exitDepth;
   let h1 = Math.max(0, zEnt - s.depthHall);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, zEx - s.depthHall);
@@ -1208,25 +1238,24 @@ function getProfileHtml(s, isMultiPrint) {
     <text x="${toSvgX(L1 + Math.max(0, L - L2 - L1)/2)}" y="${toSvgY(s.depthHall)+20}" font-size="12" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>
   `;
 
-  // ВЫНОСКИ СЕТЕЙ
   let linesMarkup = '';
   let textsMarkup = '';
   let drawNets = [...s.nets].sort((a, b) => a.dist - b.dist);
 
   drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
-    const zGr = getElevationAt(net.dist, s.asphalts, s.terrain);
+    const zGr = getNaturalElevation(net.dist, effTerrain);
     const nz = zGr - net.depth;
     const ny = toSvgY(nz);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
     
-    let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, s.asphalts, s.terrain);
+    let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, effTerrain);
     const centerDist = Math.abs(pipeZAtDist - nz);
     const deltaHVal = centerDist - 0.080; 
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
     const isUnderNorm = deltaHVal < 0.49; 
     
-    const textEndY = gridBottomY + 20; // Выноска идет до подвала
+    const textEndY = gridBottomY + 20; 
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
@@ -1244,7 +1273,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПОДВАЛ-ТАБЛИЦА (СТРОГО ПО ГОСТ)
   let footerY = gridBottomY + 110;
   markup += `
     <g stroke="#000" stroke-width="1.5">
@@ -1265,8 +1293,8 @@ function getProfileHtml(s, isMultiPrint) {
   `;
   xPts.forEach(x => {
       let px = toSvgX(x);
-      let zGround = getElevationAt(x, s.asphalts, s.terrain).toFixed(2);
-      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, s.asphalts, s.terrain).toFixed(2);
+      let zGround = getNaturalElevation(x, effTerrain).toFixed(2);
+      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, effTerrain).toFixed(2);
       markup += `
         <line x1="${px}" y1="${footerY}" x2="${px}" y2="${footerY+75}" stroke="#aaa" stroke-width="1" />
         <text x="${px}" y="${footerY+17}" transform="rotate(-90 ${px} ${footerY+17}) translate(5,-4)">${zGround}</text>
@@ -1276,7 +1304,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += `</g>`;
 
-  // ПРИМЕЧАНИЯ
   let notesY = footerY + 110;
   markup += `
     <g font-size="14" fill="#333">
