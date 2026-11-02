@@ -21,7 +21,6 @@
     overflow: hidden;
   }
 
-  /* ЛЕВАЯ ПАНЕЛЬ */
   .sidebar {
     width: 440px;
     min-width: 440px;
@@ -45,7 +44,6 @@
     color: #fff;
   }
   
-  /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
   .tabs-container {
     display: flex;
     background: #1a1a20;
@@ -567,7 +565,7 @@ function getDefaultProfile(numStr) {
   };
 }
 
-/* МАТЕМАТИКА РЕЛЬЕФА (НОВАЯ ГИБРИДНАЯ МОДЕЛЬ БЕЗ ИЗЛОМОВ) */
+/* МАТЕМАТИКА РЕЛЬЕФА */
 function getNaturalElevation(x, terrainPts) {
     if (!terrainPts || terrainPts.length === 0) return 100.0;
     if (x <= terrainPts[0].x) return terrainPts[0].z;
@@ -604,13 +602,12 @@ function getEffectiveTerrain(asphalts, terrainPts) {
         let pt = {x: unique[i].x, z: unique[i].z};
         for(let a of asphalts) {
             if (pt.x > a.start && pt.x <= a.end) {
-                // Внутри зоны асфальта Z фиксируется по начальной точке асфальта (горизонтальная плита)
                 pt.z = getNaturalElevation(a.start, terrainPts);
             }
         }
         eff.push(pt);
     }
-    return eff; // Возвращает непрерывный массив точек рельефа без отвесных скал
+    return eff;
 }
 
 function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, effTerrain) {
@@ -672,13 +669,12 @@ function snapToSafeDepth(targetZ) {
     if (isValid(targetZ)) return targetZ;
 
     for (let step = 0; step <= 25.0; step += 0.05) {
-        let testZ = targetZ - step; // Уходим глубже
+        let testZ = targetZ - step;
         if (isValid(testZ)) return testZ;
     }
     return null;
 }
 
-// Автоподгон глубины на 5 метров от самой низкой точки рельефа
 function autoSetDepth5m() {
   if (!state) return;
   let eff = getEffectiveTerrain(state.asphalts, state.terrain);
@@ -829,7 +825,7 @@ function triggerUpdate() {
   let oldNumber = state.hddNumber;
   state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
-  let userZ = parseFloat(document.getElementById('inpHall').value) || 95.00;
+  let userZ = parseFloat(document.getElementById('inpHall').value) || 97.00;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
@@ -1273,38 +1269,7 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  let footerY = gridBottomY + 110;
-  markup += `
-    <g stroke="#000" stroke-width="1.5">
-      <line x1="${leftX-90}" y1="${footerY}" x2="${rightX+20}" y2="${footerY}" />
-      <line x1="${leftX-90}" y1="${footerY+25}" x2="${rightX+20}" y2="${footerY+25}" />
-      <line x1="${leftX-90}" y1="${footerY+50}" x2="${rightX+20}" y2="${footerY+50}" />
-      <line x1="${leftX-90}" y1="${footerY+75}" x2="${rightX+20}" y2="${footerY+75}" />
-      <line x1="${leftX-90}" y1="${footerY}" x2="${leftX-90}" y2="${footerY+75}" />
-      <line x1="${leftX}" y1="${footerY}" x2="${leftX}" y2="${footerY+75}" />
-      <line x1="${rightX+20}" y1="${footerY}" x2="${rightX+20}" y2="${footerY+75}" />
-    </g>
-    <g font-size="12" fill="#000" font-weight="bold">
-      <text x="${leftX-80}" y="${footerY+17}">Отметки земли, м</text>
-      <text x="${leftX-80}" y="${footerY+42}">Отметки оси трубы, м</text>
-      <text x="${leftX-80}" y="${footerY+67}">Пикет (ПК), м</text>
-    </g>
-    <g font-size="11" fill="#000" text-anchor="middle">
-  `;
-  xPts.forEach(x => {
-      let px = toSvgX(x);
-      let zGround = getNaturalElevation(x, effTerrain).toFixed(2);
-      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, effTerrain).toFixed(2);
-      markup += `
-        <line x1="${px}" y1="${footerY}" x2="${px}" y2="${footerY+75}" stroke="#aaa" stroke-width="1" />
-        <text x="${px}" y="${footerY+17}" transform="rotate(-90 ${px} ${footerY+17}) translate(5,-4)">${zGround}</text>
-        <text x="${px}" y="${footerY+42}" transform="rotate(-90 ${px} ${footerY+42}) translate(5,-4)">${zPipe}</text>
-        <text x="${px}" y="${footerY+67}">${x}</text>
-      `;
-  });
-  markup += `</g>`;
-
-  let notesY = footerY + 110;
+  let notesY = gridBottomY + 180;
   markup += `
     <g font-size="14" fill="#333">
       <text x="${leftX-20}" y="${notesY}" font-weight="bold">Примечания:</text>
