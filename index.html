@@ -51,24 +51,6 @@
     flex: 1;
   }
 
-  .preset-buttons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .btn-preset {
-    background: #333340;
-    color: #aaa;
-    border: 1px solid #444455;
-    padding: 6px 4px;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-    font-weight: 500;
-  }
-  .btn-preset:hover { background: #3d3d4d; color: #fff; }
-
   .section-title {
     font-size: 11px;
     text-transform: uppercase;
@@ -183,6 +165,23 @@
     transition: background 0.2s;
   }
   .btn-primary:hover { background: #0066aa; }
+  
+  .btn-danger {
+    background: transparent;
+    color: #ff5252;
+    border: 1px solid #ff5252;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(255, 82, 82, 0.1); }
+  
   .export-group {
     display: flex;
     gap: 8px;
@@ -386,13 +385,6 @@
   </div>
 
   <div class="sidebar-body">
-    <div style="font-size: 11px; color: #888; margin-bottom: 6px;">Быстрые примеры:</div>
-    <div class="preset-buttons">
-      <button class="btn-preset" onclick="loadPreset(110)">Тест 110 м</button>
-      <button class="btn-preset" onclick="loadPreset(62)">Тест 62 м</button>
-      <button class="btn-preset" onclick="loadPreset(48)">Трасса 48 м</button>
-    </div>
-
     <div class="section-title">Геометрия скважины</div>
     <div class="form-row">
       <div class="form-group">
@@ -401,7 +393,7 @@
       </div>
       <div class="form-group">
         <label>Длина ГНБ L (м)</label>
-        <input type="number" id="inpLength" value="110" step="1" onchange="triggerUpdate()">
+        <input type="number" id="inpLength" value="60" step="1" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -419,11 +411,11 @@
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
         <label>Базовый горизонт (м)</label>
-        <input type="number" id="inpHall" value="3.80" step="0.05" onchange="triggerUpdate()">
+        <input type="number" id="inpHall" value="3.00" step="0.05" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
         <label>Радиус Rизг (м)</label>
-        <input type="number" id="inpRadius" value="60" step="5" onchange="triggerUpdate()">
+        <input type="number" id="inpRadius" value="50" step="5" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -462,11 +454,14 @@
   </div>
 
   <div class="sidebar-footer">
+    <button class="btn-danger" style="margin-bottom: 12px;" onclick="resetData()">
+      🗑 Сброс данных
+    </button>
     <button class="btn-primary" onclick="printPureSheet()">
       🖨️ Сохранить в PDF (Лист А3)
     </button>
-    <div class="export-group">
-      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины (Дно)</button>
+    <div class="export-group" style="margin-top: 8px;">
+      <button class="btn-secondary" onclick="autoOptimizeDepth()">Авто-расчет безопасной глубины</button>
     </div>
     <div class="export-group" style="margin-top: 4px;">
       <button class="btn-secondary" onclick="saveProject()">💾 Сохранить проект (.json)</button>
@@ -491,7 +486,7 @@
         <div class="title-block" id="mainTitleBlock">
           ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №1
           <div class="subtitle" id="sheetSubtitle">
-            Масштаб: горизонтальный 1:200, вертикальный 1:50 | Длина перехода L = 110.0 м
+            Масштаб: горизонтальный 1:200, вертикальный 1:50 | Длина перехода L = 60.0 м
           </div>
         </div>
         
@@ -516,13 +511,13 @@
 <script>
 let state = {
   hddNumber: "1",
-  length: 110,
-  depthHall: 3.80,
+  length: 60,
+  depthHall: 3.00,
   entryDepth: 1.0,
   exitDepth: 1.0,
-  radius: 60,
-  asphalts: [{ start: 0, end: 10 }, { start: 50, end: 110 }],
-  trees: [{ start: 20, end: 40 }],
+  radius: 50,
+  asphalts: [],
+  trees: [],
   nets: []
 };
 
@@ -535,6 +530,29 @@ const NET_TYPES = {
   sewer: { label: 'Канализация', defaultDepth: 2.0, color: '#8b4513', badge: 'badge-sewer' },
   heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'badge-heat' }
 };
+
+// СБРОС ДАННЫХ
+function resetData(confirmPrompt = true) {
+  if (confirmPrompt && !confirm("Вы уверены, что хотите очистить холст и сбросить все данные?")) {
+    return;
+  }
+  state = {
+    hddNumber: "1",
+    length: 60,
+    depthHall: 3.00,
+    entryDepth: 1.0,
+    exitDepth: 1.0,
+    radius: 50,
+    asphalts: [],
+    trees: [],
+    nets: []
+  };
+  syncInputs();
+  renderAsphaltsList();
+  renderTreesList();
+  renderNetsList();
+  triggerUpdate();
+}
 
 // СОХРАНЕНИЕ ПРОЕКТА В JSON
 function saveProject() {
@@ -563,7 +581,7 @@ function loadProject(event) {
                 state = loadedState;
                 if (!state.hddNumber) state.hddNumber = "1";
                 if (!state.asphalts) state.asphalts = [];
-                if (!state.trees) state.trees = []; // поддержка старых сохранений
+                if (!state.trees) state.trees = []; 
                 if (!state.nets) state.nets = [];
 
                 syncInputs();
@@ -689,62 +707,6 @@ document.getElementById('viewportArea').addEventListener('wheel', function(e) {
   }
 }, { passive: false });
 
-function loadPreset(len) {
-  if (len === 110) {
-    state.hddNumber = "1";
-    state.length = 110;
-    state.depthHall = 3.80; 
-    state.entryDepth = 1.0;
-    state.exitDepth = 1.0;
-    state.radius = 60;
-    state.asphalts = [{ start: 0, end: 10 }, { start: 50, end: 110 }];
-    state.trees = [{ start: 20, end: 40 }];
-    state.nets = []; 
-  } else if (len === 62) {
-    state.hddNumber = "2";
-    state.length = 62;
-    state.depthHall = 3.70;
-    state.entryDepth = 1.0;
-    state.exitDepth = 1.0;
-    state.radius = 50;
-    state.asphalts = [{ start: 15, end: 45 }];
-    state.trees = [];
-    state.nets = [
-      { type: 'power', name: 'Электрокабель', dist: 6, depth: 0.7 },
-      { type: 'gas', name: 'Газопровод', dist: 8, depth: 2.0 },
-      { type: 'power', name: 'Электрокабель', dist: 11, depth: 0.7 },
-      { type: 'power', name: 'Электрокабель', dist: 12, depth: 0.7 },
-      { type: 'power', name: 'Электрокабель', dist: 13, depth: 0.7 },
-      { type: 'power', name: 'Электрокабель', dist: 15, depth: 0.7 },
-      { type: 'power', name: 'Электрокабель', dist: 22, depth: 0.7 },
-      { type: 'heat', name: 'Теплотрасса', dist: 56, depth: 2.0 }
-    ];
-  } else if (len === 48) {
-    state.hddNumber = "3";
-    state.length = 48;
-    state.depthHall = 3.80;
-    state.entryDepth = 1.0;
-    state.exitDepth = 1.0;
-    state.radius = 50;
-    state.asphalts = [{ start: 14, end: 38 }];
-    state.trees = [];
-    state.nets = [
-      { type: 'comm', name: 'Кабель связи', dist: 8, depth: 0.7 },
-      { type: 'power', name: 'Электрокабель', dist: 18, depth: 0.7 },
-      { type: 'water', name: 'Водопровод В1', dist: 22.5, depth: 2.0 },
-      { type: 'gas', name: 'Газопровод с/д', dist: 27, depth: 2.0 },
-      { type: 'sewer', name: 'Канализация К1', dist: 34, depth: 2.0 },
-      { type: 'comm', name: 'Кабель связи (ВОЛС)', dist: 42, depth: 0.7 }
-    ];
-  }
-  
-  syncInputs();
-  renderAsphaltsList();
-  renderTreesList();
-  renderNetsList();
-  triggerUpdate(); 
-}
-
 function syncInputs() {
   document.getElementById('inpNumber').value = state.hddNumber;
   document.getElementById('inpLength').value = state.length;
@@ -773,6 +735,9 @@ function triggerUpdate() {
   } else {
       state.depthHall = userDepth;
   }
+
+  // Сохраняем в localStorage при каждом изменении
+  localStorage.setItem('gnbState', JSON.stringify(state));
 
   renderSvg();
 }
@@ -1086,10 +1051,7 @@ function renderSvg() {
     const w = toSvgX(g.end) - toSvgX(g.start);
     markup += `
       <rect x="${toSvgX(g.start)}" y="${groundY-8}" width="${w}" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />
-      
-      <!-- Белая маска для текста "Газон" -->
       <text x="${toSvgX((g.start+g.end)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Газон</text>
-      <!-- Сам текст "Газон" -->
       <text x="${toSvgX((g.start+g.end)/2)}" y="${groundY-15}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#28a745">Газон</text>
     `;
   });
@@ -1111,14 +1073,11 @@ function renderSvg() {
 
   rawTrees.forEach(t => {
       let treeMarkup = '';
-      // Высаживаем деревья каждые 4 метра внутри выбранной зоны
       for(let px = t.start; px <= t.end; px += 4) {
           let tx = toSvgX(px);
           let ty = groundY - 8;
           treeMarkup += `
-            <!-- Ствол -->
             <line x1="${tx}" y1="${ty}" x2="${tx}" y2="${ty-14}" stroke="#795548" stroke-width="2.5" />
-            <!-- Крона из кругов -->
             <circle cx="${tx}" cy="${ty-18}" r="6.5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
             <circle cx="${tx-5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
             <circle cx="${tx+5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
@@ -1126,7 +1085,6 @@ function renderSvg() {
       }
       markup += `
         ${treeMarkup}
-        <!-- Текст над деревьями -->
         <text x="${toSvgX((t.start+t.end)/2)}" y="${groundY-32}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Зеленые насаждения</text>
         <text x="${toSvgX((t.start+t.end)/2)}" y="${groundY-32}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
       `;
@@ -1259,8 +1217,29 @@ function printPureSheet() {
   }, 50);
 }
 
+// Загрузка состояния из localStorage при открытии страницы
 window.onload = () => {
-  loadPreset(110);
+  const saved = localStorage.getItem('gnbState');
+  if (saved) {
+    try {
+      state = JSON.parse(saved);
+      if (!state.hddNumber) state.hddNumber = "1";
+      if (!state.asphalts) state.asphalts = [];
+      if (!state.trees) state.trees = [];
+      if (!state.nets) state.nets = [];
+      
+      syncInputs();
+      renderAsphaltsList();
+      renderTreesList();
+      renderNetsList();
+      triggerUpdate();
+    } catch(e) {
+      console.error("Ошибка чтения localStorage", e);
+      resetData(false);
+    }
+  } else {
+    resetData(false);
+  }
   fitToScreen();
 };
 </script>
