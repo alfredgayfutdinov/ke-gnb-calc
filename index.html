@@ -21,22 +21,26 @@
     overflow: hidden;
   }
 
+  /* БАЗОВЫЕ СТИЛИ БОКОВЫХ ПАНЕЛЕЙ */
   .sidebar {
-    width: 440px;
-    min-width: 440px;
+    width: 380px;
+    min-width: 380px;
     background: #25252d;
-    border-right: 1px solid #383844;
     display: flex;
     flex-direction: column;
     height: 100%;
     z-index: 10;
   }
+  .left-sidebar { border-right: 1px solid #383844; }
+  .right-sidebar { border-left: 1px solid #383844; }
+
   .sidebar-header {
     padding: 16px 20px;
     background: #1a1a20;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-bottom: 1px solid #383844;
   }
   .sidebar-header h2 {
     margin: 0;
@@ -44,6 +48,7 @@
     color: #fff;
   }
   
+  /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
   .tabs-container {
     display: flex;
     background: #1a1a20;
@@ -242,6 +247,7 @@
   }
   .btn-secondary:hover { background: #3d3d4e; color: #fff; }
 
+  /* ЦЕНТРАЛЬНАЯ ОБЛАСТЬ: ПРОСМОТР С ЗУМОМ */
   .viewport {
     flex: 1;
     height: 100%;
@@ -252,8 +258,9 @@
     user-select: none;
   }
   
+  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ */
   .zoom-toolbar {
-    position: fixed;
+    position: absolute;
     top: 16px;
     right: 24px;
     background: rgba(30, 30, 36, 0.9);
@@ -421,8 +428,9 @@
   </div>
 </div>
 
-<div class="sidebar">
-  <div class="sidebar-header">
+<!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ) -->
+<div class="sidebar left-sidebar">
+  <div class="sidebar-header" style="border-bottom: none;">
     <h2>⚡ Профили ГНБ (А3 ГОСТ)</h2>
   </div>
   
@@ -480,17 +488,37 @@
       </label>
     </div>
 
-    <!-- АСФАЛЬТ -->
+    <!-- АСФАЛЬТ И ДЕРЕВЬЯ -->
     <div class="section-title">Зоны асфальта (Горизонтальные)</div>
     <div id="asphaltsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
     
-    <!-- ДЕРЕВЬЯ -->
     <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
     <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
+  </div>
+</div>
 
+<!-- ЦЕНТРАЛЬНАЯ ПАНЕЛЬ (ЧЕРТЕЖ) -->
+<div class="viewport" id="viewportArea">
+  <div class="zoom-toolbar">
+    <button class="btn-zoom" onclick="zoomIn()">+</button>
+    <button class="btn-zoom" onclick="zoomOut()">−</button>
+    <span class="zoom-val" id="zoomValLabel">85%</span>
+    <button class="btn-zoom" onclick="resetZoom(1.0)">100%</button>
+    <button class="btn-zoom" onclick="fitToScreen()">По размеру</button>
+  </div>
+  <div class="sheet-wrapper" id="sheetWrapper"></div>
+</div>
+
+<!-- ПРАВАЯ ПАНЕЛЬ (КОММУНИКАЦИИ И ЭКСПОРТ) -->
+<div class="sidebar right-sidebar">
+  <div class="sidebar-header">
+    <h2>🛠 Коммуникации и экспорт</h2>
+  </div>
+
+  <div class="sidebar-body">
     <div class="section-title">
       <span>Пересекаемые сети</span>
       <span id="netsCountBadge" style="color: #888; font-size: 11px;">0 сетей</span>
@@ -520,17 +548,6 @@
       <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
     </div>
   </div>
-</div>
-
-<div class="viewport" id="viewportArea">
-  <div class="zoom-toolbar">
-    <button class="btn-zoom" onclick="zoomIn()">+</button>
-    <button class="btn-zoom" onclick="zoomOut()">−</button>
-    <span class="zoom-val" id="zoomValLabel">85%</span>
-    <button class="btn-zoom" onclick="resetZoom(1.0)">100%</button>
-    <button class="btn-zoom" onclick="fitToScreen()">По размеру</button>
-  </div>
-  <div class="sheet-wrapper" id="sheetWrapper"></div>
 </div>
 
 <div id="multiPrintArea"></div>
@@ -825,7 +842,7 @@ function triggerUpdate() {
   let oldNumber = state.hddNumber;
   state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
-  let userZ = parseFloat(document.getElementById('inpHall').value) || 97.00;
+  let userZ = parseFloat(document.getElementById('inpHall').value) || 95.00;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
@@ -1269,7 +1286,7 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  let notesY = gridBottomY + 180;
+  let notesY = gridBottomY + 60;
   markup += `
     <g font-size="14" fill="#333">
       <text x="${leftX-20}" y="${notesY}" font-weight="bold">Примечания:</text>
