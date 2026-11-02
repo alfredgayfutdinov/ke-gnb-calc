@@ -156,6 +156,7 @@
     font-size: 12px;
     font-weight: bold;
     margin-top: 4px;
+    transition: background 0.2s;
   }
   .btn-add-net:hover { background: #323245; }
 
@@ -179,6 +180,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: background 0.2s;
   }
   .btn-primary:hover { background: #0066aa; }
   .export-group {
@@ -297,11 +299,44 @@
     display: block;
   }
 
+  /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+  }
+  .modal-box {
+    background: #25252d;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #383844;
+    width: 320px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h3 {
+    margin-top: 0;
+    color: #fff;
+    font-size: 15px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #383844;
+    padding-bottom: 10px;
+  }
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
   @media print {
     body {
       background: #fff !important;
     }
-    .sidebar, .zoom-toolbar {
+    .sidebar, .zoom-toolbar, .modal-overlay {
       display: none !important;
       visibility: hidden !important;
     }
@@ -318,6 +353,32 @@
 </style>
 </head>
 <body>
+
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ БЫСТРОГО ДОБАВЛЕНИЯ СЕТИ -->
+<div class="modal-overlay" id="singleNetModal">
+  <div class="modal-box">
+    <h3>Добавить пересекаемую коммуникацию</h3>
+    <div class="form-group">
+      <label>Тип коммуникации</label>
+      <select id="modalNetType">
+        <option value="power">Электрокабель</option>
+        <option value="gas">Газопровод</option>
+        <option value="water">Водопровод</option>
+        <option value="sewer">Канализация</option>
+        <option value="heat">Теплосеть</option>
+        <option value="comm">Кабель связи</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Расстояние до сети (ПК, метры)</label>
+      <input type="number" id="modalNetDist" step="0.1" value="10">
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-primary" style="flex:1; font-size:12px; padding:8px;" onclick="confirmSingleNet()">Добавить</button>
+      <button class="btn-secondary" style="flex:1; font-size:12px; padding:8px;" onclick="closeSingleNetModal()">Отмена</button>
+    </div>
+  </div>
+</div>
 
 <div class="sidebar">
   <div class="sidebar-header">
@@ -386,7 +447,10 @@
     </div>
     
     <div id="netsContainer"></div>
-    <button class="btn-add-net" onclick="addNetPrompt()">+ Добавить пересечение коммуникации</button>
+    
+    <!-- ДВЕ КНОПКИ ДЛЯ ДОБАВЛЕНИЯ СЕТЕЙ -->
+    <button class="btn-add-net" onclick="addNetPrompt()">+ Добавить сети (Пошаговый мастер)</button>
+    <button class="btn-add-net" style="margin-top: 8px;" onclick="openSingleNetModal()">+ Добавить пересекаемую коммуникацию</button>
   </div>
 
   <div class="sidebar-footer">
@@ -424,7 +488,6 @@
         </div>
         
         <div class="svg-container">
-          <!-- Увеличен viewBox, чтобы вместить все элементы снизу -->
           <svg id="profileSvg" viewBox="0 0 1460 1400">
             <defs>
               <pattern id="pitHatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
@@ -813,6 +876,37 @@ function addNetPrompt() {
   }
 }
 
+/* БЫСТРОЕ ДОБАВЛЕНИЕ ОДНОЙ СЕТИ (МОДАЛЬНОЕ ОКНО) */
+function openSingleNetModal() {
+  document.getElementById('singleNetModal').style.display = 'flex';
+  document.getElementById('modalNetDist').value = (state.length / 2).toFixed(1);
+}
+
+function closeSingleNetModal() {
+  document.getElementById('singleNetModal').style.display = 'none';
+}
+
+function confirmSingleNet() {
+  const type = document.getElementById('modalNetType').value;
+  const dist = parseFloat(document.getElementById('modalNetDist').value) || 0;
+  const conf = NET_TYPES[type];
+
+  // Считаем сколько сетей такого типа уже добавлено, чтобы назначить имя (Электрокабель 2, Электрокабель 3)
+  const sameTypeCount = state.nets.filter(n => n.type === type).length;
+  const nameSuffix = sameTypeCount > 0 ? ` ${sameTypeCount + 1}` : '';
+
+  state.nets.push({
+    type: type,
+    name: conf.label + nameSuffix,
+    dist: dist,
+    depth: conf.defaultDepth
+  });
+
+  closeSingleNetModal();
+  renderNetsList();
+  triggerUpdate();
+}
+
 function autoOptimizeDepth() {
   if (state.nets.length === 0) {
       alert("Нет сетей для обхода!");
@@ -975,7 +1069,7 @@ function renderSvg() {
     <path d="${pathD}" fill="none" stroke="#6a1b9a" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ТРАЕКТОРИИ 
+  // ВЫНОСКИ ТРАЕКТОРИИ
   let h1 = Math.max(0, state.depthHall - state.entryDepth);
   let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
   let h2 = Math.max(0, state.depthHall - state.exitDepth);
