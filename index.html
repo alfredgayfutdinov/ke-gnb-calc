@@ -354,7 +354,7 @@
 </head>
 <body>
 
-<!-- МОДАЛЬНОЕ ОКНО ДЛЯ БЫСТРОГО ДОБАВЛЕНИЯ СЕТИ -->
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ПОТОКОВОГО ДОБАВЛЕНИЯ СЕТЕЙ -->
 <div class="modal-overlay" id="singleNetModal">
   <div class="modal-box">
     <h3>Добавить пересекаемую коммуникацию</h3>
@@ -371,11 +371,11 @@
     </div>
     <div class="form-group">
       <label>Расстояние до сети (ПК, метры)</label>
-      <input type="number" id="modalNetDist" step="0.1" value="10">
+      <input type="text" id="modalNetDist" placeholder="например, 15.5">
     </div>
     <div class="modal-buttons">
       <button class="btn-primary" style="flex:1; font-size:12px; padding:8px;" onclick="confirmSingleNet()">Добавить</button>
-      <button class="btn-secondary" style="flex:1; font-size:12px; padding:8px;" onclick="closeSingleNetModal()">Отмена</button>
+      <button class="btn-secondary" style="flex:1; font-size:12px; padding:8px;" onclick="closeSingleNetModal()">Отмена (Закрыть)</button>
     </div>
   </div>
 </div>
@@ -876,10 +876,11 @@ function addNetPrompt() {
   }
 }
 
-/* БЫСТРОЕ ДОБАВЛЕНИЕ ОДНОЙ СЕТИ (МОДАЛЬНОЕ ОКНО) */
+/* ПОТОКОВОЕ ДОБАВЛЕНИЕ СЕТЕЙ (МОДАЛЬНОЕ ОКНО) */
 function openSingleNetModal() {
   document.getElementById('singleNetModal').style.display = 'flex';
-  document.getElementById('modalNetDist').value = (state.length / 2).toFixed(1);
+  document.getElementById('modalNetDist').value = ''; 
+  document.getElementById('modalNetDist').focus();
 }
 
 function closeSingleNetModal() {
@@ -888,7 +889,10 @@ function closeSingleNetModal() {
 
 function confirmSingleNet() {
   const type = document.getElementById('modalNetType').value;
-  const dist = parseFloat(document.getElementById('modalNetDist').value) || 0;
+  // Поддерживаем как точку, так и запятую при вводе
+  const distInput = document.getElementById('modalNetDist').value;
+  const dist = parseFloat(distInput.replace(',', '.')) || 0;
+  
   const conf = NET_TYPES[type];
 
   // Считаем сколько сетей такого типа уже добавлено, чтобы назначить имя (Электрокабель 2, Электрокабель 3)
@@ -902,10 +906,20 @@ function confirmSingleNet() {
     depth: conf.defaultDepth
   });
 
-  closeSingleNetModal();
+  // Очищаем поле для ввода следующей сети и оставляем курсор в нем
+  document.getElementById('modalNetDist').value = '';
+  document.getElementById('modalNetDist').focus();
+
   renderNetsList();
   triggerUpdate();
 }
+
+// Позволяем нажимать Enter в поле ввода для быстрого добавления
+document.getElementById('modalNetDist').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        confirmSingleNet();
+    }
+});
 
 function autoOptimizeDepth() {
   if (state.nets.length === 0) {
@@ -1094,7 +1108,7 @@ function renderSvg() {
     <text x="${toSvgX(2.0 + L1 + horizLen/2)}" y="${yHoriz+20}" font-size="11.5" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (отм. оси -${state.depthHall.toFixed(3)}м, гл. ${state.depthHall.toFixed(2)}м)</text>
   `;
 
-  // ВЫНОСКИ СЕТЕЙ (СТРОГО НА ОДНОМ УРОВНЕ ВНИЗУ, БЕЗ СТУПЕНЕК)
+  // ВЫНОСКИ СЕТЕЙ
   let linesMarkup = '';
   let textsMarkup = '';
   let drawNets = [...state.nets].sort((a, b) => a.dist - b.dist);
@@ -1111,10 +1125,8 @@ function renderSvg() {
     
     const isUnderNorm = deltaHVal < 0.49; 
 
-    // ЕДИНЫЙ УРОВЕНЬ: Выноски начинаются строго на отметке 830px (ниже сетки и текста пикетажа)
     const textEndY = 830; 
     
-    // Формируем чистый текст: "Электрокабель, Δh=2,47м"
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
@@ -1131,7 +1143,7 @@ function renderSvg() {
     `;
 
     textsMarkup += `
-      <!-- Маска (ореол), которая закрашивает всё за буквами, чтобы линии соседних сетей не перечеркивали текст -->
+      <!-- Маска (ореол) -->
       <text x="${nx + 4}" y="${textEndY}" font-size="10.5" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 4} ${textEndY})">${paramStr}</text>
       
       <!-- Основной текст -->
