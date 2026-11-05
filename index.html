@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Генератор профилей ГНБ - Лист А3</title>
+<title>Генератор профилей ГНБ / ГНП - Лист А3</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMjUyNTJkIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzljMjdiMCIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRkYTNmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNmZjUyNTIiLz48L3N2Zz4=">
 <style>
   @page {
@@ -145,6 +145,7 @@
     outline: none;
   }
   input:focus, select:focus { border-color: #007acc; }
+  input:disabled { background: #22222a; color: #666; border-color: #33333d; cursor: not-allowed; }
 
   .net-item {
     background: #1e1e26;
@@ -259,7 +260,6 @@
     user-select: none;
   }
   
-  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ */
   .zoom-toolbar {
     position: absolute;
     top: 16px;
@@ -354,7 +354,6 @@
     display: block;
   }
 
-  /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -432,7 +431,7 @@
 <!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ И РЕЛЬЕФ) -->
 <div class="sidebar left-sidebar">
   <div class="sidebar-header" style="border-bottom: none;">
-    <h2>⚡ Профили ГНБ (А3 ГОСТ)</h2>
+    <h2>⚡ Профили ГНБ / ГНП</h2>
   </div>
   
   <div class="tabs-container" id="tabsContainer"></div>
@@ -441,11 +440,16 @@
     <div class="section-title">Геометрия скважины</div>
     <div class="form-row">
       <div class="form-group">
-        <label>Номер ГНБ</label>
-        <input type="text" id="inpNumber" value="1" onchange="triggerUpdate()">
+        <label>Номер / Тип</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="inpNumber" value="1" onchange="triggerUpdate()" style="flex:1;">
+          <label style="display:flex; align-items:center; gap:4px; color:#ddd; font-size:12px; cursor:pointer; margin:0; user-select:none;">
+            <input type="checkbox" id="chkIsGNP" onchange="toggleGNP()" style="width:auto; margin:0;"> ГНП
+          </label>
+        </div>
       </div>
       <div class="form-group">
-        <label>Длина ГНБ L (м)</label>
+        <label>Длина трассы L (м)</label>
         <input type="number" id="inpLength" value="60" step="1" onchange="triggerUpdate()">
       </div>
     </div>
@@ -544,7 +548,7 @@
     </div>
 
     <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
-    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили ГНБ</button>
+    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили</button>
     
     <div class="export-group" style="margin-top: 8px;">
       <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта на 5.0м</button>
@@ -574,16 +578,17 @@ const NET_TYPES = {
   heat:  { label: 'Теплосеть', defaultDepth: 2.0, color: '#000000', badge: 'badge-heat' }
 };
 
-function getDefaultProfile(numStr) {
+function getDefaultProfile(isGNP = false, numStr = "1") {
   return {
     hddNumber: numStr,
+    isGNP: isGNP,
     length: 60,
     depthHall: 95.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
     radius: 50,
-    pitDepthEntry: 2.0,
-    pitDepthExit: 2.0,
+    pitDepthEntry: isGNP ? 1.0 : 2.0,
+    pitDepthExit: isGNP ? 1.0 : 2.0,
     terrain: [ {x: 0, z: 100.00}, {x: 60, z: 100.00} ],
     asphalts: [],
     trees: [],
@@ -592,7 +597,6 @@ function getDefaultProfile(numStr) {
 }
 
 /* --- МАТЕМАТИКА СПЛАЙНОВ (ПЛАВНЫЙ РЕЛЬЕФ) --- */
-
 function createSplineInterpolator(pts) {
     let n = pts.length;
     if (n === 0) return (x) => 100.0;
@@ -674,9 +678,15 @@ function getTerrainInterpolator(s) {
     return createSplineInterpolator(eff);
 }
 
-function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ) {
+function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
+
+    if (isGNP) {
+        if (x <= 0) return zEnt;
+        if (x >= L) return zEx;
+        return zEnt + (zEx - zEnt) * (x / L);
+    }
 
     if (x <= 0) return zEnt;
     if (x >= L) return zEx;
@@ -703,7 +713,7 @@ function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ) {
 }
 
 function snapToSafeDepth(targetZ) {
-    if (state.nets.length === 0) return targetZ;
+    if (state.nets.length === 0 || state.isGNP) return targetZ;
 
     const L = state.length;
     const R = state.radius;
@@ -723,7 +733,7 @@ function snapToSafeDepth(targetZ) {
         if (L1 + L2 > L) return false;
 
         for (let net of state.nets) {
-            let pipeZ = getTruePipeDepth(net.dist, zH, state.entryDepth, state.exitDepth, L, R, getZ);
+            let pipeZ = getTruePipeDepth(net.dist, zH, state.entryDepth, state.exitDepth, L, R, getZ, state.isGNP);
             let netZ = getZ(net.dist) - net.depth;
             if (Math.abs(pipeZ - netZ) < clearance) return false;
         }
@@ -740,7 +750,7 @@ function snapToSafeDepth(targetZ) {
 }
 
 function autoSetDepth5m() {
-  if (!state) return;
+  if (!state || state.isGNP) return;
   let getZ = getTerrainInterpolator(state);
   let minZ = getZ(0);
   for (let x = 0.5; x <= state.length; x += 0.5) {
@@ -749,6 +759,29 @@ function autoSetDepth5m() {
   }
   state.depthHall = minZ - 5.0;
   document.getElementById('inpHall').value = state.depthHall.toFixed(2);
+}
+
+function getNextNumber(isGNP) {
+    let nextNum = 1;
+    profiles.forEach(p => {
+        if (!!p.isGNP === isGNP) {
+            let num = parseInt(p.hddNumber);
+            if (!isNaN(num) && num >= nextNum) nextNum = num + 1;
+        }
+    });
+    return nextNum.toString();
+}
+
+function sortProfiles() {
+    if (profiles.length <= 1) return;
+    let currentProf = profiles[activeProfileIdx];
+    profiles.sort((a, b) => {
+        if (!!a.isGNP !== !!b.isGNP) {
+            return a.isGNP ? 1 : -1; // ГНБ (false) идут перед ГНП (true)
+        }
+        return parseInt(a.hddNumber) - parseInt(b.hddNumber);
+    });
+    activeProfileIdx = profiles.indexOf(currentProf);
 }
 
 /* ЛОГИКА ВКЛАДОК И ДАННЫХ */
@@ -760,7 +793,7 @@ function renderTabs() {
       const btn = document.createElement('div');
       btn.className = `tab-btn ${idx === activeProfileIdx ? 'active' : ''}`;
       btn.onclick = () => switchTab(idx);
-      btn.innerHTML = `ГНБ №${p.hddNumber}`;
+      btn.innerHTML = `${p.isGNP ? 'ГНП' : 'ГНБ'} №${p.hddNumber}`;
       
       if (profiles.length > 1) {
           const delBtn = document.createElement('span');
@@ -795,18 +828,18 @@ function switchTab(idx) {
 }
 
 function addNewTab() {
-  let nextNum = 1;
-  profiles.forEach(p => {
-      let num = parseInt(p.hddNumber);
-      if (!isNaN(num) && num >= nextNum) nextNum = num + 1;
-  });
-  profiles.push(getDefaultProfile(nextNum.toString()));
-  switchTab(profiles.length - 1);
+  let isGNP = false;
+  let nextNum = getNextNumber(isGNP);
+  let newProf = getDefaultProfile(isGNP, nextNum);
+  profiles.push(newProf);
+  sortProfiles();
+  activeProfileIdx = profiles.indexOf(newProf);
+  switchTab(activeProfileIdx);
 }
 
 function deleteTab(idx) {
   if (profiles.length <= 1) return;
-  if (confirm(`Вы действительно хотите удалить вкладку ГНБ №${profiles[idx].hddNumber}?`)) {
+  if (confirm(`Вы действительно хотите удалить вкладку ${profiles[idx].isGNP ? 'ГНП' : 'ГНБ'} №${profiles[idx].hddNumber}?`)) {
       profiles.splice(idx, 1);
       if (activeProfileIdx >= profiles.length) activeProfileIdx = profiles.length - 1;
       else if (activeProfileIdx > idx) activeProfileIdx--; 
@@ -815,15 +848,15 @@ function deleteTab(idx) {
 }
 
 function resetData(confirmPrompt = true) {
-  if (confirmPrompt && !confirm(`Очистить ГНБ №${state.hddNumber}? Все данные на этой вкладке будут удалены.`)) return;
-  profiles[activeProfileIdx] = getDefaultProfile(state.hddNumber);
+  if (confirmPrompt && !confirm(`Очистить ${state.isGNP ? 'ГНП' : 'ГНБ'} №${state.hddNumber}? Все данные на этой вкладке будут удалены.`)) return;
+  profiles[activeProfileIdx] = getDefaultProfile(state.isGNP, state.hddNumber);
   state = profiles[activeProfileIdx];
   switchTab(activeProfileIdx);
 }
 
 function resetAllData() {
   if (confirm("Вы уверены, что хотите БЕЗВОЗВРАТНО удалить ВСЕ вкладки и очистить проект?")) {
-    profiles = [getDefaultProfile("1")];
+    profiles = [getDefaultProfile(false, "1")];
     activeProfileIdx = 0;
     localStorage.removeItem('gnbProfilesArray');
     localStorage.removeItem('gnbActiveIndex');
@@ -832,11 +865,11 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.3", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.4", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `Проект_ГНБ_(${profiles.length}_шт).json`;
+    a.download = `Проект_ГНБ_ГНП_(${profiles.length}_шт).json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -861,6 +894,7 @@ function loadProject(event) {
             }
             
             profiles.forEach(p => {
+                if (p.isGNP === undefined) p.isGNP = false;
                 if (!p.hddNumber) p.hddNumber = "1";
                 if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
@@ -872,6 +906,7 @@ function loadProject(event) {
                     if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall;
                 }
             });
+            sortProfiles();
             if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
             switchTab(activeProfileIdx);
         } catch (err) { alert("Ошибка при чтении файла проекта!"); }
@@ -880,7 +915,28 @@ function loadProject(event) {
     reader.readAsText(file);
 }
 
+function toggleGNP() {
+    let isGNP = document.getElementById('chkIsGNP').checked;
+    if (!!state.isGNP === isGNP) return;
+    
+    state.isGNP = isGNP;
+    state.hddNumber = getNextNumber(isGNP);
+    
+    if (isGNP) {
+        state.entryDepth = 1.0;
+        state.exitDepth = 1.0;
+        state.pitDepthEntry = 1.0;
+        state.pitDepthExit = 1.0;
+    }
+    
+    sortProfiles();
+    renderTabs();
+    syncInputs();
+    triggerUpdate();
+}
+
 function syncInputs() {
+  document.getElementById('chkIsGNP').checked = !!state.isGNP;
   document.getElementById('inpNumber').value = state.hddNumber;
   document.getElementById('inpLength').value = state.length;
   document.getElementById('inpHall').value = state.depthHall.toFixed(2);
@@ -890,6 +946,17 @@ function syncInputs() {
   
   document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
+
+  // Блокируем поля для режима ГНП
+  let hallInp = document.getElementById('inpHall');
+  let radInp = document.getElementById('inpRadius');
+  if (state.isGNP) {
+      hallInp.disabled = true;
+      radInp.disabled = true;
+  } else {
+      hallInp.disabled = false;
+      radInp.disabled = false;
+  }
 }
 
 function triggerUpdate() {
@@ -906,7 +973,7 @@ function triggerUpdate() {
 
   state.terrain.sort((a,b) => a.x - b.x);
 
-  if (document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
+  if (!state.isGNP && document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
       let safeZ = snapToSafeDepth(userZ);
       if (safeZ !== null && Math.abs(safeZ - userZ) > 0.01) {
           state.depthHall = +(safeZ.toFixed(2));
@@ -918,7 +985,10 @@ function triggerUpdate() {
       state.depthHall = userZ;
   }
 
-  if (oldNumber !== state.hddNumber) renderTabs(); 
+  if (oldNumber !== state.hddNumber) {
+      sortProfiles();
+      renderTabs(); 
+  }
 
   localStorage.setItem('gnbProfilesArray', JSON.stringify(profiles));
   localStorage.setItem('gnbActiveIndex', activeProfileIdx);
@@ -1107,7 +1177,12 @@ document.getElementById('modalNetDist').addEventListener('keypress', function(e)
 });
 
 function autoOptimizeDepth() {
+  if (state.isGNP) {
+      alert("В режиме ГНП авто-углубление недоступно (трасса прямая). Измените глубину входа и выхода вручную.");
+      return;
+  }
   if (state.nets.length === 0) { alert("Нет сетей для обхода!"); return; }
+  
   let targetZ = state.depthHall; 
   let safeZ = snapToSafeDepth(targetZ + 1.0); 
   if (safeZ) {
@@ -1149,7 +1224,7 @@ function getProfileHtml(s, isMultiPrint) {
   
   let allZ = [];
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
-  allZ.push(s.depthHall);
+  if (!s.isGNP) allZ.push(s.depthHall);
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
@@ -1289,10 +1364,10 @@ function getProfileHtml(s, isMultiPrint) {
 
   let pathD = `M ${toSvgX(0)} ${toSvgY(getZ(0) - s.entryDepth)}`;
   for (let x = 0.5; x <= L; x += 0.5) {
-      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ);
+      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP);
       pathD += ` L ${toSvgX(x)} ${toSvgY(zPipe)}`;
   }
-  let yEx = getTruePipeDepth(L, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ);
+  let yEx = getTruePipeDepth(L, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP);
   pathD += ` L ${toSvgX(L)} ${toSvgY(yEx)}`;
 
   markup += `
@@ -1302,10 +1377,6 @@ function getProfileHtml(s, isMultiPrint) {
 
   let zEnt = getZ(0) - s.entryDepth;
   let zEx = getZ(L) - s.exitDepth;
-  let h1 = Math.max(0, zEnt - s.depthHall);
-  let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
-  let h2 = Math.max(0, zEx - s.depthHall);
-  let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
   
   markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#9c27b0" />
@@ -1313,8 +1384,15 @@ function getProfileHtml(s, isMultiPrint) {
     
     <text x="${toSvgX(0)}" y="${toSvgY(zEnt) - 10}" font-size="11" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Вход (Z: ${zEnt.toFixed(2)}м)</text>
     <text x="${toSvgX(L)}" y="${toSvgY(zEx) - 10}" font-size="11" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Выход (Z: ${zEx.toFixed(2)}м)</text>
-    <text x="${toSvgX(L1 + Math.max(0, L - L2 - L1)/2)}" y="${toSvgY(s.depthHall)+20}" font-size="12" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>
   `;
+
+  if (!s.isGNP) {
+      let h1 = Math.max(0, zEnt - s.depthHall);
+      let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
+      let h2 = Math.max(0, zEx - s.depthHall);
+      let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
+      markup += `<text x="${toSvgX(L1 + Math.max(0, L - L2 - L1)/2)}" y="${toSvgY(s.depthHall)+20}" font-size="12" fill="#6a1b9a" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
+  }
 
   let linesMarkup = '';
   let textsMarkup = '';
@@ -1327,7 +1405,7 @@ function getProfileHtml(s, isMultiPrint) {
     const ny = toSvgY(nz);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
     
-    let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ);
+    let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP);
     const centerDist = Math.abs(pipeZAtDist - nz);
     const deltaHVal = centerDist - 0.080; 
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
@@ -1365,12 +1443,10 @@ function getProfileHtml(s, isMultiPrint) {
     </g>
   `;
 
-  // УСЛОВНЫЕ ОБОЗНАЧЕНИЯ (ДВЕ КОЛОНКИ СПРАВА ОТ ПРИМЕЧАНИЙ)
   let legendItems = [];
-  
   legendItems.push({
       svg: `<path d="M 0 0 L 30 0" fill="none" stroke="#9c27b0" stroke-width="6" /><path d="M 0 0 L 30 0" fill="none" stroke="#6a1b9a" stroke-width="1.5" stroke-dasharray="6,3" />`,
-      text: "Проектируемая трасса ГНБ"
+      text: `Проектируемая трасса ${s.isGNP ? 'ГНП' : 'ГНБ'}`
   });
   
   legendItems.push({
@@ -1411,7 +1487,7 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  let legendMarkup = `<g transform="translate(800, ${notesY})">
+  let legendMarkup = `<g transform="translate(850, ${notesY})">
       <text x="0" y="0" font-size="14" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
   legendItems.forEach((item, index) => {
@@ -1434,7 +1510,7 @@ function getProfileHtml(s, isMultiPrint) {
     <div class="sheet ${isMultiPrint ? 'print-page' : ''}">
       <div class="frame">
         <div class="title-block">
-          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ГНБ №${s.hddNumber}
+          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ${s.isGNP ? 'ГНП' : 'ГНБ'} №${s.hddNumber}
           <div class="subtitle">
             Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м
           </div>
@@ -1494,6 +1570,7 @@ window.onload = () => {
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       
       profiles.forEach(p => {
+          if (p.isGNP === undefined) p.isGNP = false;
           if (!p.hddNumber) p.hddNumber = "1";
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
@@ -1505,10 +1582,12 @@ window.onload = () => {
               if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall;
           }
       });
+      sortProfiles();
+      if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       switchTab(activeProfileIdx);
-    } catch(e) { profiles = [getDefaultProfile("1")]; switchTab(0); }
+    } catch(e) { profiles = [getDefaultProfile(false, "1")]; switchTab(0); }
   } else {
-    profiles = [getDefaultProfile("1")];
+    profiles = [getDefaultProfile(false, "1")];
     switchTab(0);
   }
   
