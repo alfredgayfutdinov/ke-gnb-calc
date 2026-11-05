@@ -1247,13 +1247,21 @@ function getProfileHtml(s, isMultiPrint) {
   
   let gridBottomY = toSvgY(minZ);
 
+  // --- ДИНАМИЧЕСКИЙ ШАГ СЕТКИ ---
+  let gridStep = 5;
+  if (L <= 20) {
+      gridStep = 1;
+  } else if (L < 100) {
+      gridStep = 2;
+  }
+
   let markup = '';
   let gridLines = '';
   let gridTextsX = ''; 
   let xPts = [];
   
-  for (let x = 0; x <= L; x += 5) xPts.push(x);
-  if (L % 5 !== 0) xPts.push(L);
+  for (let x = 0; x <= L; x += gridStep) xPts.push(x);
+  if (L % gridStep !== 0) xPts.push(L);
   
   xPts.forEach(x => {
       let px = toSvgX(x);
@@ -1354,7 +1362,6 @@ function getProfileHtml(s, isMultiPrint) {
       `;
   });
 
-  // КОТЛОВАНЫ - ТЕПЕРЬ ЦВЕТ FF00FF
   const pitWidthPx = 1.5 * scaleX; 
   const pitDepthEntryPx = (s.pitDepthEntry !== undefined ? s.pitDepthEntry : 2.0) * scaleY;
   const pitDepthExitPx = (s.pitDepthExit !== undefined ? s.pitDepthExit : 2.0) * scaleY;
@@ -1369,7 +1376,6 @@ function getProfileHtml(s, isMultiPrint) {
     <line x1="${toSvgX(L)}" y1="${endPitY}" x2="${toSvgX(L)}" y2="${endPitY+pitDepthExitPx}" stroke="#ff00ff" stroke-width="2.5" />
   `;
 
-  // ТРУБА - ТЕПЕРЬ ЦВЕТ FF00FF и CC00CC
   let pathD = `M ${toSvgX(0)} ${toSvgY(getZ(0) - s.entryDepth)}`;
   for (let x = 0.5; x <= L; x += 0.5) {
       let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP);
