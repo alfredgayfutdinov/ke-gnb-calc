@@ -1324,8 +1324,9 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
   
-  const leftX = 100;
-  const rightX = 1510;
+  // Увеличены отступы по краям с 100 до 130px, чтобы вынесенный наружу текст Вход/Выход не обрезался
+  const leftX = 130;
+  const rightX = 1430;
   const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
@@ -1359,7 +1360,7 @@ function getProfileHtml(s, isMultiPrint) {
   xPts.forEach(x => {
       let px = toSvgX(x);
       gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${gridBottomY}" stroke-dasharray="3,3" />`;
-      gridTextsX += `<text x="${px}" y="${gridBottomY + 18}" font-size="13">${x}</text>`; /* ШРИФТ УВЕЛИЧЕН ДО 13 */
+      gridTextsX += `<text x="${px}" y="${gridBottomY + 18}" font-size="13">${x}</text>`;
   });
 
   markup += `<g stroke="rgb(128, 128, 128)" stroke-width="1.2">${gridLines}`;
@@ -1369,7 +1370,7 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  markup += `<g font-size="14" fill="#444" text-anchor="end">`; /* ШРИФТ УВЕЛИЧЕН ДО 14 */
+  markup += `<g font-size="14" fill="#444" text-anchor="end">`;
   for (let z = minZ; z <= maxZ; z++) {
       let gy = toSvgY(z);
       markup += `<text x="${leftX-28}" y="${gy+5}">${z.toFixed(2)}</text>`;
@@ -1381,7 +1382,7 @@ function getProfileHtml(s, isMultiPrint) {
       ${gridTextsX}
     </g>
     <text x="${leftX-28}" y="${gridBottomY+18}" font-size="13" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
-  `; /* ШРИФТ УВЕЛИЧЕН ДО 13 */
+  `;
 
   let groundPathD = `M ${toSvgX(0)} ${toSvgY(getZ(0))}`;
   for (let x = 0.5; x <= L; x += 0.5) {
@@ -1419,7 +1420,7 @@ function getProfileHtml(s, isMultiPrint) {
       <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" stroke-linejoin="round" />
       <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
       <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="#28a745">Газон</text>
-    `; /* ШРИФТ УВЕЛИЧЕН ДО 14 */
+    `;
   });
 
   asphalts.forEach(a => {
@@ -1430,7 +1431,7 @@ function getProfileHtml(s, isMultiPrint) {
       <rect x="${toSvgX(a.start)}" y="${y-10}" width="${w}" height="10" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.8" />
       <rect x="${toSvgX(a.end)-2}" y="${y-16}" width="4" height="16" fill="#333" />
       <text x="${toSvgX((a.start+a.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Асфальтобетон</text>
-    `; /* ШРИФТ УВЕЛИЧЕН ДО 14 */
+    `;
   });
 
   let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
@@ -1452,7 +1453,7 @@ function getProfileHtml(s, isMultiPrint) {
       markup += `
         <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Зеленые насаждения</text>
         <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
-      `; /* ШРИФТ УВЕЛИЧЕН ДО 14 */
+      `;
   });
 
   const pitWidthPx = 15; 
@@ -1482,21 +1483,27 @@ function getProfileHtml(s, isMultiPrint) {
     <path d="${pathD}" fill="none" stroke="#cc00cc" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
+  // ВЫНОСКИ ВХОДА/ВЫХОДА С БЕЛОЙ ОБВОДКОЙ И ВЫРАВНИВАНИЕМ НАРУЖУ
   markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#ff00ff" />
     <circle cx="${toSvgX(L)}" cy="${toSvgY(zEx)}" r="4.5" fill="#ff00ff" />
     
-    <text x="${toSvgX(0)}" y="${toSvgY(zEnt) - 12}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="middle">Вход (Z: ${zEnt.toFixed(2)}м)</text>
-    <text x="${toSvgX(L)}" y="${toSvgY(zEx) - 12}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="middle">Выход (Z: ${zEx.toFixed(2)}м)</text>
-  `; /* ШРИФТ УВЕЛИЧЕН ДО 14 */
+    <text x="${toSvgX(0) - 12}" y="${toSvgY(zEnt) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
+    <text x="${toSvgX(0) - 12}" y="${toSvgY(zEnt) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
+    
+    <text x="${toSvgX(L) + 12}" y="${toSvgY(zEx) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
+    <text x="${toSvgX(L) + 12}" y="${toSvgY(zEx) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
+  `;
 
   if (!s.isGNP) {
       let h1 = Math.max(0, zEnt - s.depthHall);
       let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
       let h2 = Math.max(0, zEx - s.depthHall);
       let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
-      markup += `<text x="${toSvgX(L1 + Math.max(0, L - L2 - L1)/2)}" y="${toSvgY(s.depthHall)+22}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
-      /* ШРИФТ УВЕЛИЧЕН ДО 15 */
+      let horizX = toSvgX(L1 + Math.max(0, L - L2 - L1)/2);
+      let horizY = toSvgY(s.depthHall) + 22;
+      markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
+      markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
   }
 
   let linesMarkup = '';
@@ -1531,11 +1538,10 @@ function getProfileHtml(s, isMultiPrint) {
     textsMarkup += `
       <text x="${nx + 5}" y="${textEndY}" font-size="14" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})">${paramStr}</text>
       <text x="${nx + 5}" y="${textEndY}" font-size="14" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})">${paramStr}</text>
-    `; /* ШРИФТ УВЕЛИЧЕН ДО 14 */
+    `;
   });
   markup += linesMarkup + textsMarkup; 
 
-  // Примечания с увеличенным шрифтом и отступами
   let notesY = 1240;
   markup += `
     <g font-size="18" fill="#333">
@@ -1546,7 +1552,7 @@ function getProfileHtml(s, isMultiPrint) {
       <text x="70" y="${notesY+96}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
       <text x="70" y="${notesY+120}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
-  `; /* ШРИФТ УВЕЛИЧЕН ДО 18 */
+  `;
 
   let legendItems = [];
   legendItems.push({
@@ -1592,7 +1598,6 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // Легенда с увеличенным шрифтом
   let legendMarkup = `<g transform="translate(850, ${notesY})">
       <text x="0" y="0" font-size="18" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
@@ -1600,14 +1605,14 @@ function getProfileHtml(s, isMultiPrint) {
       let col = Math.floor(index / 6); 
       let row = index % 6;
       let xOff = col * 320;
-      let yOff = 30 + row * 26; // Расширили интервал
+      let yOff = 30 + row * 26;
       legendMarkup += `
           <g transform="translate(${xOff}, ${yOff})">
               <g transform="translate(0, -4)">${item.svg}</g>
               <text x="40" y="1" font-size="15" fill="#333">${item.text}</text>
           </g>
       `;
-  }); /* ТЕКСТ ЛЕГЕНДЫ УВЕЛИЧЕН ДО 15 */
+  });
   legendMarkup += `</g>`;
 
   markup += legendMarkup;
