@@ -491,7 +491,7 @@
       </div>
       <div class="form-group">
         <label>Радиус изгиба (м)</label>
-        <input type="number" id="inpRadius" value="50" step="5" onchange="triggerUpdate()">
+        <input type="number" id="inpRadius" value="14" step="1" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -588,7 +588,7 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     depthHall: 95.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
-    radius: 50,
+    radius: 14, // Изменено с 50 на 14
     pitDepthEntry: isGNP ? 1.0 : 2.0,
     pitDepthExit: isGNP ? 1.0 : 2.0,
     terrain: [ {x: 0, z: 100.00}, {x: 60, z: 100.00} ],
@@ -903,6 +903,7 @@ function loadProject(event) {
                 if (!p.hddNumber) p.hddNumber = "1";
                 if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
+                if (p.radius === undefined) p.radius = 14; // Проверка при загрузке старых проектов
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
@@ -949,7 +950,7 @@ function syncInputs() {
   document.getElementById('inpHall').value = state.depthHall.toFixed(2);
   document.getElementById('inpEntryDepth').value = state.entryDepth;
   document.getElementById('inpExitDepth').value = state.exitDepth;
-  document.getElementById('inpRadius').value = state.radius;
+  document.getElementById('inpRadius').value = state.radius !== undefined ? state.radius : 14;
   
   document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
@@ -972,7 +973,7 @@ function triggerUpdate() {
   let userZ = parseFloat(document.getElementById('inpHall').value) || 95.00;
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
-  state.radius = parseFloat(document.getElementById('inpRadius').value) || 50;
+  state.radius = parseFloat(document.getElementById('inpRadius').value) || 14;
   
   state.pitDepthEntry = parseFloat(document.getElementById('inpPitDepthEntry').value) || 2.0;
   state.pitDepthExit = parseFloat(document.getElementById('inpPitDepthExit').value) || 2.0;
@@ -1234,18 +1235,14 @@ function getProfileHtml(s, isMultiPrint) {
   let allZ = [];
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   
-  // Вычисляем минимальную (самую глубокую) точку трубы
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
-  
-  // ГАРАНТИРУЕМ: Сетка должна быть на 3м ниже самой трубы
   allZ.push(pipeMinZ - 3); 
   
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
-  let minZ = Math.floor(Math.min(...allZ)); // -1 убрано, так как -3 уже дает отличный запас
+  let minZ = Math.floor(Math.min(...allZ));
   
-  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
   const leftX = 100;
   const rightX = 1510;
   const scaleX = (rightX - leftX) / L;
@@ -1403,7 +1400,7 @@ function getProfileHtml(s, isMultiPrint) {
     <path d="${pathD}" fill="none" stroke="#ff00ff" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
     <path d="${pathD}" fill="none" stroke="#cc00cc" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
-  
+
   markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#ff00ff" />
     <circle cx="${toSvgX(L)}" cy="${toSvgY(zEx)}" r="4.5" fill="#ff00ff" />
@@ -1456,7 +1453,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // Примечания с жесткой привязкой координат
   let notesY = 1240;
   markup += `
     <g font-size="14" fill="#333">
@@ -1513,7 +1509,6 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // Легенда с жесткой привязкой координат
   let legendMarkup = `<g transform="translate(850, ${notesY})">
       <text x="0" y="0" font-size="14" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
