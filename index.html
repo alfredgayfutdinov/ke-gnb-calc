@@ -1228,17 +1228,24 @@ function getProfileHtml(s, isMultiPrint) {
   
   let getZ = getTerrainInterpolator(s); 
   
+  let zEnt = getZ(0) - s.entryDepth;
+  let zEx = getZ(L) - s.exitDepth;
+  
   let allZ = [];
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
-  if (!s.isGNP) allZ.push(s.depthHall);
+  
+  // Вычисляем минимальную (самую глубокую) точку трубы
+  let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
+  
+  // ГАРАНТИРУЕМ: Сетка должна быть на 3м ниже самой трубы
+  allZ.push(pipeMinZ - 3); 
+  
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
-  let minZ = Math.floor(Math.min(...allZ)) - 1;
+  let minZ = Math.floor(Math.min(...allZ)); // -1 убрано, так как -3 уже дает отличный запас
   
   // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
-  // Левая граница зафиксирована на 100px, правая на 1510px. 
-  // Трасса любой длины (L) растягивается ровно на 1410 пикселей.
   const leftX = 100;
   const rightX = 1510;
   const scaleX = (rightX - leftX) / L;
@@ -1255,7 +1262,6 @@ function getProfileHtml(s, isMultiPrint) {
   let gridTextsX = ''; 
   let xPts = [];
   
-  // ДИНАМИЧЕСКИЙ ШАГ СЕТКИ С УЧЕТОМ МАКСИМАЛЬНОГО РАСТЯГИВАНИЯ
   let gridStep = 5;
   if (L <= 30) {
       gridStep = 1;
@@ -1371,7 +1377,6 @@ function getProfileHtml(s, isMultiPrint) {
       `;
   });
 
-  // Ширина приямка жестко зафиксирована в пикселях (чтобы не искажалась при адаптивном растягивании трассы)
   const pitWidthPx = 15; 
   const pitDepthEntryPx = (s.pitDepthEntry !== undefined ? s.pitDepthEntry : 2.0) * scaleY;
   const pitDepthExitPx = (s.pitDepthExit !== undefined ? s.pitDepthExit : 2.0) * scaleY;
@@ -1398,9 +1403,6 @@ function getProfileHtml(s, isMultiPrint) {
     <path d="${pathD}" fill="none" stroke="#ff00ff" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
     <path d="${pathD}" fill="none" stroke="#cc00cc" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
-
-  let zEnt = getZ(0) - s.entryDepth;
-  let zEx = getZ(L) - s.exitDepth;
   
   markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#ff00ff" />
