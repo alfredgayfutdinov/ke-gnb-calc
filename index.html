@@ -260,6 +260,7 @@
     user-select: none;
   }
   
+  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ */
   .zoom-toolbar {
     position: absolute;
     top: 16px;
@@ -354,6 +355,7 @@
     display: block;
   }
 
+  /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -596,6 +598,34 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
   };
 }
 
+/* --- ИСПРАВЛЕННАЯ ЛОГИКА НУМЕРАЦИИ --- */
+// Функция ищет максимальный номер для заданного типа (ГНБ или ГНП),
+// ИГНОРИРУЯ профиль, который мы сейчас меняем.
+function getNextNumber(isGNP, excludeProfile = null) {
+    let maxNum = 0;
+    profiles.forEach(p => {
+        if (p !== excludeProfile && !!p.isGNP === isGNP) {
+            let num = parseInt(p.hddNumber);
+            if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+            }
+        }
+    });
+    return (maxNum + 1).toString();
+}
+
+function sortProfiles() {
+    if (profiles.length <= 1) return;
+    let currentProf = profiles[activeProfileIdx];
+    profiles.sort((a, b) => {
+        if (!!a.isGNP !== !!b.isGNP) {
+            return a.isGNP ? 1 : -1; 
+        }
+        return parseInt(a.hddNumber) - parseInt(b.hddNumber);
+    });
+    activeProfileIdx = profiles.indexOf(currentProf);
+}
+
 /* --- МАТЕМАТИКА СПЛАЙНОВ (ПЛАВНЫЙ РЕЛЬЕФ) --- */
 function createSplineInterpolator(pts) {
     let n = pts.length;
@@ -761,29 +791,6 @@ function autoSetDepth5m() {
   document.getElementById('inpHall').value = state.depthHall.toFixed(2);
 }
 
-function getNextNumber(isGNP) {
-    let nextNum = 1;
-    profiles.forEach(p => {
-        if (!!p.isGNP === isGNP) {
-            let num = parseInt(p.hddNumber);
-            if (!isNaN(num) && num >= nextNum) nextNum = num + 1;
-        }
-    });
-    return nextNum.toString();
-}
-
-function sortProfiles() {
-    if (profiles.length <= 1) return;
-    let currentProf = profiles[activeProfileIdx];
-    profiles.sort((a, b) => {
-        if (!!a.isGNP !== !!b.isGNP) {
-            return a.isGNP ? 1 : -1; // ГНБ (false) идут перед ГНП (true)
-        }
-        return parseInt(a.hddNumber) - parseInt(b.hddNumber);
-    });
-    activeProfileIdx = profiles.indexOf(currentProf);
-}
-
 /* ЛОГИКА ВКЛАДОК И ДАННЫХ */
 function renderTabs() {
   const container = document.getElementById('tabsContainer');
@@ -829,7 +836,7 @@ function switchTab(idx) {
 
 function addNewTab() {
   let isGNP = false;
-  let nextNum = getNextNumber(isGNP);
+  let nextNum = getNextNumber(isGNP); // Создаем ГНБ по умолчанию
   let newProf = getDefaultProfile(isGNP, nextNum);
   profiles.push(newProf);
   sortProfiles();
@@ -919,8 +926,11 @@ function toggleGNP() {
     let isGNP = document.getElementById('chkIsGNP').checked;
     if (!!state.isGNP === isGNP) return;
     
+    // Получаем правильный следующий номер для нового типа, игнорируя ТЕКУЩИЙ профиль
+    let newNum = getNextNumber(isGNP, state);
+    
     state.isGNP = isGNP;
-    state.hddNumber = getNextNumber(isGNP);
+    state.hddNumber = newNum;
     
     if (isGNP) {
         state.entryDepth = 1.0;
@@ -947,7 +957,6 @@ function syncInputs() {
   document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
 
-  // Блокируем поля для режима ГНП
   let hallInp = document.getElementById('inpHall');
   let radInp = document.getElementById('inpRadius');
   if (state.isGNP) {
