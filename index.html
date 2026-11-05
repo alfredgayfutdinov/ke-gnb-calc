@@ -1221,7 +1221,7 @@ document.getElementById('viewportArea').addEventListener('wheel', function(e) {
 }, { passive: false });
 
 
-/* ГЕНЕРАЦИЯ SVG ЧЕРТЕЖА */
+/* --- ГЕНЕРАЦИЯ SVG ЧЕРТЕЖА --- */
 function getProfileHtml(s, isMultiPrint) {
   const L = s.length;
   const R = s.radius;
@@ -1236,9 +1236,18 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ)) - 1;
   
-  const leftX = 140;
-  const rightX = 1440;
-  const scaleX = (rightX - leftX) / L;
+  // ВЫЧИСЛЕНИЕ ДИНАМИЧЕСКИХ ГРАНИЦ И МАСШТАБА
+  // Масштаб 1:100 (1м = 10px), если L <= 100. Масштаб 1:200 (1м = 5px), если L > 100
+  const isScale200 = L > 100;
+  const pixelsPerMeter = isScale200 ? 5 : 10;
+  const graphWidthPx = L * pixelsPerMeter;
+  
+  // Центрируем график на листе (общая ширина 1560)
+  const centerOfSheet = 1560 / 2;
+  const leftX = centerOfSheet - (graphWidthPx / 2);
+  const rightX = centerOfSheet + (graphWidthPx / 2);
+  
+  const scaleX = (rightX - leftX) / L; // Это всегда будет равно pixelsPerMeter
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
   const scaleY = 60;
@@ -1361,14 +1370,15 @@ function getProfileHtml(s, isMultiPrint) {
       `;
   });
 
-  const pitWidthPx = 1.5 * scaleX; 
+  // Ширина котлована теперь не зависит от длины трассы (всегда фиксированная в пикселях)
+  const pitWidthPx = 15; 
   const pitDepthEntryPx = (s.pitDepthEntry !== undefined ? s.pitDepthEntry : 2.0) * scaleY;
   const pitDepthExitPx = (s.pitDepthExit !== undefined ? s.pitDepthExit : 2.0) * scaleY;
   const startPitY = toSvgY(getZ(0));
   const endPitY = toSvgY(getZ(L));
   
   markup += `
-    <rect x="${toSvgX(-1.5)}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthEntryPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />
+    <rect x="${toSvgX(0) - pitWidthPx}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthEntryPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />
     <line x1="${toSvgX(0)}" y1="${startPitY}" x2="${toSvgX(0)}" y2="${startPitY+pitDepthEntryPx}" stroke="#ff00ff" stroke-width="2.5" />
     
     <rect x="${toSvgX(L)}" y="${endPitY}" width="${pitWidthPx}" height="${pitDepthExitPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />
@@ -1443,15 +1453,16 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
+  // Примечания с жесткой привязкой координат (не зависят от ширины графика)
   let notesY = 1240;
   markup += `
     <g font-size="14" fill="#333">
-      <text x="${leftX-20}" y="${notesY}" font-weight="bold">Примечания:</text>
-      <text x="${leftX-20}" y="${notesY+20}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
-      <text x="${leftX-5}" y="${notesY+40}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
-      <text x="${leftX-20}" y="${notesY+60}">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="${leftX-20}" y="${notesY+80}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="${leftX-20}" y="${notesY+100}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+      <text x="65" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="65" y="${notesY+20}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
+      <text x="80" y="${notesY+40}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="65" y="${notesY+60}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="65" y="${notesY+80}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="65" y="${notesY+100}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
   `;
 
@@ -1499,6 +1510,7 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
+  // Легенда с жесткой привязкой координат
   let legendMarkup = `<g transform="translate(850, ${notesY})">
       <text x="0" y="0" font-size="14" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
@@ -1524,7 +1536,7 @@ function getProfileHtml(s, isMultiPrint) {
         <div class="title-block">
           ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ${s.isGNP ? 'ГНП' : 'ГНБ'} №${s.hddNumber}
           <div class="subtitle">
-            Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong>
+            Масштаб: горизонтальный 1:${isScale200 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong>
           </div>
         </div>
         <div class="svg-container">
