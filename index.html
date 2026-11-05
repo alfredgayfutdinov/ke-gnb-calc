@@ -1324,7 +1324,6 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
   
-  // Увеличены отступы по краям с 100 до 130px, чтобы вынесенный наружу текст Вход/Выход не обрезался
   const leftX = 130;
   const rightX = 1430;
   const scaleX = (rightX - leftX) / L;
@@ -1483,16 +1482,16 @@ function getProfileHtml(s, isMultiPrint) {
     <path d="${pathD}" fill="none" stroke="#cc00cc" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ВХОДА/ВЫХОДА С БЕЛОЙ ОБВОДКОЙ И ВЫРАВНИВАНИЕМ НАРУЖУ
+  // ВЫНОСКИ ВХОДА/ВЫХОДА — УВЕЛИЧЕН ОТСТУП ДО 25px
   markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#ff00ff" />
     <circle cx="${toSvgX(L)}" cy="${toSvgY(zEx)}" r="4.5" fill="#ff00ff" />
     
-    <text x="${toSvgX(0) - 12}" y="${toSvgY(zEnt) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
-    <text x="${toSvgX(0) - 12}" y="${toSvgY(zEnt) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
+    <text x="${toSvgX(0) - 25}" y="${toSvgY(zEnt) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
+    <text x="${toSvgX(0) - 25}" y="${toSvgY(zEnt) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
     
-    <text x="${toSvgX(L) + 12}" y="${toSvgY(zEx) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
-    <text x="${toSvgX(L) + 12}" y="${toSvgY(zEx) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
+    <text x="${toSvgX(L) + 25}" y="${toSvgY(zEx) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
+    <text x="${toSvgX(L) + 25}" y="${toSvgY(zEx) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
   `;
 
   if (!s.isGNP) {
