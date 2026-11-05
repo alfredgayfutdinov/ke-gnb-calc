@@ -220,6 +220,23 @@
   }
   .btn-primary:hover { background: #0066aa; }
   
+  .btn-success {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+  }
+  .btn-success:hover { background: #218838; }
+  .btn-success:disabled { background: #6c757d; cursor: not-allowed; }
+  
   .btn-danger {
     background: transparent;
     color: #ff5252;
@@ -550,6 +567,7 @@
     </div>
 
     <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
+    <button class="btn-success" id="btnCopy" style="margin-top: 8px;" onclick="copyToClipboard()">📋 Копировать как картинку</button>
     <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили</button>
     
     <div class="export-group" style="margin-top: 8px;">
@@ -588,7 +606,7 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     depthHall: 95.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
-    radius: 14, // Изменено с 50 на 14
+    radius: 14,
     pitDepthEntry: isGNP ? 1.0 : 2.0,
     pitDepthExit: isGNP ? 1.0 : 2.0,
     terrain: [ {x: 0, z: 100.00}, {x: 60, z: 100.00} ],
@@ -597,6 +615,74 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     nets: []
   };
 }
+
+/* --- ЭКСПОРТ В КАРТИНКУ (БУФЕР ОБМЕНА) --- */
+function copyToClipboard() {
+    const btn = document.getElementById('btnCopy');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '⏳ Копирование...';
+    btn.disabled = true;
+
+    try {
+        const wrapper = document.getElementById('sheetWrapper');
+        const savedZoom = wrapper.style.transform;
+        
+        // Временно отключаем зум, чтобы отрендерить лист в идеальном качестве (1:1)
+        wrapper.style.transform = 'none';
+
+        const makeImagePromise = async () => {
+            // Подгружаем легкую библиотеку скриншотов DOM, если ее еще нет
+            if (typeof html2canvas === 'undefined') {
+                await new Promise((resolve, reject) => {
+                    let script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            
+            const sheet = document.querySelector('.sheet');
+            const canvas = await html2canvas(sheet, { scale: 1.5, backgroundColor: '#ffffff', useCORS: true });
+            wrapper.style.transform = savedZoom; // Возвращаем зум
+            
+            return new Promise((resolve) => {
+                canvas.toBlob(blob => resolve(blob), 'image/png');
+            });
+        };
+
+        const blobPromise = makeImagePromise();
+
+        // Пишем в буфер напрямую (современный подход)
+        navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blobPromise })
+        ]).then(() => {
+            btn.innerHTML = '✅ Скопировано!';
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 3000);
+        }).catch(async (err) => {
+            // Фолбэк: если браузер из-за настроек безопасности блокирует запись в буфер - скачиваем
+            const blob = await blobPromise;
+            downloadPngFallback(blob);
+            btn.innerHTML = '✅ Скачано!';
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 3000);
+        });
+
+    } catch(e) {
+        alert('Ваш браузер не поддерживает прямое копирование картинок. Обновите браузер.');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+function downloadPngFallback(blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Профиль_${state.isGNP ? 'ГНП' : 'ГНБ'}_№${state.hddNumber}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 
 /* --- ЛОГИКА НУМЕРАЦИИ --- */
 function getNextNumber(isGNP, excludeProfile = null) {
@@ -903,7 +989,7 @@ function loadProject(event) {
                 if (!p.hddNumber) p.hddNumber = "1";
                 if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
-                if (p.radius === undefined) p.radius = 14; // Проверка при загрузке старых проектов
+                if (p.radius === undefined) p.radius = 14; 
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
@@ -1528,6 +1614,7 @@ function getProfileHtml(s, isMultiPrint) {
 
   markup += legendMarkup;
 
+  // Изменено масштабирование в заголовке, так как оно теперь адаптивное
   return `
     <div class="sheet ${isMultiPrint ? 'print-page' : ''}">
       <div class="frame">
@@ -1596,6 +1683,7 @@ window.onload = () => {
           if (!p.hddNumber) p.hddNumber = "1";
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
+          if (p.radius === undefined) p.radius = 14;
           if (!p.asphalts) p.asphalts = [];
           if (!p.trees) p.trees = [];
           if (!p.nets) p.nets = [];
