@@ -1236,18 +1236,10 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ)) - 1;
   
-  // ВЫЧИСЛЕНИЕ ДИНАМИЧЕСКИХ ГРАНИЦ И МАСШТАБА
-  // Масштаб 1:100 (1м = 10px), если L <= 100. Масштаб 1:200 (1м = 5px), если L > 100
-  const isScale200 = L > 100;
-  const pixelsPerMeter = isScale200 ? 5 : 10;
-  const graphWidthPx = L * pixelsPerMeter;
-  
-  // Центрируем график на листе (общая ширина 1560)
-  const centerOfSheet = 1560 / 2;
-  const leftX = centerOfSheet - (graphWidthPx / 2);
-  const rightX = centerOfSheet + (graphWidthPx / 2);
-  
-  const scaleX = (rightX - leftX) / L; // Это всегда будет равно pixelsPerMeter
+  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
+  const leftX = 140;
+  const rightX = 1440;
+  const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
   const scaleY = 60;
@@ -1370,7 +1362,6 @@ function getProfileHtml(s, isMultiPrint) {
       `;
   });
 
-  // Ширина котлована теперь не зависит от длины трассы (всегда фиксированная в пикселях)
   const pitWidthPx = 15; 
   const pitDepthEntryPx = (s.pitDepthEntry !== undefined ? s.pitDepthEntry : 2.0) * scaleY;
   const pitDepthExitPx = (s.pitDepthExit !== undefined ? s.pitDepthExit : 2.0) * scaleY;
@@ -1453,7 +1444,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // Примечания с жесткой привязкой координат (не зависят от ширины графика)
   let notesY = 1240;
   markup += `
     <g font-size="14" fill="#333">
@@ -1510,7 +1500,6 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // Легенда с жесткой привязкой координат
   let legendMarkup = `<g transform="translate(850, ${notesY})">
       <text x="0" y="0" font-size="14" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
@@ -1536,7 +1525,7 @@ function getProfileHtml(s, isMultiPrint) {
         <div class="title-block">
           ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ${s.isGNP ? 'ГНП' : 'ГНБ'} №${s.hddNumber}
           <div class="subtitle">
-            Масштаб: горизонтальный 1:${isScale200 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong>
+            Масштаб: вертикальный 1:50, горизонтальный - адаптивный | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong>
           </div>
         </div>
         <div class="svg-container">
