@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Генератор профилей ГНБ - Лист А3</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMjUyNTJkIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzljMjdiMCIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRkYTNmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNmZjUyNTIiLz48L3N2Zz4=">
 <style>
   @page {
     size: A3 landscape;
@@ -592,7 +593,6 @@ function getDefaultProfile(numStr) {
 
 /* --- МАТЕМАТИКА СПЛАЙНОВ (ПЛАВНЫЙ РЕЛЬЕФ) --- */
 
-// Функция создает интерполятор (сплайн Безье/Эрмита), сохраняющий монотонность (без ложных бугров)
 function createSplineInterpolator(pts) {
     let n = pts.length;
     if (n === 0) return (x) => 100.0;
@@ -641,7 +641,6 @@ function createSplineInterpolator(pts) {
     };
 }
 
-// Создаем "Эффективный рельеф", который плавно изгибается, но сплющивается под асфальтом
 function getTerrainInterpolator(s) {
     let basePts = s.terrain.map(p => ({x: p.x, z: p.z}));
     basePts.sort((a,b) => a.x - b.x);
@@ -666,7 +665,9 @@ function getTerrainInterpolator(s) {
     for(let i=0; i<unique.length; i++) {
         let pt = {x: unique[i].x, z: unique[i].z};
         for(let a of s.asphalts) {
-            if (pt.x > a.start && pt.x <= a.end) pt.z = baseSpline(a.start);
+            if (pt.x > a.start && pt.x <= a.end) {
+                pt.z = baseSpline(a.start);
+            }
         }
         eff.push(pt);
     }
@@ -1351,7 +1352,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ
   let notesY = 1240;
   markup += `
     <g font-size="14" fill="#333">
@@ -1365,7 +1365,7 @@ function getProfileHtml(s, isMultiPrint) {
     </g>
   `;
 
-  // УСЛОВНЫЕ ОБОЗНАЧЕНИЯ (СДВИНУТЫ ВПРАВО)
+  // УСЛОВНЫЕ ОБОЗНАЧЕНИЯ (ДВЕ КОЛОНКИ СПРАВА ОТ ПРИМЕЧАНИЙ)
   let legendItems = [];
   
   legendItems.push({
@@ -1411,8 +1411,7 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // Легенда стартует от x=850 (вместо 600) и формируется в 6 строк
-  let legendMarkup = `<g transform="translate(850, ${notesY})">
+  let legendMarkup = `<g transform="translate(800, ${notesY})">
       <text x="0" y="0" font-size="14" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
   legendItems.forEach((item, index) => {
