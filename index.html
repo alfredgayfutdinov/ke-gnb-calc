@@ -598,7 +598,7 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
   };
 }
 
-/* --- ИСПРАВЛЕННАЯ ЛОГИКА НУМЕРАЦИИ --- */
+/* --- ЛОГИКА НУМЕРАЦИИ --- */
 function getNextNumber(isGNP, excludeProfile = null) {
     let maxNum = 0;
     profiles.forEach(p => {
@@ -1247,18 +1247,17 @@ function getProfileHtml(s, isMultiPrint) {
   
   let gridBottomY = toSvgY(minZ);
 
-  // --- ДИНАМИЧЕСКИЙ ШАГ СЕТКИ ---
+  let markup = '';
+  let gridLines = '';
+  let gridTextsX = ''; 
+  let xPts = [];
+  
   let gridStep = 5;
   if (L <= 20) {
       gridStep = 1;
   } else if (L < 100) {
       gridStep = 2;
   }
-
-  let markup = '';
-  let gridLines = '';
-  let gridTextsX = ''; 
-  let xPts = [];
   
   for (let x = 0; x <= L; x += gridStep) xPts.push(x);
   if (L % gridStep !== 0) xPts.push(L);
@@ -1453,7 +1452,6 @@ function getProfileHtml(s, isMultiPrint) {
       <text x="${leftX-20}" y="${notesY+60}">2. Приближение к коммуникациям - в допустимых пределах;</text>
       <text x="${leftX-20}" y="${notesY+80}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
       <text x="${leftX-20}" y="${notesY+100}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
-      <text x="${leftX-20}" y="${notesY+120}">5. Количество пересечений - <tspan font-weight="bold">${s.nets.length}</tspan>.</text>
     </g>
   `;
 
@@ -1526,7 +1524,7 @@ function getProfileHtml(s, isMultiPrint) {
         <div class="title-block">
           ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ${s.isGNP ? 'ГНП' : 'ГНБ'} №${s.hddNumber}
           <div class="subtitle">
-            Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м
+            Масштаб: горизонтальный 1:${L > 70 ? 200 : 100}, вертикальный 1:50 | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong>
           </div>
         </div>
         <div class="svg-container">
