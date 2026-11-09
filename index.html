@@ -372,6 +372,11 @@
     display: block;
   }
 
+  /* ИНТЕРАКТИВНОСТЬ ЧЕРТЕЖА */
+  .draggable-net { cursor: grab; pointer-events: all; }
+  .draggable-net:active { cursor: grabbing; }
+  .draggable-net:hover .net-vis { r: 8.5px; stroke: #fff !important; stroke-width: 2px !important; }
+
   /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
   .modal-overlay {
     display: none;
@@ -615,6 +620,58 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     nets: []
   };
 }
+
+/* --- ИНТЕРАКТИВНЫЙ DRAG & DROP СЕТЕЙ НА ЧЕРТЕЖЕ --- */
+let isDraggingNet = false;
+let dragNetIdx = -1;
+
+document.addEventListener('mousedown', (e) => {
+    let target = e.target.closest('.draggable-net');
+    if (target) {
+        isDraggingNet = true;
+        dragNetIdx = parseInt(target.getAttribute('data-idx'));
+        e.preventDefault(); 
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDraggingNet && dragNetIdx >= 0 && window.currentSvgTransform) {
+        const tr = window.currentSvgTransform;
+        const svg = document.querySelector('.svg-container svg');
+        if(!svg) return;
+        
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const cursorPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+        
+        // Вычисляем новую позицию X (Пикетаж)
+        let newDist = (cursorPt.x - tr.leftX) / tr.scaleX;
+        newDist = Math.max(0, Math.min(tr.L, newDist)); // Не даем вытащить за рамки трассы
+        
+        // Воспроизводим рельеф, чтобы понять, где находится земля
+        let getZ = getTerrainInterpolator(state);
+        let zGr = getZ(newDist);
+        
+        // Вычисляем новую глубину сети
+        let nz = tr.maxZ - (cursorPt.y - tr.startY) / tr.scaleY;
+        let newDepth = zGr - nz;
+        
+        state.nets[dragNetIdx].dist = parseFloat(newDist.toFixed(2));
+        state.nets[dragNetIdx].depth = parseFloat(newDepth.toFixed(2));
+        
+        renderSvg(); // Мгновенная перерисовка графика
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    if (isDraggingNet) {
+        isDraggingNet = false;
+        dragNetIdx = -1;
+        renderNetsList(); // Обновляем панель справа
+        triggerUpdate();  // Сохраняем проект в память и пересчитываем отскоки
+    }
+});
 
 /* --- ЭКСПОРТ В КАРТИНКУ (БУФЕР ОБМЕНА) --- */
 function copyToClipboard() {
@@ -915,7 +972,7 @@ function switchTab(idx) {
 
 function addNewTab() {
   let isGNP = false;
-  let nextNum = getNextNumber(isGNP); // Создаем ГНБ по умолчанию
+  let nextNum = getNextNumber(isGNP);
   let newProf = getDefaultProfile(isGNP, nextNum);
   profiles.push(newProf);
   sortProfiles();
@@ -951,7 +1008,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.4", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.5", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1178,25 +1235,29 @@ function renderNetsList() {
   const container = document.getElementById('netsContainer');
   container.innerHTML = '';
   document.getElementById('netsCountBadge').textContent = state.nets.length + ' сетей';
-  state.nets.sort((a,b) => a.dist - b.dist);
-  state.nets.forEach((net, index) => {
+  
+  // Копия массива для безопасного рендера (используем исходный индекс для привязки перетаскивания)
+  let renderNets = state.nets.map((n, i) => Object.assign({}, n, { _origIdx: i }));
+  renderNets.sort((a,b) => a.dist - b.dist);
+  
+  renderNets.forEach((net) => {
     const div = document.createElement('div');
     div.className = 'net-item';
     const netConf = NET_TYPES[net.type] || NET_TYPES.gas;
     div.innerHTML = `
       <div class="net-item-header">
         <span class="net-badge ${netConf.badge}">${netConf.label}</span>
-        <button class="btn-remove-net" onclick="removeNet(${index})">✕</button>
+        <button class="btn-remove-net" onclick="removeNet(${net._origIdx})">✕</button>
       </div>
       <div class="form-row">
         <div class="form-group" style="flex:2">
-          <input type="text" value="${net.name}" onchange="updateNetName(${index}, this.value)" placeholder="Название">
+          <input type="text" value="${net.name}" onchange="updateNetName(${net._origIdx}, this.value)" placeholder="Название">
         </div>
         <div class="form-group" style="flex:1">
-          <input type="number" step="0.5" value="${net.dist}" onchange="updateNetDist(${index}, this.value)" placeholder="ПК">
+          <input type="number" step="0.5" value="${net.dist}" onchange="updateNetDist(${net._origIdx}, this.value)" placeholder="ПК">
         </div>
         <div class="form-group" style="flex:1">
-          <input type="number" step="0.1" value="${net.depth}" onchange="updateNetDepth(${index}, this.value)" placeholder="Гл">
+          <input type="number" step="0.1" value="${net.depth}" onchange="updateNetDepth(${net._origIdx}, this.value)" placeholder="Гл">
         </div>
       </div>
     `;
@@ -1317,27 +1378,51 @@ function getProfileHtml(s, isMultiPrint) {
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
-  allZ.push(pipeMinZ - 3); 
+  allZ.push(pipeMinZ - 3); // Запас подвала
   
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
   
-  const leftX = 130;
-  const rightX = 1430;
-  const scaleX = (rightX - leftX) / L;
+  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ С УЧЕТОМ ПОДВАЛА
+  const isScale200 = L > 100;
+  const pixelsPerMeter = isScale200 ? 5 : 10;
+  const graphWidthPx = L * pixelsPerMeter;
+  
+  const totalBlockWidth = 120 + graphWidthPx; // 120px - левая колонка заголовков таблицы
+  const leftHeaderX = (1560 - totalBlockWidth) / 2; // Центрируем на листе 1560
+  
+  const leftX = leftHeaderX + 120;
+  const rightX = leftX + graphWidthPx;
+  const scaleX = pixelsPerMeter;
+  
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
   const scaleY = 60;
   const startY = 200; 
   const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
   
+  // Экспорт параметров координат в глобальный объект для Drag & Drop
+  window.currentSvgTransform = {
+      leftX: leftX,
+      scaleX: scaleX,
+      startY: startY,
+      scaleY: scaleY,
+      maxZ: maxZ,
+      L: L,
+      isGNP: s.isGNP
+  };
+  
   let gridBottomY = toSvgY(minZ);
+
+  // ПОДВАЛ (ТАБЛИЦА ГОСТ)
+  let tableTop = gridBottomY;
+  const rowH = 45;
+  const tableBottom = tableTop + rowH * 4;
 
   let markup = '';
   let gridLines = '';
-  let gridTextsX = ''; 
   let xPts = [];
   
   let gridStep = 5;
@@ -1356,10 +1441,49 @@ function getProfileHtml(s, isMultiPrint) {
   for (let x = 0; x <= L; x += gridStep) xPts.push(x);
   if (L % gridStep !== 0) xPts.push(L);
   
+  let tableLines = `
+    <line x1="${leftHeaderX}" y1="${tableTop}" x2="${rightX}" y2="${tableTop}" stroke="#000" stroke-width="1.5" />
+    <line x1="${leftHeaderX}" y1="${tableTop + rowH}" x2="${rightX}" y2="${tableTop + rowH}" stroke="#000" stroke-width="1" />
+    <line x1="${leftHeaderX}" y1="${tableTop + rowH*2}" x2="${rightX}" y2="${tableTop + rowH*2}" stroke="#000" stroke-width="1" />
+    <line x1="${leftHeaderX}" y1="${tableTop + rowH*3}" x2="${rightX}" y2="${tableTop + rowH*3}" stroke="#000" stroke-width="1" />
+    <line x1="${leftHeaderX}" y1="${tableBottom}" x2="${rightX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
+
+    <line x1="${leftHeaderX}" y1="${tableTop}" x2="${leftHeaderX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
+    <line x1="${leftX}" y1="${tableTop}" x2="${leftX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
+    <line x1="${rightX}" y1="${tableTop}" x2="${rightX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
+  `;
+
+  let tableValues = `
+    <g font-size="13" fill="#000" font-weight="bold">
+        <text x="${leftHeaderX + 10}" y="${tableTop + 27}">Отметка земли, м</text>
+        <text x="${leftHeaderX + 10}" y="${tableTop + rowH + 27}">Отметка оси, м</text>
+        <text x="${leftHeaderX + 10}" y="${tableTop + rowH*2 + 27}">Глубина залож., м</text>
+        <text x="${leftHeaderX + 10}" y="${tableTop + rowH*3 + 27}">Пикетаж (ПК), м</text>
+    </g>
+  `;
+  
   xPts.forEach(x => {
       let px = toSvgX(x);
-      gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${gridBottomY}" stroke-dasharray="3,3" />`;
-      gridTextsX += `<text x="${px}" y="${gridBottomY + 18}" font-size="13">${x}</text>`;
+      
+      // Сетка над таблицей
+      gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${tableTop}" stroke-dasharray="3,3" />`;
+      
+      // Разделители внутри таблицы
+      if (x > 0 && x < L) {
+          tableLines += `<line x1="${px}" y1="${tableTop}" x2="${px}" y2="${tableBottom}" stroke="#000" stroke-width="0.8" />`;
+      }
+      
+      // Значения в подвале
+      let zG = getZ(x);
+      let zP = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP);
+      let dep = zG - zP;
+      
+      tableValues += `
+        <text x="${px}" y="${tableTop + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${zG.toFixed(2)}</text>
+        <text x="${px}" y="${tableTop + rowH + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${zP.toFixed(2)}</text>
+        <text x="${px}" y="${tableTop + rowH*2 + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH*2 + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${dep.toFixed(2)}</text>
+        <text x="${px}" y="${tableTop + rowH*3 + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH*3 + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${x.toFixed(1)}</text>
+      `;
   });
 
   markup += `<g stroke="rgb(128, 128, 128)" stroke-width="1.2">${gridLines}`;
@@ -1369,6 +1493,7 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
+  // Шкала высот слева
   markup += `<g font-size="14" fill="#444" text-anchor="end">`;
   for (let z = minZ; z <= maxZ; z++) {
       let gy = toSvgY(z);
@@ -1376,13 +1501,10 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  markup += `
-    <g font-size="13" fill="#666" text-anchor="middle">
-      ${gridTextsX}
-    </g>
-    <text x="${leftX-28}" y="${gridBottomY+18}" font-size="13" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
-  `;
+  // Отрисовка подвала
+  markup += `<g>${tableLines}</g><g>${tableValues}</g>`;
 
+  // Контур земли
   let groundPathD = `M ${toSvgX(0)} ${toSvgY(getZ(0))}`;
   for (let x = 0.5; x <= L; x += 0.5) {
       groundPathD += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`;
@@ -1482,7 +1604,6 @@ function getProfileHtml(s, isMultiPrint) {
     <path d="${pathD}" fill="none" stroke="#cc00cc" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
   `;
 
-  // ВЫНОСКИ ВХОДА/ВЫХОДА — УВЕЛИЧЕН ОТСТУП ДО 25px
   markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#ff00ff" />
     <circle cx="${toSvgX(L)}" cy="${toSvgY(zEx)}" r="4.5" fill="#ff00ff" />
@@ -1507,7 +1628,9 @@ function getProfileHtml(s, isMultiPrint) {
 
   let linesMarkup = '';
   let textsMarkup = '';
-  let drawNets = [...s.nets].sort((a, b) => a.dist - b.dist);
+  
+  // Копируем сети с индексами для Drag&Drop
+  let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
   drawNets.forEach((net) => {
     const nx = toSvgX(net.dist);
@@ -1528,28 +1651,34 @@ function getProfileHtml(s, isMultiPrint) {
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
 
+    // Вставляем кружок в группу с классом draggable-net для интерактивности
     linesMarkup += `
-      <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" />
-      <line x1="${nx}" y1="${toSvgY(zGr)}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" />
-      <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" />
+      <g class="draggable-net" data-idx="${net._origIdx}">
+          <circle cx="${nx}" cy="${ny}" r="16" fill="transparent" />
+          <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" class="net-vis" pointer-events="none" />
+      </g>
+      <line x1="${nx}" y1="${toSvgY(zGr)}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" pointer-events="none" />
+      <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" pointer-events="none" />
     `;
 
     textsMarkup += `
-      <text x="${nx + 5}" y="${textEndY}" font-size="14" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})">${paramStr}</text>
-      <text x="${nx + 5}" y="${textEndY}" font-size="14" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})">${paramStr}</text>
+      <text x="${nx + 5}" y="${textEndY}" font-size="14" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})" pointer-events="none">${paramStr}</text>
+      <text x="${nx + 5}" y="${textEndY}" font-size="14" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})" pointer-events="none">${paramStr}</text>
     `;
   });
   markup += linesMarkup + textsMarkup; 
 
-  let notesY = 1240;
+  // ПРИМЕЧАНИЯ И ЛЕГЕНДА СЛЕВА
+  let notesY = tableBottom + 40;
+  
   markup += `
     <g font-size="18" fill="#333">
-      <text x="70" y="${notesY}" font-weight="bold">Примечания:</text>
-      <text x="70" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
-      <text x="85" y="${notesY+48}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
-      <text x="70" y="${notesY+72}">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="70" y="${notesY+96}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="70" y="${notesY+120}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+      <text x="${leftHeaderX}" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="${leftHeaderX}" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
+      <text x="${leftHeaderX+15}" y="${notesY+48}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="${leftHeaderX}" y="${notesY+72}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="${leftHeaderX}" y="${notesY+96}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="${leftHeaderX}" y="${notesY+120}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
   `;
 
@@ -1597,13 +1726,15 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  let legendMarkup = `<g transform="translate(850, ${notesY})">
+  // Легенда справа от примечаний
+  let legendX = leftHeaderX + 700;
+  let legendMarkup = `<g transform="translate(${legendX}, ${notesY})">
       <text x="0" y="0" font-size="18" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
   legendItems.forEach((item, index) => {
-      let col = Math.floor(index / 6); 
-      let row = index % 6;
-      let xOff = col * 320;
+      let col = Math.floor(index / 5); 
+      let row = index % 5;
+      let xOff = col * 300;
       let yOff = 30 + row * 26;
       legendMarkup += `
           <g transform="translate(${xOff}, ${yOff})">
@@ -1626,7 +1757,7 @@ function getProfileHtml(s, isMultiPrint) {
           </div>
         </div>
         <div class="svg-container">
-          <svg viewBox="0 0 1560 1400">
+          <svg viewBox="0 0 1560 1500">
             <defs>
               <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#ff00ff" stroke-width="1.2" />
