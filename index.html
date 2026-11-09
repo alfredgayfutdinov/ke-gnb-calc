@@ -1078,7 +1078,7 @@ function loadProject(event) {
                 if (!p.hddNumber) p.hddNumber = "1";
                 if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
-                if (p.radius === undefined) p.radius = 60; // Обновлено значение по умолчанию на 60
+                if (p.radius === undefined) p.radius = 60; 
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
@@ -1415,23 +1415,26 @@ function getProfileHtml(s, isMultiPrint) {
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
-  
-  // ГАРАНТИРУЕМ: Сетка должна быть на 3м ниже самой трубы
   allZ.push(pipeMinZ - 3); 
   
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
+
+  // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ ---
+  // Чтобы график гарантированно не налезал на подвал при любой глубине
+  let maxDeltaZ = maxZ - minZ;
+  let availableHeight = 700; // От 150 (верх) до 850 (низ)
+  let scaleY = Math.min(60, availableHeight / maxDeltaZ);
   
   // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
-  const leftX = 130;
-  const rightX = 1430;
+  const leftX = 100;
+  const rightX = 1460;
   const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
-  const scaleY = 60;
-  const startY = 200; 
+  const startY = 150; 
   const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
   
   // Экспорт параметров координат в глобальный объект для Drag & Drop
@@ -1606,7 +1609,6 @@ function getProfileHtml(s, isMultiPrint) {
   `;
 
   if (!s.isGNP) {
-      // Имитация вычислений центра для выноски "Горизонт"
       const tanA = 0.25; 
       const cosA = Math.cos(Math.atan(tanA));
       const h_arc_max = R * (1 - cosA);
@@ -1666,7 +1668,7 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  let notesY = 1240;
+  let notesY = 920;
   
   markup += `
     <g font-size="18" fill="#333">
@@ -1753,7 +1755,7 @@ function getProfileHtml(s, isMultiPrint) {
           </div>
         </div>
         <div class="svg-container">
-          <svg viewBox="0 0 1560 1400">
+          <svg viewBox="0 0 1560 1050">
             <defs>
               <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#ff00ff" stroke-width="1.2" />
