@@ -841,6 +841,7 @@ function getTerrainInterpolator(s) {
     return createSplineInterpolator(eff);
 }
 
+/* --- ОБНОВЛЕННАЯ ФИЗИКА ГНБ: Прямая касательная + Дуга --- */
 function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
@@ -855,21 +856,62 @@ function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP) {
     if (x >= L) return zEx;
 
     let h1 = Math.max(0, zEnt - zHall);
-    let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
     let h2 = Math.max(0, zEx - zHall);
-    let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
+
+    // Стандартный уклон забуривания (25% или ~14 градусов)
+    const tanA = 0.25; 
+    const alpha = Math.atan(tanA);
+    const sinA = Math.sin(alpha);
+    const cosA = Math.cos(alpha);
+    
+    // Максимальные параметры дуги при таком уклоне
+    const h_arc_max = R * (1 - cosA);
+    const L_arc_max = R * sinA;
+
+    // Вычисляет длину горизонтальной проекции от дна до точки на поверхности
+    function getFootprint(h) {
+        if (h <= h_arc_max) {
+            // Если глубина маленькая, используем только дугу (без прямого участка)
+            return Math.sqrt(Math.max(0, 2 * R * h - h * h));
+        } else {
+            // Если глубина большая: дуга + прямой наклонный участок
+            return L_arc_max + (h - h_arc_max) / tanA;
+        }
+    }
+    
+    // Вычисляет Z координату на расстоянии dx от начала горизонтального участка
+    function getZfromDX(dx) {
+        if (dx <= L_arc_max) {
+            // Идем по дуге
+            return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
+        } else {
+            // Идем по прямому наклонному участку
+            return zHall + h_arc_max + (dx - L_arc_max) * tanA;
+        }
+    }
+
+    let L1 = getFootprint(h1);
+    let L2 = getFootprint(h2);
 
     let xHorizStart = L1;
     let xHorizEnd = L - L2;
 
-    if (xHorizStart > xHorizEnd) return zHall; 
+    // Защита от пересечения (если радиус и глубина слишком велики для короткой трассы)
+    if (xHorizStart > xHorizEnd) {
+        let midX = L / 2;
+        if (x <= midX) {
+            let dx = L1 - (x / midX) * L1; 
+            return getZfromDX(dx);
+        } else {
+            let dx = L2 - ((L - x) / (L - midX)) * L2;
+            return getZfromDX(dx);
+        }
+    } 
 
     if (x < xHorizStart) {
-        let dx = xHorizStart - x;
-        return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
+        return getZfromDX(xHorizStart - x);
     } else if (x > xHorizEnd) {
-        let dx = x - xHorizEnd;
-        return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
+        return getZfromDX(x - xHorizEnd);
     } else {
         return zHall;
     }
@@ -890,9 +932,17 @@ function snapToSafeDepth(targetZ) {
         if (zH > zEnt || zH > zEx) return false;
         
         let h1 = zEnt - zH;
-        let L1 = Math.sqrt(Math.max(0, 2*R*h1 - h1*h1));
         let h2 = zEx - zH;
-        let L2 = Math.sqrt(Math.max(0, 2*R*h2 - h2*h2));
+        
+        // Быстрая проверка на полное пересечение дуг
+        const tanA = 0.25; 
+        const cosA = Math.cos(Math.atan(tanA));
+        const h_arc_max = R * (1 - cosA);
+        const L_arc_max = R * Math.sin(Math.atan(tanA));
+        
+        let L1 = h1 <= h_arc_max ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : L_arc_max + (h1 - h_arc_max)/tanA;
+        let L2 = h2 <= h_arc_max ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : L_arc_max + (h2 - h_arc_max)/tanA;
+        
         if (L1 + L2 > L) return false;
 
         for (let net of state.nets) {
@@ -1005,7 +1055,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.5", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.6", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1566,12 +1616,22 @@ function getProfileHtml(s, isMultiPrint) {
   `;
 
   if (!s.isGNP) {
+      // Имитация вычислений центра для выноски "Горизонт"
+      const tanA = 0.25; 
+      const cosA = Math.cos(Math.atan(tanA));
+      const h_arc_max = R * (1 - cosA);
+      const L_arc_max = R * Math.sin(Math.atan(tanA));
+      
+      const getFp = (h) => h <= h_arc_max ? Math.sqrt(Math.max(0, 2*R*h - h*h)) : L_arc_max + (h - h_arc_max)/tanA;
+      
       let h1 = Math.max(0, zEnt - s.depthHall);
-      let L1 = Math.sqrt(Math.max(0, 2 * R * h1 - h1 * h1));
       let h2 = Math.max(0, zEx - s.depthHall);
-      let L2 = Math.sqrt(Math.max(0, 2 * R * h2 - h2 * h2));
-      let horizX = toSvgX(L1 + Math.max(0, L - L2 - L1)/2);
+      let L1 = getFp(h1);
+      let L2 = getFp(h2);
+      
+      let horizX = toSvgX(L1 + L2 > L ? L / 2 : L1 + (L - L2 - L1)/2);
       let horizY = toSvgY(s.depthHall) + 22;
+      
       markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
       markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
   }
@@ -1616,7 +1676,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ И ЛЕГЕНДА СЛЕВА
   let notesY = 1240;
   
   markup += `
@@ -1679,9 +1738,9 @@ function getProfileHtml(s, isMultiPrint) {
       <text x="0" y="0" font-size="18" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
   legendItems.forEach((item, index) => {
-      let col = Math.floor(index / 5); 
-      let row = index % 5;
-      let xOff = col * 300;
+      let col = Math.floor(index / 6); 
+      let row = index % 6;
+      let xOff = col * 320;
       let yOff = 30 + row * 26;
       legendMarkup += `
           <g transform="translate(${xOff}, ${yOff})">
@@ -1762,9 +1821,9 @@ window.onload = () => {
           if (!p.hddNumber) p.hddNumber = "1";
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
-          if (p.radius === undefined) p.radius = 14; 
+          if (p.radius === undefined) p.radius = 14;
           if (!p.asphalts) p.asphalts = [];
-          if (!p.trees) p.trees = []; 
+          if (!p.trees) p.trees = [];
           if (!p.nets) p.nets = [];
           if (!p.terrain) {
               p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ];
@@ -1774,8 +1833,7 @@ window.onload = () => {
       sortProfiles();
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       switchTab(activeProfileIdx);
-    } catch (err) { alert("Ошибка при чтении файла проекта!"); }
-        event.target.value = ''; 
+    } catch(e) { profiles = [getDefaultProfile(false, "1")]; switchTab(0); }
   } else {
     profiles = [getDefaultProfile(false, "1")];
     switchTab(0);
