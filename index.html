@@ -645,22 +645,19 @@ document.addEventListener('mousemove', (e) => {
         pt.y = e.clientY;
         const cursorPt = pt.matrixTransform(svg.getScreenCTM().inverse());
         
-        // Вычисляем новую позицию X (Пикетаж)
         let newDist = (cursorPt.x - tr.leftX) / tr.scaleX;
-        newDist = Math.max(0, Math.min(tr.L, newDist)); // Не даем вытащить за рамки трассы
+        newDist = Math.max(0, Math.min(tr.L, newDist)); 
         
-        // Воспроизводим рельеф, чтобы понять, где находится земля
         let getZ = getTerrainInterpolator(state);
         let zGr = getZ(newDist);
         
-        // Вычисляем новую глубину сети
         let nz = tr.maxZ - (cursorPt.y - tr.startY) / tr.scaleY;
         let newDepth = zGr - nz;
         
         state.nets[dragNetIdx].dist = parseFloat(newDist.toFixed(2));
         state.nets[dragNetIdx].depth = parseFloat(newDepth.toFixed(2));
         
-        renderSvg(); // Мгновенная перерисовка графика
+        renderSvg(); 
     }
 });
 
@@ -668,8 +665,8 @@ document.addEventListener('mouseup', () => {
     if (isDraggingNet) {
         isDraggingNet = false;
         dragNetIdx = -1;
-        renderNetsList(); // Обновляем панель справа
-        triggerUpdate();  // Сохраняем проект в память и пересчитываем отскоки
+        renderNetsList(); 
+        triggerUpdate();  
     }
 });
 
@@ -972,7 +969,7 @@ function switchTab(idx) {
 
 function addNewTab() {
   let isGNP = false;
-  let nextNum = getNextNumber(isGNP);
+  let nextNum = getNextNumber(isGNP); // Создаем ГНБ по умолчанию
   let newProf = getDefaultProfile(isGNP, nextNum);
   profiles.push(newProf);
   sortProfiles();
@@ -1378,25 +1375,19 @@ function getProfileHtml(s, isMultiPrint) {
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
-  allZ.push(pipeMinZ - 3); // Запас подвала
+  
+  // ГАРАНТИРУЕМ: Сетка должна быть на 3м ниже самой трубы
+  allZ.push(pipeMinZ - 3); 
   
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
   
-  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ С УЧЕТОМ ПОДВАЛА
-  const isScale200 = L > 100;
-  const pixelsPerMeter = isScale200 ? 5 : 10;
-  const graphWidthPx = L * pixelsPerMeter;
-  
-  const totalBlockWidth = 120 + graphWidthPx; // 120px - левая колонка заголовков таблицы
-  const leftHeaderX = (1560 - totalBlockWidth) / 2; // Центрируем на листе 1560
-  
-  const leftX = leftHeaderX + 120;
-  const rightX = leftX + graphWidthPx;
-  const scaleX = pixelsPerMeter;
-  
+  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
+  const leftX = 130;
+  const rightX = 1430;
+  const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
   const scaleY = 60;
@@ -1416,13 +1407,9 @@ function getProfileHtml(s, isMultiPrint) {
   
   let gridBottomY = toSvgY(minZ);
 
-  // ПОДВАЛ (ТАБЛИЦА ГОСТ)
-  let tableTop = gridBottomY;
-  const rowH = 45;
-  const tableBottom = tableTop + rowH * 4;
-
   let markup = '';
   let gridLines = '';
+  let gridTextsX = ''; 
   let xPts = [];
   
   let gridStep = 5;
@@ -1441,49 +1428,10 @@ function getProfileHtml(s, isMultiPrint) {
   for (let x = 0; x <= L; x += gridStep) xPts.push(x);
   if (L % gridStep !== 0) xPts.push(L);
   
-  let tableLines = `
-    <line x1="${leftHeaderX}" y1="${tableTop}" x2="${rightX}" y2="${tableTop}" stroke="#000" stroke-width="1.5" />
-    <line x1="${leftHeaderX}" y1="${tableTop + rowH}" x2="${rightX}" y2="${tableTop + rowH}" stroke="#000" stroke-width="1" />
-    <line x1="${leftHeaderX}" y1="${tableTop + rowH*2}" x2="${rightX}" y2="${tableTop + rowH*2}" stroke="#000" stroke-width="1" />
-    <line x1="${leftHeaderX}" y1="${tableTop + rowH*3}" x2="${rightX}" y2="${tableTop + rowH*3}" stroke="#000" stroke-width="1" />
-    <line x1="${leftHeaderX}" y1="${tableBottom}" x2="${rightX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
-
-    <line x1="${leftHeaderX}" y1="${tableTop}" x2="${leftHeaderX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
-    <line x1="${leftX}" y1="${tableTop}" x2="${leftX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
-    <line x1="${rightX}" y1="${tableTop}" x2="${rightX}" y2="${tableBottom}" stroke="#000" stroke-width="1.5" />
-  `;
-
-  let tableValues = `
-    <g font-size="13" fill="#000" font-weight="bold">
-        <text x="${leftHeaderX + 10}" y="${tableTop + 27}">Отметка земли, м</text>
-        <text x="${leftHeaderX + 10}" y="${tableTop + rowH + 27}">Отметка оси, м</text>
-        <text x="${leftHeaderX + 10}" y="${tableTop + rowH*2 + 27}">Глубина залож., м</text>
-        <text x="${leftHeaderX + 10}" y="${tableTop + rowH*3 + 27}">Пикетаж (ПК), м</text>
-    </g>
-  `;
-  
   xPts.forEach(x => {
       let px = toSvgX(x);
-      
-      // Сетка над таблицей
-      gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${tableTop}" stroke-dasharray="3,3" />`;
-      
-      // Разделители внутри таблицы
-      if (x > 0 && x < L) {
-          tableLines += `<line x1="${px}" y1="${tableTop}" x2="${px}" y2="${tableBottom}" stroke="#000" stroke-width="0.8" />`;
-      }
-      
-      // Значения в подвале
-      let zG = getZ(x);
-      let zP = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP);
-      let dep = zG - zP;
-      
-      tableValues += `
-        <text x="${px}" y="${tableTop + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${zG.toFixed(2)}</text>
-        <text x="${px}" y="${tableTop + rowH + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${zP.toFixed(2)}</text>
-        <text x="${px}" y="${tableTop + rowH*2 + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH*2 + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${dep.toFixed(2)}</text>
-        <text x="${px}" y="${tableTop + rowH*3 + rowH/2}" transform="rotate(-90 ${px} ${tableTop + rowH*3 + rowH/2})" font-size="13" fill="#111" text-anchor="middle" dy="4">${x.toFixed(1)}</text>
-      `;
+      gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${gridBottomY}" stroke-dasharray="3,3" />`;
+      gridTextsX += `<text x="${px}" y="${gridBottomY + 18}" font-size="13">${x}</text>`;
   });
 
   markup += `<g stroke="rgb(128, 128, 128)" stroke-width="1.2">${gridLines}`;
@@ -1493,7 +1441,6 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  // Шкала высот слева
   markup += `<g font-size="14" fill="#444" text-anchor="end">`;
   for (let z = minZ; z <= maxZ; z++) {
       let gy = toSvgY(z);
@@ -1501,10 +1448,13 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `</g>`;
 
-  // Отрисовка подвала
-  markup += `<g>${tableLines}</g><g>${tableValues}</g>`;
+  markup += `
+    <g font-size="13" fill="#666" text-anchor="middle">
+      ${gridTextsX}
+    </g>
+    <text x="${leftX-28}" y="${gridBottomY+18}" font-size="13" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
+  `;
 
-  // Контур земли
   let groundPathD = `M ${toSvgX(0)} ${toSvgY(getZ(0))}`;
   for (let x = 0.5; x <= L; x += 0.5) {
       groundPathD += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`;
@@ -1629,7 +1579,6 @@ function getProfileHtml(s, isMultiPrint) {
   let linesMarkup = '';
   let textsMarkup = '';
   
-  // Копируем сети с индексами для Drag&Drop
   let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
   drawNets.forEach((net) => {
@@ -1651,7 +1600,6 @@ function getProfileHtml(s, isMultiPrint) {
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
     const textWeight = isUnderNorm ? 'bold' : 'normal';
 
-    // Вставляем кружок в группу с классом draggable-net для интерактивности
     linesMarkup += `
       <g class="draggable-net" data-idx="${net._origIdx}">
           <circle cx="${nx}" cy="${ny}" r="16" fill="transparent" />
@@ -1669,16 +1617,16 @@ function getProfileHtml(s, isMultiPrint) {
   markup += linesMarkup + textsMarkup; 
 
   // ПРИМЕЧАНИЯ И ЛЕГЕНДА СЛЕВА
-  let notesY = tableBottom + 40;
+  let notesY = 1240;
   
   markup += `
     <g font-size="18" fill="#333">
-      <text x="${leftHeaderX}" y="${notesY}" font-weight="bold">Примечания:</text>
-      <text x="${leftHeaderX}" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
-      <text x="${leftHeaderX+15}" y="${notesY+48}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
-      <text x="${leftHeaderX}" y="${notesY+72}">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="${leftHeaderX}" y="${notesY+96}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="${leftHeaderX}" y="${notesY+120}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+      <text x="70" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="70" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
+      <text x="85" y="${notesY+48}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="70" y="${notesY+72}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="70" y="${notesY+96}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="70" y="${notesY+120}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
   `;
 
@@ -1726,8 +1674,7 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // Легенда справа от примечаний
-  let legendX = leftHeaderX + 700;
+  let legendX = 850;
   let legendMarkup = `<g transform="translate(${legendX}, ${notesY})">
       <text x="0" y="0" font-size="18" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
@@ -1757,7 +1704,7 @@ function getProfileHtml(s, isMultiPrint) {
           </div>
         </div>
         <div class="svg-container">
-          <svg viewBox="0 0 1560 1500">
+          <svg viewBox="0 0 1560 1400">
             <defs>
               <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#ff00ff" stroke-width="1.2" />
@@ -1815,9 +1762,9 @@ window.onload = () => {
           if (!p.hddNumber) p.hddNumber = "1";
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
-          if (p.radius === undefined) p.radius = 14;
+          if (p.radius === undefined) p.radius = 14; 
           if (!p.asphalts) p.asphalts = [];
-          if (!p.trees) p.trees = [];
+          if (!p.trees) p.trees = []; 
           if (!p.nets) p.nets = [];
           if (!p.terrain) {
               p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ];
@@ -1827,7 +1774,8 @@ window.onload = () => {
       sortProfiles();
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       switchTab(activeProfileIdx);
-    } catch(e) { profiles = [getDefaultProfile(false, "1")]; switchTab(0); }
+    } catch (err) { alert("Ошибка при чтении файла проекта!"); }
+        event.target.value = ''; 
   } else {
     profiles = [getDefaultProfile(false, "1")];
     switchTab(0);
