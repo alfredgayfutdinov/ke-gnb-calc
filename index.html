@@ -1415,6 +1415,8 @@ function getProfileHtml(s, isMultiPrint) {
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
+  
+  // ГАРАНТИРУЕМ: Сетка должна быть на 3м ниже самой трубы
   allZ.push(pipeMinZ - 3); 
   
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
@@ -1423,14 +1425,13 @@ function getProfileHtml(s, isMultiPrint) {
   let minZ = Math.floor(Math.min(...allZ));
 
   // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ ---
-  // Чтобы график гарантированно не налезал на подвал при любой глубине
   let maxDeltaZ = maxZ - minZ;
-  let availableHeight = 700; // От 150 (верх) до 850 (низ)
+  let availableHeight = 700; 
   let scaleY = Math.min(60, availableHeight / maxDeltaZ);
   
-  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
-  const leftX = 100;
-  const rightX = 1460;
+  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ С БОЛЬШИМИ ОТСТУПАМИ ДЛЯ ВЫНОСОК
+  const leftX = 180; // УВЕЛИЧЕНО до 180px
+  const rightX = 1380; // УМЕНЬШЕНО до 1380px
   const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
