@@ -1424,14 +1424,14 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
 
-  // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ ---
+  // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ (Уменьшен для текста) ---
   let maxDeltaZ = maxZ - minZ;
-  let availableHeight = 700; 
+  let availableHeight = 450; // Жестко ограничиваем высоту графика, оставляя 300+ пикселей снизу для текста выносок
   let scaleY = Math.min(60, availableHeight / maxDeltaZ);
   
-  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ С БОЛЬШИМИ ОТСТУПАМИ ДЛЯ ВЫНОСОК
-  const leftX = 180; // УВЕЛИЧЕНО до 180px
-  const rightX = 1380; // УМЕНЬШЕНО до 1380px
+  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
+  const leftX = 130;
+  const rightX = 1430;
   const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
   
@@ -1634,7 +1634,7 @@ function getProfileHtml(s, isMultiPrint) {
   
   let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
-  drawNets.forEach((net) => {
+  drawNets.forEach((net, index) => {
     const nx = toSvgX(net.dist);
     const zGr = getZ(net.dist);
     const nz = zGr - net.depth;
@@ -1647,7 +1647,9 @@ function getProfileHtml(s, isMultiPrint) {
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
     const isUnderNorm = deltaHVal < 0.49; 
     
-    const textEndY = gridBottomY + 38; 
+    // ДОБАВЛЕНА ЛЕСЕНКА: чередование длины линий, чтобы текст соседних сетей не слипался
+    let staggerOffset = (index % 2) * 25; 
+    const textEndY = gridBottomY + 38 + staggerOffset; 
     
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
     const textFill = isUnderNorm ? '#d32f2f' : conf.color;
@@ -1669,7 +1671,8 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  let notesY = 920;
+  // ПРИМЕЧАНИЯ (С ДИНАМИЧЕСКИМ ОТСТУПОМ ВНИЗ ОТ СЕТКИ)
+  let notesY = Math.max(920, gridBottomY + 300);
   
   markup += `
     <g font-size="18" fill="#333">
@@ -1756,7 +1759,7 @@ function getProfileHtml(s, isMultiPrint) {
           </div>
         </div>
         <div class="svg-container">
-          <svg viewBox="0 0 1560 1050">
+          <svg viewBox="0 0 1560 1100">
             <defs>
               <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#ff00ff" stroke-width="1.2" />
