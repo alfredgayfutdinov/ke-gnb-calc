@@ -452,7 +452,7 @@
   </div>
 </div>
 
-<!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ И РЕЛЬЕФ) -->
+<!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ И РЕЛЬЕФ, ЭКСПОРТ) -->
 <div class="sidebar left-sidebar">
   <div class="sidebar-header" style="border-bottom: none;">
     <h2>⚡ Профили ГНБ / ГНП</h2>
@@ -524,6 +524,28 @@
       </label>
     </div>
   </div>
+  
+  <!-- ПЕРЕНЕСЕННЫЙ ФУТЕР В ЛЕВУЮ ПАНЕЛЬ -->
+  <div class="sidebar-footer">
+    <div class="export-group" style="margin-bottom: 12px;">
+      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetData()">🗑 Очистить текущий</button>
+      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
+    </div>
+
+    <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
+    <button class="btn-success" id="btnCopy" style="margin-top: 8px;" onclick="copyToClipboard()">📋 Копировать как картинку</button>
+    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили</button>
+    
+    <div class="export-group" style="margin-top: 8px;">
+      <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта на 5.0м</button>
+      <button class="btn-secondary" onclick="autoOptimizeDepth()">Углубить под сети</button>
+    </div>
+    <div class="export-group" style="margin-top: 4px;">
+      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить весь проект (.json)</button>
+      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Загрузить проект</button>
+      <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
+    </div>
+  </div>
 </div>
 
 <!-- ЦЕНТРАЛЬНАЯ ПАНЕЛЬ (ЧЕРТЕЖ) -->
@@ -538,10 +560,10 @@
   <div class="sheet-wrapper" id="sheetWrapper"></div>
 </div>
 
-<!-- ПРАВАЯ ПАНЕЛЬ (КОММУНИКАЦИИ И ЭКСПОРТ) -->
+<!-- ПРАВАЯ ПАНЕЛЬ (КОММУНИКАЦИИ И ПОКРЫТИЯ) -->
 <div class="sidebar right-sidebar">
   <div class="sidebar-header">
-    <h2>🛠 Коммуникации и экспорт</h2>
+    <h2>🛠 Коммуникации и покрытия</h2>
   </div>
 
   <div class="sidebar-body">
@@ -563,27 +585,6 @@
     
     <button class="btn-add-net" onclick="addNetPrompt()">+ Добавить сети (Пошаговый мастер)</button>
     <button class="btn-add-net" style="margin-top: 8px;" onclick="openSingleNetModal()">+ Добавить пересекаемую коммуникацию</button>
-  </div>
-
-  <div class="sidebar-footer">
-    <div class="export-group" style="margin-bottom: 12px;">
-      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetData()">🗑 Очистить текущий</button>
-      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
-    </div>
-
-    <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
-    <button class="btn-success" id="btnCopy" style="margin-top: 8px;" onclick="copyToClipboard()">📋 Копировать как картинку</button>
-    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили</button>
-    
-    <div class="export-group" style="margin-top: 8px;">
-      <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта на 5.0м</button>
-      <button class="btn-secondary" onclick="autoOptimizeDepth()">Углубить под сети</button>
-    </div>
-    <div class="export-group" style="margin-top: 4px;">
-      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить весь проект (.json)</button>
-      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Загрузить проект</button>
-      <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
-    </div>
   </div>
 </div>
 
@@ -1634,6 +1635,8 @@ function getProfileHtml(s, isMultiPrint) {
   
   let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
+  // Чтобы длинные выноски сетей не выходили за пределы листа по вертикали, вычисляем максимальную длину
+  // Лесенка теперь опускается вниз от сетки (gridBottomY)
   drawNets.forEach((net, index) => {
     const nx = toSvgX(net.dist);
     const zGr = getZ(net.dist);
