@@ -1704,17 +1704,18 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ СМЕЩЕНЫ ЛЕВЕЕ (x=15)
+  // ПРИМЕЧАНИЯ СДЕЛАНЫ УЖЕ И СДВИНУТЫ В КРАЙ
   let notesY = Math.max(900, gridBottomY + 200);
   
   markup += `
     <g font-size="15" fill="#333">
-      <text x="15" y="${notesY}" font-weight="bold">Примечания:</text>
-      <text x="15" y="${notesY+22}">1. Перед началом буровых работ выполнить контрольное шурфование</text>
-      <text x="30" y="${notesY+44}">всех пересекаемых коммуникаций в присутствии представителей служб.</text>
-      <text x="15" y="${notesY+66}">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="15" y="${notesY+88}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="15" y="${notesY+110}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+      <text x="10" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="10" y="${notesY+22}">1. Перед началом буровых работ выполнить контрольное</text>
+      <text x="25" y="${notesY+44}">шурфование всех пересекаемых коммуникаций</text>
+      <text x="25" y="${notesY+66}">в присутствии представителей служб.</text>
+      <text x="10" y="${notesY+88}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="10" y="${notesY+110}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="10" y="${notesY+132}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
   `;
 
@@ -1763,7 +1764,7 @@ function getProfileHtml(s, isMultiPrint) {
   });
 
   // ЛЕГЕНДА: В ОДИН СТОЛБИК И ДИНАМИЧЕСКИЙ ПОДЪЕМ
-  let legendX = 400; // Сдвинуто левее
+  let legendX = 450; 
   let legendItemHeight = 24;
   let legendTotalHeight = 24 + legendItems.length * legendItemHeight;
   
