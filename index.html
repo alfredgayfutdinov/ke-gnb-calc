@@ -6,6 +6,27 @@
 <title>Генератор профилей ГНБ / ГНП - Лист А3</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMjUyNTJkIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmMDBmZiIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRkYTNmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNmZjUyNTIiLz48L3N2Zz4=">
 <style>
+  :root {
+    /* Палитра на основе референса */
+    --bg-main: #0a0e17;       
+    --bg-panel: #131b2b;      
+    --bg-card: #1c273c;       
+    --border-color: #1e293b;  
+    --border-light: #334155;  
+    
+    --accent-blue: #007aff;   
+    --accent-hover: #005ce6;  
+    
+    --accent-cyan: #00d0c0;   
+    --accent-cyan-hover: #00b3a5;
+    
+    --danger: #ef4444;        
+    --danger-hover: rgba(239, 68, 68, 0.15);
+    
+    --text-main: #f8fafc;     
+    --text-muted: #8b949e;    
+  }
+
   @page {
     size: A3 landscape;
     margin: 0;
@@ -15,8 +36,8 @@
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    background: #1e1e24;
-    color: #e0e0e0;
+    background: var(--bg-main);
+    color: var(--text-main);
     display: flex;
     height: 100vh;
     overflow: hidden;
@@ -26,44 +47,45 @@
   .sidebar {
     width: 380px;
     min-width: 380px;
-    background: #25252d;
+    background: var(--bg-panel);
     display: flex;
     flex-direction: column;
     height: 100%;
     z-index: 10;
   }
-  .left-sidebar { border-right: 1px solid #383844; }
-  .right-sidebar { border-left: 1px solid #383844; }
+  .left-sidebar { border-right: 1px solid var(--border-color); }
+  .right-sidebar { border-left: 1px solid var(--border-color); }
 
   .sidebar-header {
     padding: 16px 20px;
-    background: #1a1a20;
+    background: var(--bg-main);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #383844;
+    border-bottom: 1px solid var(--border-color);
   }
   .sidebar-header h2 {
     margin: 0;
     font-size: 16px;
-    color: #fff;
+    color: var(--text-main);
+    font-weight: 600;
   }
   
   /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
   .tabs-container {
     display: flex;
-    background: #1a1a20;
-    border-bottom: 1px solid #383844;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
     overflow-x: auto;
     scrollbar-width: none;
   }
   .tabs-container::-webkit-scrollbar { display: none; }
   .tab-btn {
     padding: 10px 16px;
-    background: #1a1a20;
-    color: #888;
+    background: var(--bg-main);
+    color: var(--text-muted);
     border: none;
-    border-right: 1px solid #383844;
+    border-right: 1px solid var(--border-color);
     border-bottom: 2px solid transparent;
     cursor: pointer;
     font-size: 12px;
@@ -72,19 +94,19 @@
     align-items: center;
     gap: 6px;
     white-space: nowrap;
-    transition: background 0.2s;
+    transition: all 0.2s;
   }
   .tab-btn.active {
-    color: #4da3ff;
-    background: #25252d;
-    border-bottom: 2px solid #4da3ff;
+    color: var(--accent-blue);
+    background: var(--bg-panel);
+    border-bottom: 2px solid var(--accent-blue);
   }
   .tab-btn:hover:not(.active) {
-    color: #eee;
-    background: #2a2a35;
+    color: var(--text-main);
+    background: var(--bg-card);
   }
   .tab-del {
-    color: #ff5252;
+    color: var(--danger);
     background: transparent;
     border: none;
     font-size: 14px;
@@ -97,7 +119,7 @@
   .tab-btn:hover .tab-del { display: inline-block; }
   .tab-add {
     background: transparent;
-    color: #4da3ff;
+    color: var(--accent-blue);
     border: none;
     font-size: 18px;
     padding: 0 16px;
@@ -105,7 +127,7 @@
     font-weight: bold;
     transition: background 0.2s;
   }
-  .tab-add:hover { background: #2a2a35; }
+  .tab-add:hover { background: var(--bg-card); }
 
   .sidebar-body {
     padding: 16px 20px;
@@ -117,7 +139,7 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: #4da3ff;
+    color: var(--accent-blue);
     margin: 16px 0 10px;
     font-weight: 700;
     display: flex;
@@ -128,28 +150,39 @@
   .form-group label {
     display: block;
     font-size: 11px;
-    color: #aaa;
+    color: var(--text-muted);
     margin-bottom: 4px;
     white-space: nowrap;
   }
   .form-row { display: flex; gap: 8px; }
   .form-row .form-group { flex: 1; margin-bottom: 0; }
+  
   input, select {
     width: 100%;
-    background: #18181f;
-    border: 1px solid #3c3c4a;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
     border-radius: 4px;
     padding: 7px 10px;
-    color: #fff;
+    color: var(--text-main);
     font-size: 13px;
+    font-weight: 600;
     outline: none;
+    transition: all 0.2s;
   }
-  input:focus, select:focus { border-color: #007acc; }
-  input:disabled { background: #22222a; color: #666; border-color: #33333d; cursor: not-allowed; }
+  input:focus, select:focus { 
+    border-color: var(--accent-blue); 
+    box-shadow: 0 0 0 1px var(--accent-blue);
+  }
+  input:disabled { 
+    background: var(--bg-panel); 
+    color: var(--text-muted); 
+    border-color: var(--border-color); 
+    cursor: not-allowed; 
+  }
 
   .net-item {
-    background: #1e1e26;
-    border: 1px solid #353545;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
     border-radius: 6px;
     padding: 8px 10px;
     margin-bottom: 8px;
@@ -177,15 +210,18 @@
   .btn-remove-net {
     background: none;
     border: none;
-    color: #ff5252;
+    color: var(--danger);
     cursor: pointer;
     font-size: 15px;
+    transition: transform 0.2s;
   }
+  .btn-remove-net:hover { transform: scale(1.1); }
+  
   .btn-add-net {
     width: 100%;
-    background: #2a2a38;
-    color: #4da3ff;
-    border: 1px dashed #4da3ff;
+    background: var(--bg-panel);
+    color: var(--accent-blue);
+    border: 1px dashed var(--accent-blue);
     padding: 8px;
     border-radius: 6px;
     cursor: pointer;
@@ -194,18 +230,19 @@
     margin-top: 4px;
     transition: background 0.2s;
   }
-  .btn-add-net:hover { background: #323245; }
+  .btn-add-net:hover { background: var(--bg-card); }
 
   .sidebar-footer {
     padding: 14px 20px;
-    background: #1a1a20;
-    border-top: 1px solid #383844;
+    background: var(--bg-main);
+    border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
+  
   .btn-primary {
-    background: #007acc;
+    background: var(--accent-blue);
     color: #fff;
     border: none;
     padding: 10px;
@@ -218,11 +255,11 @@
     align-items: center;
     transition: background 0.2s;
   }
-  .btn-primary:hover { background: #0066aa; }
+  .btn-primary:hover { background: var(--accent-hover); }
   
   .btn-success {
-    background: #28a745;
-    color: #fff;
+    background: var(--accent-cyan);
+    color: #0a0e17; 
     border: none;
     padding: 10px;
     border-radius: 5px;
@@ -234,13 +271,13 @@
     align-items: center;
     transition: background 0.2s;
   }
-  .btn-success:hover { background: #218838; }
+  .btn-success:hover { background: var(--accent-cyan-hover); }
   .btn-success:disabled { background: #6c757d; cursor: not-allowed; }
   
   .btn-danger {
     background: transparent;
-    color: #ff5252;
-    border: 1px solid #ff5252;
+    color: var(--danger);
+    border: 1px solid var(--danger);
     padding: 10px;
     border-radius: 5px;
     font-size: 14px;
@@ -251,27 +288,29 @@
     align-items: center;
     transition: all 0.2s;
   }
-  .btn-danger:hover { background: rgba(255, 82, 82, 0.1); }
+  .btn-danger:hover { background: var(--danger-hover); }
   
   .export-group { display: flex; gap: 8px; }
   .btn-secondary {
     flex: 1;
-    background: #333340;
-    color: #ddd;
-    border: 1px solid #484858;
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-light);
     padding: 7px;
     border-radius: 4px;
     font-size: 11px;
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
   }
-  .btn-secondary:hover { background: #3d3d4e; color: #fff; }
+  .btn-secondary:hover { background: var(--border-light); color: #fff; }
 
   /* ЦЕНТРАЛЬНАЯ ОБЛАСТЬ: ПРОСМОТР С ЗУМОМ */
   .viewport {
     flex: 1;
     height: 100%;
     overflow: auto;
-    background: #404249;
+    background: #030508; 
     padding: 24px;
     position: relative;
     user-select: none;
@@ -282,31 +321,33 @@
     position: absolute;
     top: 16px;
     right: 24px;
-    background: rgba(30, 30, 36, 0.9);
+    background: rgba(19, 27, 43, 0.85); 
     backdrop-filter: blur(4px);
-    border: 1px solid #444455;
+    border: 1px solid var(--border-light);
     border-radius: 6px;
     padding: 4px 8px;
     display: flex;
     align-items: center;
     gap: 6px;
     z-index: 100;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
   }
   .btn-zoom {
-    background: #2a2a35;
-    border: 1px solid #444455;
-    color: #eee;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    color: var(--text-main);
     border-radius: 4px;
     padding: 4px 8px;
     font-size: 12px;
     cursor: pointer;
     font-weight: bold;
+    transition: all 0.2s;
   }
-  .btn-zoom:hover { background: #007acc; color: #fff; border-color: #007acc; }
+  .btn-zoom:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
   .zoom-val {
     font-size: 11px;
-    color: #aaa;
+    color: var(--text-main);
+    font-weight: bold;
     min-width: 44px;
     text-align: center;
   }
@@ -324,7 +365,7 @@
     min-width: 1587px;
     min-height: 1122px;
     background: #ffffff;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
     position: relative;
     padding: 38px 19px 19px 76px;
     box-sizing: border-box;
@@ -340,7 +381,7 @@
   .frame {
     width: 100%;
     height: 100%;
-    border: 2px solid #000;
+    border: none; /* Убрана черная рамка */
     position: relative;
     padding: 12px 15px;
     box-sizing: border-box;
@@ -382,26 +423,26 @@
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(4px);
   }
   .modal-box {
-    background: #25252d;
+    background: var(--bg-panel);
     padding: 24px;
     border-radius: 8px;
-    border: 1px solid #383844;
+    border: 1px solid var(--border-light);
     width: 320px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
   }
   .modal-box h3 {
     margin-top: 0;
-    color: #fff;
+    color: var(--text-main);
     font-size: 15px;
     margin-bottom: 16px;
-    border-bottom: 1px solid #383844;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
   }
   .modal-buttons {
@@ -467,7 +508,7 @@
         <label>Номер / Тип</label>
         <div style="display:flex; gap:8px; align-items:center;">
           <input type="text" id="inpNumber" value="1" onchange="triggerUpdate()" style="flex:1;">
-          <label style="display:flex; align-items:center; gap:4px; color:#ddd; font-size:12px; cursor:pointer; margin:0; user-select:none;">
+          <label style="display:flex; align-items:center; gap:4px; color:var(--text-muted); font-size:12px; cursor:pointer; margin:0; user-select:none;">
             <input type="checkbox" id="chkIsGNP" onchange="toggleGNP()" style="width:auto; margin:0;"> ГНП
           </label>
         </div>
@@ -518,23 +559,23 @@
     </div>
 
     <div class="form-group" style="margin-top: -4px; margin-bottom: 12px;">
-      <label style="display:flex; align-items:center; gap:6px; color:#4da3ff; font-size:11px; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:6px; color:var(--accent-blue); font-size:11px; cursor:pointer; font-weight:600;">
         <input type="checkbox" id="chkAutoSnap" checked onchange="triggerUpdate()" style="width:auto; margin:0;">
         Авто-смещение при нарушении (зазор 0.5м)
       </label>
     </div>
   </div>
   
-  <!-- ПЕРЕНЕСЕННЫЙ ФУТЕР В ЛЕВУЮ ПАНЕЛЬ -->
   <div class="sidebar-footer">
     <div class="export-group" style="margin-bottom: 12px;">
       <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetData()">🗑 Очистить текущий</button>
       <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
     </div>
 
+    <!-- Изменен порядок и названия кнопок согласно требованию -->
     <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
+    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили в PDF</button>
     <button class="btn-success" id="btnCopy" style="margin-top: 8px;" onclick="copyToClipboard()">📋 Копировать как картинку</button>
-    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили</button>
     
     <div class="export-group" style="margin-top: 8px;">
       <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта на 5.0м</button>
@@ -575,11 +616,11 @@
     <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
-    <div style="font-size: 10.5px; color: #777; margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
+    <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
 
     <div class="section-title">
       <span>Пересекаемые сети</span>
-      <span id="netsCountBadge" style="color: #888; font-size: 11px;">0 сетей</span>
+      <span id="netsCountBadge" style="color: var(--text-muted); font-size: 11px;">0 сетей</span>
     </div>
     <div id="netsContainer"></div>
     
@@ -1046,7 +1087,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.6", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.7", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1274,7 +1315,6 @@ function renderNetsList() {
   container.innerHTML = '';
   document.getElementById('netsCountBadge').textContent = state.nets.length + ' сетей';
   
-  // Копия массива для безопасного рендера (используем исходный индекс для привязки перетаскивания)
   let renderNets = state.nets.map((n, i) => Object.assign({}, n, { _origIdx: i }));
   renderNets.sort((a,b) => a.dist - b.dist);
   
@@ -1425,9 +1465,9 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
 
-  // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ (Уменьшен для текста) ---
+  // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ ---
   let maxDeltaZ = maxZ - minZ;
-  let availableHeight = 450; // Жестко ограничиваем высоту графика, оставляя 300+ пикселей снизу для текста выносок
+  let availableHeight = 450; // Оставляем огромный запас снизу
   let scaleY = Math.min(60, availableHeight / maxDeltaZ);
   
   // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
@@ -1635,8 +1675,6 @@ function getProfileHtml(s, isMultiPrint) {
   
   let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
-  // Чтобы длинные выноски сетей не выходили за пределы листа по вертикали, вычисляем максимальную длину
-  // Лесенка теперь опускается вниз от сетки (gridBottomY)
   drawNets.forEach((net, index) => {
     const nx = toSvgX(net.dist);
     const zGr = getZ(net.dist);
@@ -1650,7 +1688,6 @@ function getProfileHtml(s, isMultiPrint) {
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
     const isUnderNorm = deltaHVal < 0.49; 
     
-    // ДОБАВЛЕНА ЛЕСЕНКА: чередование длины линий, чтобы текст соседних сетей не слипался
     let staggerOffset = (index % 2) * 25; 
     const textEndY = gridBottomY + 38 + staggerOffset; 
     
@@ -1674,17 +1711,17 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ (С ДИНАМИЧЕСКИМ ОТСТУПОМ ВНИЗ ОТ СЕТКИ)
-  let notesY = Math.max(920, gridBottomY + 300);
+  // ПРИМЕЧАНИЯ И ЛЕГЕНДА СДВИНУТЫ ВЛЕВО ДЛЯ ШТАМПА ПРОЕКТА
+  let notesY = Math.max(900, gridBottomY + 200);
   
   markup += `
-    <g font-size="18" fill="#333">
-      <text x="70" y="${notesY}" font-weight="bold">Примечания:</text>
-      <text x="70" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
-      <text x="85" y="${notesY+48}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
-      <text x="70" y="${notesY+72}">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="70" y="${notesY+96}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="70" y="${notesY+120}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+    <g font-size="16" fill="#333">
+      <text x="50" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="50" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
+      <text x="65" y="${notesY+44}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
+      <text x="50" y="${notesY+64}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="50" y="${notesY+84}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="50" y="${notesY+104}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
   `;
 
@@ -1732,19 +1769,20 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  let legendX = 850;
+  // Легенда прижата к примечаниям (освобождаем правый нижний угол)
+  let legendX = 620;
   let legendMarkup = `<g transform="translate(${legendX}, ${notesY})">
-      <text x="0" y="0" font-size="18" font-weight="bold" fill="#333">Условные обозначения:</text>`;
+      <text x="0" y="0" font-size="16" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
   legendItems.forEach((item, index) => {
-      let col = Math.floor(index / 6); 
-      let row = index % 6;
-      let xOff = col * 320;
-      let yOff = 30 + row * 26;
+      let col = Math.floor(index / 5); 
+      let row = index % 5;
+      let xOff = col * 250; 
+      let yOff = 24 + row * 22;
       legendMarkup += `
           <g transform="translate(${xOff}, ${yOff})">
               <g transform="translate(0, -4)">${item.svg}</g>
-              <text x="40" y="1" font-size="15" fill="#333">${item.text}</text>
+              <text x="40" y="1" font-size="14" fill="#333">${item.text}</text>
           </g>
       `;
   });
