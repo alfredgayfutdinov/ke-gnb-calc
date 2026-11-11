@@ -7,7 +7,6 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMjUyNTJkIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmMDBmZiIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRkYTNmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNmZjUyNTIiLz48L3N2Zz4=">
 <style>
   :root {
-    /* Палитра на основе референса */
     --bg-main: #0a0e17;       
     --bg-panel: #131b2b;      
     --bg-card: #1c273c;       
@@ -381,7 +380,7 @@
   .frame {
     width: 100%;
     height: 100%;
-    border: none; /* Убрана черная рамка */
+    border: none;
     position: relative;
     padding: 12px 15px;
     box-sizing: border-box;
@@ -572,7 +571,6 @@
       <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
     </div>
 
-    <!-- Изменен порядок и названия кнопок согласно требованию -->
     <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
     <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили в PDF</button>
     <button class="btn-success" id="btnCopy" style="margin-top: 8px;" onclick="copyToClipboard()">📋 Копировать как картинку</button>
@@ -1456,8 +1454,6 @@ function getProfileHtml(s, isMultiPrint) {
   for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
-  
-  // ГАРАНТИРУЕМ: Сетка должна быть на 3м ниже самой трубы
   allZ.push(pipeMinZ - 3); 
   
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
@@ -1465,12 +1461,10 @@ function getProfileHtml(s, isMultiPrint) {
   let maxZ = Math.ceil(Math.max(...allZ)) + 1;
   let minZ = Math.floor(Math.min(...allZ));
 
-  // --- ДИНАМИЧЕСКИЙ МАСШТАБ ПО ВЕРТИКАЛИ ---
   let maxDeltaZ = maxZ - minZ;
-  let availableHeight = 450; // Оставляем огромный запас снизу
+  let availableHeight = 450; 
   let scaleY = Math.min(60, availableHeight / maxDeltaZ);
   
-  // МАКСИМАЛЬНОЕ РАСТЯГИВАНИЕ НА ВЕСЬ ЛИСТ А3
   const leftX = 130;
   const rightX = 1430;
   const scaleX = (rightX - leftX) / L;
@@ -1479,7 +1473,6 @@ function getProfileHtml(s, isMultiPrint) {
   const startY = 150; 
   const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
   
-  // Экспорт параметров координат в глобальный объект для Drag & Drop
   window.currentSvgTransform = {
       leftX: leftX,
       scaleX: scaleX,
@@ -1711,17 +1704,17 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ И ЛЕГЕНДА СДВИНУТЫ ВЛЕВО ДЛЯ ШТАМПА ПРОЕКТА
+  // ПРИМЕЧАНИЯ СМЕЩЕНЫ ЛЕВЕЕ (x=15)
   let notesY = Math.max(900, gridBottomY + 200);
   
   markup += `
-    <g font-size="16" fill="#333">
-      <text x="50" y="${notesY}" font-weight="bold">Примечания:</text>
-      <text x="50" y="${notesY+24}">1. Перед началом буровых работ выполнить контрольное шурфование всех пересекаемых</text>
-      <text x="65" y="${notesY+44}">коммуникаций в присутствии представителей эксплуатирующих служб.</text>
-      <text x="50" y="${notesY+64}">2. Приближение к коммуникациям - в допустимых пределах;</text>
-      <text x="50" y="${notesY+84}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
-      <text x="50" y="${notesY+104}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
+    <g font-size="15" fill="#333">
+      <text x="15" y="${notesY}" font-weight="bold">Примечания:</text>
+      <text x="15" y="${notesY+22}">1. Перед началом буровых работ выполнить контрольное шурфование</text>
+      <text x="30" y="${notesY+44}">всех пересекаемых коммуникаций в присутствии представителей служб.</text>
+      <text x="15" y="${notesY+66}">2. Приближение к коммуникациям - в допустимых пределах;</text>
+      <text x="15" y="${notesY+88}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
+      <text x="15" y="${notesY+110}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
     </g>
   `;
 
@@ -1769,20 +1762,26 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // Легенда прижата к примечаниям (освобождаем правый нижний угол)
-  let legendX = 620;
-  let legendMarkup = `<g transform="translate(${legendX}, ${notesY})">
-      <text x="0" y="0" font-size="16" font-weight="bold" fill="#333">Условные обозначения:</text>`;
+  // ЛЕГЕНДА: В ОДИН СТОЛБИК И ДИНАМИЧЕСКИЙ ПОДЪЕМ
+  let legendX = 400; // Сдвинуто левее
+  let legendItemHeight = 24;
+  let legendTotalHeight = 24 + legendItems.length * legendItemHeight;
+  
+  let legendY = notesY;
+  // Если условные обозначения не влезают по высоте, сдвигаем весь блок легенды вверх
+  if (legendY + legendTotalHeight > 1080) {
+      legendY = 1080 - legendTotalHeight;
+  }
+
+  let legendMarkup = `<g transform="translate(${legendX}, ${legendY})">
+      <text x="0" y="0" font-size="15" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   
   legendItems.forEach((item, index) => {
-      let col = Math.floor(index / 5); 
-      let row = index % 5;
-      let xOff = col * 250; 
-      let yOff = 24 + row * 22;
+      let yOff = 24 + index * legendItemHeight;
       legendMarkup += `
-          <g transform="translate(${xOff}, ${yOff})">
+          <g transform="translate(0, ${yOff})">
               <g transform="translate(0, -4)">${item.svg}</g>
-              <text x="40" y="1" font-size="14" fill="#333">${item.text}</text>
+              <text x="35" y="1" font-size="14" fill="#333">${item.text}</text>
           </g>
       `;
   });
