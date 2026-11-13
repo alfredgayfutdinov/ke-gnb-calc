@@ -606,16 +606,23 @@
   </div>
 
   <div class="sidebar-body">
-    <!-- АСФАЛЬТ И ДЕРЕВЬЯ -->
+    <!-- АСФАЛЬТ И ЩЕБЕНЬ -->
     <div class="section-title">Зоны асфальта (Горизонтальные)</div>
     <div id="asphaltsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
     
+    <!-- НОВЫЙ БЛОК: ЩЕБЕНЬ -->
+    <div class="section-title">Зоны щебеночного покрытия (горизонтальные)</div>
+    <div id="gravelsContainer"></div>
+    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addGravel()">+ Добавить участок щебня</button>
+    
+    <!-- ДЕРЕВЬЯ -->
     <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
-    <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет асфальта.</div>
+    <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет твердых покрытий.</div>
 
+    <!-- СЕТИ -->
     <div class="section-title">
       <span>Пересекаемые сети</span>
       <span id="netsCountBadge" style="color: var(--text-muted); font-size: 11px;">0 сетей</span>
@@ -656,6 +663,7 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     pitDepthExit: isGNP ? 1.0 : 2.0,
     terrain: [ {x: 0, z: 100.00}, {x: 60, z: 100.00} ],
     asphalts: [],
+    gravels: [], // Добавлен массив щебня
     trees: [],
     nets: []
   };
@@ -859,6 +867,10 @@ function getTerrainInterpolator(s) {
         pts.push({x: a.start, z: baseSpline(a.start)});
         pts.push({x: a.end, z: baseSpline(a.end)});
     });
+    s.gravels.forEach(g => {
+        pts.push({x: g.start, z: baseSpline(g.start)});
+        pts.push({x: g.end, z: baseSpline(g.end)});
+    });
     pts.sort((a,b) => a.x - b.x);
     
     let unique = [pts[0]];
@@ -872,9 +884,10 @@ function getTerrainInterpolator(s) {
     for(let i=0; i<unique.length; i++) {
         let pt = {x: unique[i].x, z: unique[i].z};
         for(let a of s.asphalts) {
-            if (pt.x > a.start && pt.x <= a.end) {
-                pt.z = baseSpline(a.start);
-            }
+            if (pt.x > a.start && pt.x <= a.end) pt.z = baseSpline(a.start);
+        }
+        for(let g of s.gravels) {
+            if (pt.x > g.start && pt.x <= g.end) pt.z = baseSpline(g.start);
         }
         eff.push(pt);
     }
@@ -1042,6 +1055,7 @@ function switchTab(idx) {
   syncInputs();
   renderTerrainList();
   renderAsphaltsList();
+  renderGravelsList(); // Рендер щебня
   renderTreesList();
   renderNetsList();
   triggerUpdate();
@@ -1085,7 +1099,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.7", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.8", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1120,6 +1134,7 @@ function loadProject(event) {
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.radius === undefined) p.radius = 60; 
                 if (!p.asphalts) p.asphalts = [];
+                if (!p.gravels) p.gravels = []; // Инициализация щебня для старых сохранений
                 if (!p.trees) p.trees = []; 
                 if (!p.nets) p.nets = [];
                 if (!p.terrain) {
@@ -1281,6 +1296,32 @@ function addAsphalt() { state.asphalts.push({ start: 0, end: 10 }); autoSetDepth
 function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
 function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
 function removeAsphalt(i) { state.asphalts.splice(i, 1); autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
+
+/* ЩЕБЕНЬ */
+function renderGravelsList() {
+  const container = document.getElementById('gravelsContainer');
+  container.innerHTML = '';
+  state.gravels.forEach((a, index) => {
+    const div = document.createElement('div');
+    div.className = 'form-row';
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.5" value="${a.start}" onchange="updateGravelStart(${index}, this.value)" placeholder="От (м)">
+      </div>
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.5" value="${a.end}" onchange="updateGravelEnd(${index}, this.value)" placeholder="До (м)">
+      </div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeGravel(${index})">✕</button>
+    `;
+    container.appendChild(div);
+  });
+}
+function addGravel() { state.gravels.push({ start: 0, end: 10 }); autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
+function updateGravelStart(i, val) { state.gravels[i].start = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
+function updateGravelEnd(i, val) { state.gravels[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
+function removeGravel(i) { state.gravels.splice(i, 1); autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
+
 
 /* ДЕРЕВЬЯ */
 function renderTreesList() {
@@ -1539,22 +1580,25 @@ function getProfileHtml(s, isMultiPrint) {
   }
   markup += `<path d="${groundPathD}" fill="none" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />`;
 
-  let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
-                              .filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
+  // Сбор всех твердых покрытий для вычисления газона
+  let rawHard = [];
+  s.asphalts.forEach(a => rawHard.push({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }));
+  s.gravels.forEach(g => rawHard.push({ start: Math.max(0, Math.min(L, g.start)), end: Math.max(0, Math.min(L, g.end)) }));
+  rawHard = rawHard.filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
   
-  let asphalts = [];
-  if (rawAsphalts.length > 0) {
-      let current = rawAsphalts[0];
-      for (let i = 1; i < rawAsphalts.length; i++) {
-          if (rawAsphalts[i].start <= current.end) current.end = Math.max(current.end, rawAsphalts[i].end);
-          else { asphalts.push(current); current = rawAsphalts[i]; }
+  let mergedHard = [];
+  if (rawHard.length > 0) {
+      let current = {start: rawHard[0].start, end: rawHard[0].end};
+      for (let i = 1; i < rawHard.length; i++) {
+          if (rawHard[i].start <= current.end) current.end = Math.max(current.end, rawHard[i].end);
+          else { mergedHard.push(current); current = {start: rawHard[i].start, end: rawHard[i].end}; }
       }
-      asphalts.push(current);
+      mergedHard.push(current);
   }
 
   let grasses = [];
   let currentPos = 0;
-  asphalts.forEach(a => {
+  mergedHard.forEach(a => {
       if (a.start > currentPos) grasses.push({ start: currentPos, end: a.start });
       currentPos = a.end;
   });
@@ -1572,6 +1616,17 @@ function getProfileHtml(s, isMultiPrint) {
     `;
   });
 
+  // Отрисовка асфальта
+  let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) })).filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
+  let asphalts = [];
+  if (rawAsphalts.length > 0) {
+      let current = rawAsphalts[0];
+      for (let i = 1; i < rawAsphalts.length; i++) {
+          if (rawAsphalts[i].start <= current.end) current.end = Math.max(current.end, rawAsphalts[i].end);
+          else { asphalts.push(current); current = rawAsphalts[i]; }
+      }
+      asphalts.push(current);
+  }
   asphalts.forEach(a => {
     const y = toSvgY(getZ(a.start));
     const w = toSvgX(a.end) - toSvgX(a.start);
@@ -1580,6 +1635,28 @@ function getProfileHtml(s, isMultiPrint) {
       <rect x="${toSvgX(a.start)}" y="${y-10}" width="${w}" height="10" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.8" />
       <rect x="${toSvgX(a.end)-2}" y="${y-16}" width="4" height="16" fill="#333" />
       <text x="${toSvgX((a.start+a.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Асфальтобетон</text>
+    `;
+  });
+
+  // Отрисовка щебня
+  let rawGravels = s.gravels.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) })).filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
+  let gravels = [];
+  if (rawGravels.length > 0) {
+      let current = rawGravels[0];
+      for (let i = 1; i < rawGravels.length; i++) {
+          if (rawGravels[i].start <= current.end) current.end = Math.max(current.end, rawGravels[i].end);
+          else { gravels.push(current); current = rawGravels[i]; }
+      }
+      gravels.push(current);
+  }
+  gravels.forEach(g => {
+    const y = toSvgY(getZ(g.start));
+    const w = toSvgX(g.end) - toSvgX(g.start);
+    markup += `
+      <rect x="${toSvgX(g.start)-2}" y="${y-16}" width="4" height="16" fill="#888" />
+      <rect x="${toSvgX(g.start)}" y="${y-10}" width="${w}" height="10" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.8" />
+      <rect x="${toSvgX(g.end)-2}" y="${y-16}" width="4" height="16" fill="#888" />
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#666">Щебень</text>
     `;
   });
 
@@ -1704,7 +1781,6 @@ function getProfileHtml(s, isMultiPrint) {
   });
   markup += linesMarkup + textsMarkup; 
 
-  // ПРИМЕЧАНИЯ СДЕЛАНЫ УЖЕ И СДВИНУТЫ В КРАЙ
   let notesY = Math.max(900, gridBottomY + 200);
   
   markup += `
@@ -1736,6 +1812,13 @@ function getProfileHtml(s, isMultiPrint) {
           text: "Асфальтобетонное покрытие"
       });
   }
+  
+  if (s.gravels.length > 0) {
+      legendItems.push({
+          svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.5" />`,
+          text: "Щебеночное покрытие"
+      });
+  }
 
   if (grasses.length > 0) {
       legendItems.push({
@@ -1763,13 +1846,11 @@ function getProfileHtml(s, isMultiPrint) {
       });
   });
 
-  // ЛЕГЕНДА: В ОДИН СТОЛБИК И ДИНАМИЧЕСКИЙ ПОДЪЕМ
   let legendX = 450; 
   let legendItemHeight = 24;
   let legendTotalHeight = 24 + legendItems.length * legendItemHeight;
   
   let legendY = notesY;
-  // Если условные обозначения не влезают по высоте, сдвигаем весь блок легенды вверх
   if (legendY + legendTotalHeight > 1080) {
       legendY = 1080 - legendTotalHeight;
   }
@@ -1807,6 +1888,11 @@ function getProfileHtml(s, isMultiPrint) {
               </pattern>
               <pattern id="asphaltHatch_${s.hddNumber}" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
                 <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
+              </pattern>
+              <pattern id="gravelHatch_${s.hddNumber}" width="8" height="8" patternUnits="userSpaceOnUse">
+                <circle cx="2" cy="2" r="1.5" fill="#888" />
+                <circle cx="6" cy="5" r="2" fill="#aaa" />
+                <circle cx="3" cy="7" r="1" fill="#666" />
               </pattern>
             </defs>
             ${markup}
@@ -1860,6 +1946,7 @@ window.onload = () => {
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.radius === undefined) p.radius = 60; 
           if (!p.asphalts) p.asphalts = [];
+          if (!p.gravels) p.gravels = []; 
           if (!p.trees) p.trees = []; 
           if (!p.nets) p.nets = [];
           if (!p.terrain) {
