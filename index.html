@@ -7,23 +7,24 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMjUyNTJkIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmMDBmZiIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRkYTNmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNmZjUyNTIiLz48L3N2Zz4=">
 <style>
   :root {
-    --bg-main: #0a0e17;       
-    --bg-panel: #131b2b;      
-    --bg-card: #1c273c;       
-    --border-color: #1e293b;  
-    --border-light: #334155;  
+    /* ТЕМА: DARK NEON GLASSMORPHISM */
+    --bg-obsidian: #07090e;       
+    --bg-glass-panel: rgba(20, 25, 35, 0.45);      
+    --bg-glass-card: rgba(255, 255, 255, 0.03);       
+    --border-glass: rgba(255, 255, 255, 0.08);  
+    --border-glass-light: rgba(255, 255, 255, 0.15);  
     
-    --accent-blue: #007aff;   
-    --accent-hover: #005ce6;  
+    --accent-violet: #8b5cf6;   
+    --accent-violet-hover: #7c3aed;  
     
-    --accent-cyan: #00d0c0;   
-    --accent-cyan-hover: #00b3a5;
+    --accent-cyan: #06b6d4;   
+    --accent-cyan-hover: #0891b2;
     
     --danger: #ef4444;        
-    --danger-hover: rgba(239, 68, 68, 0.15);
+    --danger-glass: rgba(239, 68, 68, 0.15);
     
-    --text-main: #f8fafc;     
-    --text-muted: #8b949e;    
+    --text-main: #ffffff;     
+    --text-muted: #94a3b8;    
   }
 
   @page {
@@ -35,56 +36,66 @@
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    background: var(--bg-main);
+    background-color: var(--bg-obsidian);
+    /* Неоновые засветы на фоне */
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
+    background-attachment: fixed;
     color: var(--text-main);
     display: flex;
     height: 100vh;
     overflow: hidden;
   }
 
-  /* БАЗОВЫЕ СТИЛИ БОКОВЫХ ПАНЕЛЕЙ */
+  /* БОКОВЫЕ ПАНЕЛИ - СТЕКЛО */
   .sidebar {
     width: 380px;
     min-width: 380px;
-    background: var(--bg-panel);
+    background: var(--bg-glass-panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     display: flex;
     flex-direction: column;
     height: 100%;
     z-index: 10;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
   }
-  .left-sidebar { border-right: 1px solid var(--border-color); }
-  .right-sidebar { border-left: 1px solid var(--border-color); }
+  .left-sidebar { border-right: 1px solid var(--border-glass); }
+  .right-sidebar { border-left: 1px solid var(--border-glass); }
 
   .sidebar-header {
     padding: 16px 20px;
-    background: var(--bg-main);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-glass);
   }
   .sidebar-header h2 {
     margin: 0;
     font-size: 16px;
     color: var(--text-main);
     font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
   }
   
-  /* ПАНЕЛЬ ВКЛАДОК ПРОФИЛЕЙ */
+  /* ПАНЕЛЬ ВКЛАДОК */
   .tabs-container {
     display: flex;
-    background: var(--bg-main);
-    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    border-bottom: 1px solid var(--border-glass);
     overflow-x: auto;
     scrollbar-width: none;
   }
   .tabs-container::-webkit-scrollbar { display: none; }
   .tab-btn {
     padding: 10px 16px;
-    background: var(--bg-main);
+    background: transparent;
     color: var(--text-muted);
     border: none;
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-glass);
     border-bottom: 2px solid transparent;
     cursor: pointer;
     font-size: 12px;
@@ -93,16 +104,17 @@
     align-items: center;
     gap: 6px;
     white-space: nowrap;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
   }
   .tab-btn.active {
-    color: var(--accent-blue);
-    background: var(--bg-panel);
-    border-bottom: 2px solid var(--accent-blue);
+    color: var(--accent-cyan);
+    background: rgba(6, 182, 212, 0.05);
+    border-bottom: 2px solid var(--accent-cyan);
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
   }
   .tab-btn:hover:not(.active) {
     color: var(--text-main);
-    background: var(--bg-card);
+    background: var(--bg-glass-card);
   }
   .tab-del {
     color: var(--danger);
@@ -118,7 +130,7 @@
   .tab-btn:hover .tab-del { display: inline-block; }
   .tab-add {
     background: transparent;
-    color: var(--accent-blue);
+    color: var(--accent-cyan);
     border: none;
     font-size: 18px;
     padding: 0 16px;
@@ -126,7 +138,7 @@
     font-weight: bold;
     transition: background 0.2s;
   }
-  .tab-add:hover { background: var(--bg-card); }
+  .tab-add:hover { background: var(--bg-glass-card); text-shadow: 0 0 8px rgba(6, 182, 212, 0.5); }
 
   .sidebar-body {
     padding: 16px 20px;
@@ -137,13 +149,14 @@
   .section-title {
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--accent-blue);
+    letter-spacing: 1px;
+    color: var(--accent-violet);
     margin: 16px 0 10px;
     font-weight: 700;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    text-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
   }
   .form-group { margin-bottom: 12px; }
   .form-group label {
@@ -156,55 +169,62 @@
   .form-row { display: flex; gap: 8px; }
   .form-row .form-group { flex: 1; margin-bottom: 0; }
   
+  /* ИНПУТЫ В СТИЛЕ СТЕКЛА */
   input, select {
     width: 100%;
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    padding: 7px 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    padding: 8px 10px;
     color: var(--text-main);
     font-size: 13px;
     font-weight: 600;
     outline: none;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
   }
   input:focus, select:focus { 
-    border-color: var(--accent-blue); 
-    box-shadow: 0 0 0 1px var(--accent-blue);
+    border-color: var(--accent-cyan); 
+    box-shadow: 0 0 0 1px var(--accent-cyan), 0 0 10px rgba(6, 182, 212, 0.2);
+    background: rgba(0, 0, 0, 0.4);
   }
   input:disabled { 
-    background: var(--bg-panel); 
+    background: transparent; 
     color: var(--text-muted); 
-    border-color: var(--border-color); 
+    border-color: var(--border-glass); 
     cursor: not-allowed; 
   }
 
+  /* КАРТОЧКИ СЕТЕЙ */
   .net-item {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    border-radius: 6px;
-    padding: 8px 10px;
+    background: var(--bg-glass-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 10px;
     margin-bottom: 8px;
+    backdrop-filter: blur(4px);
   }
   .net-item-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .net-badge {
     font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 3px;
+    padding: 3px 6px;
+    border-radius: 4px;
     font-weight: bold;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
-  .badge-gas { background: #00008b; color: #fff; }
-  .badge-power { background: #ff0000; color: #fff; }
-  .badge-water { background: #006400; color: #fff; }
-  .badge-sewer { background: #8b4513; color: #fff; }
-  .badge-heat { background: #000000; color: #fff; }
-  .badge-comm { background: #ba68c8; color: #fff; }
+  .badge-gas { background: #1e3a8a; color: #fff; border: 1px solid #3b82f6;}
+  .badge-power { background: #7f1d1d; color: #fff; border: 1px solid #ef4444;}
+  .badge-water { background: #14532d; color: #fff; border: 1px solid #22c55e;}
+  .badge-sewer { background: #713f12; color: #fff; border: 1px solid #eab308;}
+  .badge-heat { background: #451a03; color: #fff; border: 1px solid #f97316;}
+  .badge-comm { background: #4c1d95; color: #fff; border: 1px solid #a855f7;}
 
   .btn-remove-net {
     background: none;
@@ -212,143 +232,172 @@
     color: var(--danger);
     cursor: pointer;
     font-size: 15px;
-    transition: transform 0.2s;
+    transition: transform 0.2s, text-shadow 0.2s;
   }
-  .btn-remove-net:hover { transform: scale(1.1); }
+  .btn-remove-net:hover { 
+    transform: scale(1.1); 
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.6); 
+  }
   
   .btn-add-net {
     width: 100%;
-    background: var(--bg-panel);
-    color: var(--accent-blue);
-    border: 1px dashed var(--accent-blue);
-    padding: 8px;
-    border-radius: 6px;
+    background: transparent;
+    color: var(--accent-cyan);
+    border: 1px dashed var(--border-glass-light);
+    padding: 10px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 12px;
     font-weight: bold;
     margin-top: 4px;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
   }
-  .btn-add-net:hover { background: var(--bg-card); }
+  .btn-add-net:hover { 
+    background: var(--bg-glass-card); 
+    border-color: var(--accent-cyan);
+    box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.1);
+  }
 
+  /* ФУТЕР И ГЛАВНЫЕ КНОПКИ (НЕОН) */
   .sidebar-footer {
-    padding: 14px 20px;
-    background: var(--bg-main);
-    border-top: 1px solid var(--border-color);
+    padding: 16px 20px;
+    background: transparent;
+    border-top: 1px solid var(--border-glass);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
   
   .btn-primary {
-    background: var(--accent-blue);
+    background: linear-gradient(135deg, var(--accent-violet), var(--accent-violet-hover));
     color: #fff;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 12px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
   }
-  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:hover { 
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5); 
+    transform: translateY(-1px);
+  }
   
   .btn-success {
-    background: var(--accent-cyan);
-    color: #0a0e17; 
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan-hover));
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 12px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
   }
-  .btn-success:hover { background: var(--accent-cyan-hover); }
-  .btn-success:disabled { background: #6c757d; cursor: not-allowed; }
+  .btn-success:hover { 
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5); 
+    transform: translateY(-1px);
+  }
   
   .btn-danger {
     background: transparent;
     color: var(--danger);
     border: 1px solid var(--danger);
     padding: 10px;
-    border-radius: 5px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
   }
-  .btn-danger:hover { background: var(--danger-hover); }
+  .btn-danger:hover { 
+    background: var(--danger-glass); 
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+  }
   
   .export-group { display: flex; gap: 8px; }
   .btn-secondary {
     flex: 1;
-    background: var(--bg-card);
+    background: var(--bg-glass-card);
     color: var(--text-main);
-    border: 1px solid var(--border-light);
-    padding: 7px;
-    border-radius: 4px;
+    border: 1px solid var(--border-glass-light);
+    padding: 8px;
+    border-radius: 6px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
   }
-  .btn-secondary:hover { background: var(--border-light); color: #fff; }
+  .btn-secondary:hover { 
+    background: rgba(255,255,255,0.08); 
+    border-color: rgba(255,255,255,0.3);
+  }
 
   /* ЦЕНТРАЛЬНАЯ ОБЛАСТЬ: ПРОСМОТР С ЗУМОМ */
   .viewport {
     flex: 1;
     height: 100%;
     overflow: auto;
-    background: #030508; 
+    background: transparent; /* Фон задается в body */
     padding: 24px;
     position: relative;
     user-select: none;
   }
   
-  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ */
+  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ - СТЕКЛО */
   .zoom-toolbar {
     position: absolute;
     top: 16px;
     right: 24px;
-    background: rgba(19, 27, 43, 0.85); 
-    backdrop-filter: blur(4px);
-    border: 1px solid var(--border-light);
-    border-radius: 6px;
-    padding: 4px 8px;
+    background: var(--bg-glass-panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     z-index: 100;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   }
   .btn-zoom {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
+    background: var(--bg-glass-card);
+    border: 1px solid var(--border-glass-light);
     color: var(--text-main);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 12px;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 14px;
     cursor: pointer;
     font-weight: bold;
     transition: all 0.2s;
   }
-  .btn-zoom:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+  .btn-zoom:hover { 
+    background: var(--accent-violet); 
+    border-color: var(--accent-violet);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+  }
   .zoom-val {
-    font-size: 11px;
-    color: var(--text-main);
+    font-size: 12px;
+    color: var(--accent-cyan);
     font-weight: bold;
     min-width: 44px;
     text-align: center;
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
   }
 
   .sheet-wrapper {
@@ -357,14 +406,14 @@
     transition: transform 0.12s ease-out;
   }
   
-  /* ЧЕРТЕЖ: Принудительный ГОСТовский шрифт и курсив */
+  /* ЧЕРТЕЖ - БЕЛЫЙ ЛИСТ */
   .sheet {
     width: 1587px;
     height: 1122px;
     min-width: 1587px;
     min-height: 1122px;
     background: #ffffff;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
     position: relative;
     padding: 38px 19px 19px 76px;
     box-sizing: border-box;
@@ -417,37 +466,40 @@
   .draggable-net:active { cursor: grabbing; }
   .draggable-net:hover .net-vis { r: 8.5px; stroke: #fff !important; stroke-width: 2px !important; }
 
-  /* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО */
+  /* МОДАЛЬНОЕ ОКНО - СТЕКЛО */
   .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .modal-box {
-    background: var(--bg-panel);
+    background: var(--bg-glass-panel);
     padding: 24px;
-    border-radius: 8px;
-    border: 1px solid var(--border-light);
-    width: 320px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    border-radius: 12px;
+    border: 1px solid var(--border-glass-light);
+    width: 340px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    backdrop-filter: blur(16px);
   }
   .modal-box h3 {
     margin-top: 0;
     color: var(--text-main);
-    font-size: 15px;
-    margin-bottom: 16px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 12px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
   }
   .modal-buttons {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 12px;
+    margin-top: 24px;
   }
 
   #multiPrintArea { display: none; }
@@ -456,7 +508,7 @@
     body { background: #fff !important; }
     .sidebar, .zoom-toolbar, .modal-overlay { display: none !important; visibility: hidden !important; }
     .viewport { padding: 0 !important; margin: 0 !important; background: #fff !important; overflow: visible !important; }
-    .sheet-wrapper { transform: none !important; }
+    .sheet-wrapper { transform: none !important; box-shadow: none !important; }
     
     body.print-all-mode .viewport { display: none !important; }
     body.print-all-mode #multiPrintArea { display: block !important; }
@@ -469,7 +521,7 @@
 
 <div class="modal-overlay" id="singleNetModal">
   <div class="modal-box">
-    <h3>Добавить пересекаемую коммуникацию</h3>
+    <h3>Добавить коммуникацию</h3>
     <div class="form-group">
       <label>Тип коммуникации</label>
       <select id="modalNetType">
@@ -486,16 +538,16 @@
       <input type="text" id="modalNetDist" placeholder="например, 15.5">
     </div>
     <div class="modal-buttons">
-      <button class="btn-primary" style="flex:1; font-size:12px; padding:8px;" onclick="confirmSingleNet()">Добавить</button>
-      <button class="btn-secondary" style="flex:1; font-size:12px; padding:8px;" onclick="closeSingleNetModal()">Отмена (Закрыть)</button>
+      <button class="btn-primary" style="flex:1; font-size:12px; padding:10px;" onclick="confirmSingleNet()">Добавить</button>
+      <button class="btn-secondary" style="flex:1; font-size:12px; padding:10px;" onclick="closeSingleNetModal()">Отмена</button>
     </div>
   </div>
 </div>
 
-<!-- ЛЕВАЯ ПАНЕЛЬ (ПАРАМЕТРЫ ТРАССЫ И РЕЛЬЕФ, ЭКСПОРТ) -->
+<!-- ЛЕВАЯ ПАНЕЛЬ -->
 <div class="sidebar left-sidebar">
   <div class="sidebar-header" style="border-bottom: none;">
-    <h2>⚡ Профили ГНБ / ГНП</h2>
+    <h2>⚡ ГНБ / КабельПро PRO</h2>
   </div>
   
   <div class="tabs-container" id="tabsContainer"></div>
@@ -507,7 +559,7 @@
         <label>Номер / Тип</label>
         <div style="display:flex; gap:8px; align-items:center;">
           <input type="text" id="inpNumber" value="1" onchange="triggerUpdate()" style="flex:1;">
-          <label style="display:flex; align-items:center; gap:4px; color:var(--text-muted); font-size:12px; cursor:pointer; margin:0; user-select:none;">
+          <label style="display:flex; align-items:center; gap:4px; color:var(--accent-cyan); font-size:12px; cursor:pointer; margin:0; user-select:none; font-weight:bold;">
             <input type="checkbox" id="chkIsGNP" onchange="toggleGNP()" style="width:auto; margin:0;"> ГНП
           </label>
         </div>
@@ -518,7 +570,6 @@
       </div>
     </div>
 
-    <!-- Рельеф -->
     <div class="section-title">Отметки рельефа (ПК, Z)</div>
     <div id="terrainContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTerrainPoint()">+ Добавить точку рельефа</button>
@@ -569,30 +620,30 @@
     </div>
 
     <div class="form-group" style="margin-top: -4px; margin-bottom: 12px;">
-      <label style="display:flex; align-items:center; gap:6px; color:var(--accent-blue); font-size:11px; cursor:pointer; font-weight:600;">
+      <label style="display:flex; align-items:center; gap:6px; color:var(--accent-cyan); font-size:11px; cursor:pointer; font-weight:600; text-shadow: 0 0 8px rgba(6,182,212,0.4);">
         <input type="checkbox" id="chkAutoSnap" checked onchange="triggerUpdate()" style="width:auto; margin:0;">
-        Авто-смещение при нарушении (зазор 0.5м)
+        Авто-смещение при нарушении (0.5м)
       </label>
     </div>
   </div>
   
   <div class="sidebar-footer">
     <div class="export-group" style="margin-bottom: 12px;">
-      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetData()">🗑 Очистить текущий</button>
-      <button class="btn-danger" style="flex:1; padding: 8px; font-size: 11px;" onclick="resetAllData()">🚨 Удалить все профили</button>
+      <button class="btn-danger" style="flex:1;" onclick="resetData()">🗑 Очистить</button>
+      <button class="btn-danger" style="flex:1;" onclick="resetAllData()">🚨 Удалить все</button>
     </div>
 
-    <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий профиль</button>
-    <button class="btn-primary" style="margin-top: 8px;" onclick="printAllSheets()">🖨️ Сохранить все профили в PDF</button>
-    <button class="btn-success" id="btnCopy" style="margin-top: 8px;" onclick="copyToClipboard()">📋 Копировать как картинку</button>
+    <button class="btn-primary" onclick="printPureSheet()">🖨️ Сохранить в PDF текущий</button>
+    <button class="btn-primary" onclick="printAllSheets()">🖨️ Сохранить все в PDF</button>
+    <button class="btn-success" id="btnCopy" onclick="copyToClipboard()">📋 Копировать картинку</button>
     
     <div class="export-group" style="margin-top: 8px;">
-      <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта на 5.0м</button>
+      <button class="btn-secondary" onclick="autoSetDepth5m(); triggerUpdate();">Сброс горизонта</button>
       <button class="btn-secondary" onclick="autoOptimizeDepth()">Углубить под сети</button>
     </div>
     <div class="export-group" style="margin-top: 4px;">
-      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить весь проект (.json)</button>
-      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Загрузить проект</button>
+      <button class="btn-secondary" onclick="saveProject()">💾 Сохранить проект</button>
+      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Загрузить</button>
       <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
     </div>
   </div>
@@ -610,37 +661,34 @@
   <div class="sheet-wrapper" id="sheetWrapper"></div>
 </div>
 
-<!-- ПРАВАЯ ПАНЕЛЬ (КОММУНИКАЦИИ И ПОКРЫТИЯ) -->
+<!-- ПРАВАЯ ПАНЕЛЬ -->
 <div class="sidebar right-sidebar">
   <div class="sidebar-header">
-    <h2>🛠 Коммуникации и покрытия</h2>
+    <h2>🛠 Покрытия и Сети</h2>
   </div>
 
   <div class="sidebar-body">
-    <!-- АСФАЛЬТ И ЩЕБЕНЬ -->
-    <div class="section-title">Зоны асфальта (Горизонтальные)</div>
+    <div class="section-title">Зоны асфальта (Гориз.)</div>
     <div id="asphaltsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addAsphalt()">+ Добавить участок асфальта</button>
     
-    <div class="section-title">Зоны щебеночного покрытия (горизонтальные)</div>
+    <div class="section-title">Зоны щебня (Гориз.)</div>
     <div id="gravelsContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addGravel()">+ Добавить участок щебня</button>
     
-    <!-- ДЕРЕВЬЯ -->
     <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
-    <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 12px;">*Зеленые зоны (газон) строятся автоматически там, где нет твердых покрытий.</div>
+    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">*Зеленые зоны (газон) строятся автоматически там, где нет твердых покрытий.</div>
 
-    <!-- СЕТИ -->
     <div class="section-title">
       <span>Пересекаемые сети</span>
-      <span id="netsCountBadge" style="color: var(--text-muted); font-size: 11px;">0 сетей</span>
+      <span id="netsCountBadge" style="color: var(--accent-cyan); font-size: 11px;">0 сетей</span>
     </div>
     <div id="netsContainer"></div>
     
-    <button class="btn-add-net" onclick="addNetPrompt()">+ Добавить сети (Пошаговый мастер)</button>
-    <button class="btn-add-net" style="margin-top: 8px;" onclick="openSingleNetModal()">+ Добавить пересекаемую коммуникацию</button>
+    <button class="btn-add-net" onclick="addNetPrompt()">+ Мастер добавления сетей</button>
+    <button class="btn-add-net" style="margin-top: 8px;" onclick="openSingleNetModal()">+ Добавить одну сеть</button>
   </div>
 </div>
 
@@ -730,7 +778,7 @@ document.addEventListener('mouseup', () => {
     }
 });
 
-/* --- ЭКСПОРТ В КАРТИНКУ (БУФЕР ОБМЕНА) --- */
+/* --- ЭКСПОРТ В КАРТИНКУ --- */
 function copyToClipboard() {
     const btn = document.getElementById('btnCopy');
     const orig = btn.innerHTML;
@@ -792,16 +840,12 @@ function downloadPngFallback(blob) {
     document.body.removeChild(a);
 }
 
-
-/* --- ЛОГИКА НУМЕРАЦИИ --- */
 function getNextNumber(isGNP, excludeProfile = null) {
     let maxNum = 0;
     profiles.forEach(p => {
         if (p !== excludeProfile && !!p.isGNP === isGNP) {
             let num = parseInt(p.hddNumber);
-            if (!isNaN(num) && num > maxNum) {
-                maxNum = num;
-            }
+            if (!isNaN(num) && num > maxNum) { maxNum = num; }
         }
     });
     return (maxNum + 1).toString();
@@ -811,15 +855,12 @@ function sortProfiles() {
     if (profiles.length <= 1) return;
     let currentProf = profiles[activeProfileIdx];
     profiles.sort((a, b) => {
-        if (!!a.isGNP !== !!b.isGNP) {
-            return a.isGNP ? 1 : -1; 
-        }
+        if (!!a.isGNP !== !!b.isGNP) { return a.isGNP ? 1 : -1; }
         return parseInt(a.hddNumber) - parseInt(b.hddNumber);
     });
     activeProfileIdx = profiles.indexOf(currentProf);
 }
 
-/* --- МАТЕМАТИКА СПЛАЙНОВ (ПЛАВНЫЙ РЕЛЬЕФ) --- */
 function createSplineInterpolator(pts) {
     let n = pts.length;
     if (n === 0) return (x) => 100.0;
@@ -848,22 +889,17 @@ function createSplineInterpolator(pts) {
     return function(x) {
         if (x <= pts[0].x) return pts[0].z;
         if (x >= pts[n-1].x) return pts[n-1].z;
-        
         let i = 0;
         while (i < n - 2 && x > pts[i+1].x) i++;
-        
         let h = dx[i];
         if (h === 0) return pts[i].z;
-        
         let t = (x - pts[i].x) / h;
         let t2 = t * t;
         let t3 = t2 * t;
-
         let h00 = 2*t3 - 3*t2 + 1;
         let h10 = t3 - 2*t2 + t;
         let h01 = -2*t3 + 3*t2;
         let h11 = t3 - t2;
-
         return h00 * pts[i].z + h10 * h * m[i] + h01 * pts[i+1].z + h11 * h * m[i+1];
     };
 }
@@ -906,7 +942,6 @@ function getTerrainInterpolator(s) {
     return createSplineInterpolator(eff);
 }
 
-/* --- ФИЗИКА ГНБ: НЕЗАВИСИМЫЕ УГЛЫ ЗАБУРИВАНИЯ И ВЫХОДА --- */
 function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aEntry = 14, aExit = 14) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
@@ -923,7 +958,6 @@ function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aE
     let h1 = Math.max(0, zEnt - zHall);
     let h2 = Math.max(0, zEx - zHall);
 
-    // Защита от нулевых и отрицательных углов
     let rad1 = Math.max(1, Math.min(45, aEntry)) * Math.PI / 180;
     let tan1 = Math.tan(rad1);
     let h_arc_max1 = R * (1 - Math.cos(rad1));
@@ -938,7 +972,6 @@ function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aE
         if (h <= harc) return Math.sqrt(Math.max(0, 2 * R * h - h * h));
         else return Larc + (h - harc) / tan;
     }
-    
     function getZfromDX(dx, harc, Larc, tan) {
         if (dx <= Larc) return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
         else return zHall + harc + (dx - Larc) * tan;
@@ -977,14 +1010,12 @@ function snapToSafeDepth(targetZ) {
     const R = state.radius;
     const clearance = 0.58; 
     let getZ = getTerrainInterpolator(state);
-    
     let aEnt = state.angleEntry !== undefined ? state.angleEntry : 14;
     let aEx = state.angleExit !== undefined ? state.angleExit : 14;
 
     function isValid(zH) {
         let zEnt = getZ(0) - state.entryDepth;
         let zEx = getZ(L) - state.exitDepth;
-        
         if (zH > zEnt || zH > zEx) return false;
         
         let h1 = zEnt - zH;
@@ -1009,7 +1040,6 @@ function snapToSafeDepth(targetZ) {
     }
 
     if (isValid(targetZ)) return targetZ;
-
     for (let step = 0; step <= 25.0; step += 0.05) {
         let testZ = targetZ - step;
         if (isValid(testZ)) return testZ;
@@ -1029,17 +1059,14 @@ function autoSetDepth5m() {
   document.getElementById('inpHall').value = state.depthHall.toFixed(2);
 }
 
-/* ЛОГИКА ВКЛАДОК И ДАННЫХ */
 function renderTabs() {
   const container = document.getElementById('tabsContainer');
   container.innerHTML = '';
-  
   profiles.forEach((p, idx) => {
       const btn = document.createElement('div');
       btn.className = `tab-btn ${idx === activeProfileIdx ? 'active' : ''}`;
       btn.onclick = () => switchTab(idx);
       btn.innerHTML = `${p.isGNP ? 'ГНП' : 'ГНБ'} №${p.hddNumber}`;
-      
       if (profiles.length > 1) {
           const delBtn = document.createElement('span');
           delBtn.className = 'tab-del';
@@ -1049,7 +1076,6 @@ function renderTabs() {
       }
       container.appendChild(btn);
   });
-  
   const addBtn = document.createElement('button');
   addBtn.className = 'tab-add';
   addBtn.innerHTML = '+';
@@ -1062,7 +1088,6 @@ function switchTab(idx) {
   state = profiles[activeProfileIdx];
   if(!state.terrain || state.terrain.length === 0) state.terrain = [ {x:0, z:100.0}, {x:state.length, z:100.0} ];
   state.terrain.sort((a,b) => a.x - b.x);
-  
   renderTabs(); 
   syncInputs();
   renderTerrainList();
@@ -1111,7 +1136,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.9", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.10", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1134,10 +1159,7 @@ function loadProject(event) {
             } else if (loaded.length !== undefined) {
                 profiles = [loaded];
                 activeProfileIdx = 0;
-            } else {
-                alert("Неверный формат файла.");
-                return;
-            }
+            } else { alert("Неверный формат файла."); return; }
             
             profiles.forEach(p => {
                 if (p.isGNP === undefined) p.isGNP = false;
@@ -1168,19 +1190,13 @@ function loadProject(event) {
 function toggleGNP() {
     let isGNP = document.getElementById('chkIsGNP').checked;
     if (!!state.isGNP === isGNP) return;
-    
     let newNum = getNextNumber(isGNP, state);
-    
     state.isGNP = isGNP;
     state.hddNumber = newNum;
-    
     if (isGNP) {
-        state.entryDepth = 1.0;
-        state.exitDepth = 1.0;
-        state.pitDepthEntry = 1.0;
-        state.pitDepthExit = 1.0;
+        state.entryDepth = 1.0; state.exitDepth = 1.0;
+        state.pitDepthEntry = 1.0; state.pitDepthExit = 1.0;
     }
-    
     sortProfiles();
     renderTabs();
     syncInputs();
@@ -1197,7 +1213,6 @@ function syncInputs() {
   document.getElementById('inpRadius').value = state.radius !== undefined ? state.radius : 60;
   document.getElementById('inpAngleEntry').value = state.angleEntry !== undefined ? state.angleEntry : 14;
   document.getElementById('inpAngleExit').value = state.angleExit !== undefined ? state.angleExit : 14;
-  
   document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
 
@@ -1206,15 +1221,11 @@ function syncInputs() {
   let angEntInp = document.getElementById('inpAngleEntry');
   let angExInp = document.getElementById('inpAngleExit');
   if (state.isGNP) {
-      hallInp.disabled = true;
-      radInp.disabled = true;
-      angEntInp.disabled = true;
-      angExInp.disabled = true;
+      hallInp.disabled = true; radInp.disabled = true;
+      angEntInp.disabled = true; angExInp.disabled = true;
   } else {
-      hallInp.disabled = false;
-      radInp.disabled = false;
-      angEntInp.disabled = false;
-      angExInp.disabled = false;
+      hallInp.disabled = false; radInp.disabled = false;
+      angEntInp.disabled = false; angExInp.disabled = false;
   }
 }
 
@@ -1228,10 +1239,8 @@ function triggerUpdate() {
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 60;
   state.angleEntry = parseFloat(document.getElementById('inpAngleEntry').value) || 14;
   state.angleExit = parseFloat(document.getElementById('inpAngleExit').value) || 14;
-  
   state.pitDepthEntry = parseFloat(document.getElementById('inpPitDepthEntry').value) || 2.0;
   state.pitDepthExit = parseFloat(document.getElementById('inpPitDepthExit').value) || 2.0;
-
   state.terrain.sort((a,b) => a.x - b.x);
 
   if (!state.isGNP && document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
@@ -1239,80 +1248,42 @@ function triggerUpdate() {
       if (safeZ !== null && Math.abs(safeZ - userZ) > 0.01) {
           state.depthHall = +(safeZ.toFixed(2));
           document.getElementById('inpHall').value = state.depthHall.toFixed(2);
-      } else {
-          state.depthHall = userZ;
-      }
-  } else {
-      state.depthHall = userZ;
-  }
+      } else { state.depthHall = userZ; }
+  } else { state.depthHall = userZ; }
 
-  if (oldNumber !== state.hddNumber) {
-      sortProfiles();
-      renderTabs(); 
-  }
-
+  if (oldNumber !== state.hddNumber) { sortProfiles(); renderTabs(); }
   localStorage.setItem('gnbProfilesArray', JSON.stringify(profiles));
   localStorage.setItem('gnbActiveIndex', activeProfileIdx);
-
   renderSvg();
 }
 
-/* РЕЛЬЕФ */
+/* РЕЛЬЕФ, ПОКРЫТИЯ, СЕТИ */
 function renderTerrainList() {
   const container = document.getElementById('terrainContainer');
   container.innerHTML = '';
   state.terrain.forEach((pt, index) => {
     const div = document.createElement('div');
-    div.className = 'form-row';
-    div.style.marginBottom = '8px';
+    div.className = 'form-row'; div.style.marginBottom = '8px';
     div.innerHTML = `
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${pt.x}" onchange="updateTerrainX(${index}, this.value)" placeholder="ПК">
-      </div>
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.01" value="${pt.z}" onchange="updateTerrainZ(${index}, this.value)" placeholder="Z">
-      </div>
-      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeTerrain(${index})" ${state.terrain.length<=2 ? 'disabled' : ''}>✕</button>
-    `;
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${pt.x}" onchange="updateTerrainX(${index}, this.value)" placeholder="ПК"></div>
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.01" value="${pt.z}" onchange="updateTerrainZ(${index}, this.value)" placeholder="Z"></div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeTerrain(${index})" ${state.terrain.length<=2 ? 'disabled' : ''}>✕</button>`;
     container.appendChild(div);
   });
 }
-function addTerrainPoint() {
-  let last = state.terrain[state.terrain.length - 1];
-  state.terrain.push({ x: last.x + 10, z: last.z });
-  state.terrain.sort((a,b) => a.x - b.x);
-  autoSetDepth5m();
-  renderTerrainList();
-  triggerUpdate();
-}
+function addTerrainPoint() { let last = state.terrain[state.terrain.length - 1]; state.terrain.push({ x: last.x + 10, z: last.z }); state.terrain.sort((a,b) => a.x - b.x); autoSetDepth5m(); renderTerrainList(); triggerUpdate(); }
 function updateTerrainX(i, val) { state.terrain[i].x = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
 function updateTerrainZ(i, val) { state.terrain[i].z = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function removeTerrain(i) {
-  if (state.terrain.length > 2) {
-    state.terrain.splice(i, 1);
-    autoSetDepth5m();
-    renderTerrainList();
-    triggerUpdate();
-  }
-}
+function removeTerrain(i) { if (state.terrain.length > 2) { state.terrain.splice(i, 1); autoSetDepth5m(); renderTerrainList(); triggerUpdate(); } }
 
-/* АСФАЛЬТ */
 function renderAsphaltsList() {
-  const container = document.getElementById('asphaltsContainer');
-  container.innerHTML = '';
+  const container = document.getElementById('asphaltsContainer'); container.innerHTML = '';
   state.asphalts.forEach((a, index) => {
-    const div = document.createElement('div');
-    div.className = 'form-row';
-    div.style.marginBottom = '8px';
+    const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '8px';
     div.innerHTML = `
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${a.start}" onchange="updateAsphaltStart(${index}, this.value)" placeholder="От (м)">
-      </div>
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${a.end}" onchange="updateAsphaltEnd(${index}, this.value)" placeholder="До (м)">
-      </div>
-      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeAsphalt(${index})">✕</button>
-    `;
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${a.start}" onchange="updateAsphaltStart(${index}, this.value)" placeholder="От (м)"></div>
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${a.end}" onchange="updateAsphaltEnd(${index}, this.value)" placeholder="До (м)"></div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeAsphalt(${index})">✕</button>`;
     container.appendChild(div);
   });
 }
@@ -1321,23 +1292,14 @@ function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) 
 function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
 function removeAsphalt(i) { state.asphalts.splice(i, 1); autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
 
-/* ЩЕБЕНЬ */
 function renderGravelsList() {
-  const container = document.getElementById('gravelsContainer');
-  container.innerHTML = '';
+  const container = document.getElementById('gravelsContainer'); container.innerHTML = '';
   state.gravels.forEach((a, index) => {
-    const div = document.createElement('div');
-    div.className = 'form-row';
-    div.style.marginBottom = '8px';
+    const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '8px';
     div.innerHTML = `
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${a.start}" onchange="updateGravelStart(${index}, this.value)" placeholder="От (м)">
-      </div>
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${a.end}" onchange="updateGravelEnd(${index}, this.value)" placeholder="До (м)">
-      </div>
-      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeGravel(${index})">✕</button>
-    `;
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${a.start}" onchange="updateGravelStart(${index}, this.value)" placeholder="От (м)"></div>
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${a.end}" onchange="updateGravelEnd(${index}, this.value)" placeholder="До (м)"></div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeGravel(${index})">✕</button>`;
     container.appendChild(div);
   });
 }
@@ -1346,24 +1308,14 @@ function updateGravelStart(i, val) { state.gravels[i].start = parseFloat(val) ||
 function updateGravelEnd(i, val) { state.gravels[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
 function removeGravel(i) { state.gravels.splice(i, 1); autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
 
-
-/* ДЕРЕВЬЯ */
 function renderTreesList() {
-  const container = document.getElementById('treesContainer');
-  container.innerHTML = '';
+  const container = document.getElementById('treesContainer'); container.innerHTML = '';
   state.trees.forEach((t, index) => {
-    const div = document.createElement('div');
-    div.className = 'form-row';
-    div.style.marginBottom = '8px';
+    const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '8px';
     div.innerHTML = `
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${t.start}" onchange="updateTreeStart(${index}, this.value)" placeholder="От (м)">
-      </div>
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <input type="number" step="0.5" value="${t.end}" onchange="updateTreeEnd(${index}, this.value)" placeholder="До (м)">
-      </div>
-      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeTree(${index})">✕</button>
-    `;
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${t.start}" onchange="updateTreeStart(${index}, this.value)" placeholder="От (м)"></div>
+      <div class="form-group" style="flex:1; margin-bottom:0;"><input type="number" step="0.5" value="${t.end}" onchange="updateTreeEnd(${index}, this.value)" placeholder="До (м)"></div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeTree(${index})">✕</button>`;
     container.appendChild(div);
   });
 }
@@ -1372,18 +1324,13 @@ function updateTreeStart(i, val) { state.trees[i].start = parseFloat(val) || 0; 
 function updateTreeEnd(i, val) { state.trees[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeTree(i) { state.trees.splice(i, 1); renderTreesList(); triggerUpdate(); }
 
-/* СЕТИ */
 function renderNetsList() {
-  const container = document.getElementById('netsContainer');
-  container.innerHTML = '';
+  const container = document.getElementById('netsContainer'); container.innerHTML = '';
   document.getElementById('netsCountBadge').textContent = state.nets.length + ' сетей';
-  
   let renderNets = state.nets.map((n, i) => Object.assign({}, n, { _origIdx: i }));
   renderNets.sort((a,b) => a.dist - b.dist);
-  
   renderNets.forEach((net) => {
-    const div = document.createElement('div');
-    div.className = 'net-item';
+    const div = document.createElement('div'); div.className = 'net-item';
     const netConf = NET_TYPES[net.type] || NET_TYPES.gas;
     div.innerHTML = `
       <div class="net-item-header">
@@ -1391,17 +1338,10 @@ function renderNetsList() {
         <button class="btn-remove-net" onclick="removeNet(${net._origIdx})">✕</button>
       </div>
       <div class="form-row">
-        <div class="form-group" style="flex:2">
-          <input type="text" value="${net.name}" onchange="updateNetName(${net._origIdx}, this.value)" placeholder="Название">
-        </div>
-        <div class="form-group" style="flex:1">
-          <input type="number" step="0.5" value="${net.dist}" onchange="updateNetDist(${net._origIdx}, this.value)" placeholder="ПК">
-        </div>
-        <div class="form-group" style="flex:1">
-          <input type="number" step="0.1" value="${net.depth}" onchange="updateNetDepth(${net._origIdx}, this.value)" placeholder="Гл">
-        </div>
-      </div>
-    `;
+        <div class="form-group" style="flex:2"><input type="text" value="${net.name}" onchange="updateNetName(${net._origIdx}, this.value)" placeholder="Название"></div>
+        <div class="form-group" style="flex:1"><input type="number" step="0.5" value="${net.dist}" onchange="updateNetDist(${net._origIdx}, this.value)" placeholder="ПК"></div>
+        <div class="form-group" style="flex:1"><input type="number" step="0.1" value="${net.depth}" onchange="updateNetDepth(${net._origIdx}, this.value)" placeholder="Гл"></div>
+      </div>`;
     container.appendChild(div);
   });
 }
@@ -1412,12 +1352,9 @@ function removeNet(i) { state.nets.splice(i, 1); renderNetsList(); triggerUpdate
 
 function addNetPrompt() {
   const wizardSteps = [
-    { id: 'power', defaultName: 'Электрокабель', defaultDepth: 0.7 },
-    { id: 'gas', defaultName: 'Газопровод', defaultDepth: 2.0 },
-    { id: 'water', defaultName: 'Водопровод', defaultDepth: 2.0 },
-    { id: 'sewer', defaultName: 'Канализация', defaultDepth: 2.0 },
-    { id: 'heat', defaultName: 'Теплотрасса', defaultDepth: 2.0 },
-    { id: 'comm', defaultName: 'Кабель связи', defaultDepth: 0.7 }
+    { id: 'power', defaultName: 'Электрокабель', defaultDepth: 0.7 }, { id: 'gas', defaultName: 'Газопровод', defaultDepth: 2.0 },
+    { id: 'water', defaultName: 'Водопровод', defaultDepth: 2.0 }, { id: 'sewer', defaultName: 'Канализация', defaultDepth: 2.0 },
+    { id: 'heat', defaultName: 'Теплотрасса', defaultDepth: 2.0 }, { id: 'comm', defaultName: 'Кабель связи', defaultDepth: 0.7 }
   ];
   let addedAny = false;
   for (let step of wizardSteps) {
@@ -1427,12 +1364,7 @@ function addNetPrompt() {
     for (let j = 0; j < count; j++) {
        let distInput = prompt(`📍 Пикет (ПК) для "${step.defaultName}" (${j + 1}/${count}):`, "");
        if (distInput !== null && distInput.trim() !== "") {
-           state.nets.push({
-               type: step.id,
-               name: step.defaultName + (count > 1 ? ` ${j + 1}` : ''),
-               dist: parseFloat(distInput.replace(',', '.')) || 0,
-               depth: step.defaultDepth
-           });
+           state.nets.push({ type: step.id, name: step.defaultName + (count > 1 ? ` ${j + 1}` : ''), dist: parseFloat(distInput.replace(',', '.')) || 0, depth: step.defaultDepth });
            addedAny = true;
        }
     }
@@ -1440,137 +1372,70 @@ function addNetPrompt() {
   if (addedAny) { renderNetsList(); triggerUpdate(); }
 }
 
-function openSingleNetModal() {
-  document.getElementById('singleNetModal').style.display = 'flex';
-  document.getElementById('modalNetDist').value = ''; 
-  document.getElementById('modalNetDist').focus();
-}
+function openSingleNetModal() { document.getElementById('singleNetModal').style.display = 'flex'; document.getElementById('modalNetDist').value = ''; document.getElementById('modalNetDist').focus(); }
 function closeSingleNetModal() { document.getElementById('singleNetModal').style.display = 'none'; }
 function confirmSingleNet() {
   const type = document.getElementById('modalNetType').value;
   const dist = parseFloat(document.getElementById('modalNetDist').value.replace(',', '.')) || 0;
   const conf = NET_TYPES[type];
   const sameTypeCount = state.nets.filter(n => n.type === type).length;
-  state.nets.push({
-    type: type,
-    name: conf.label + (sameTypeCount > 0 ? ` ${sameTypeCount + 1}` : ''),
-    dist: dist,
-    depth: conf.defaultDepth
-  });
-  document.getElementById('modalNetDist').value = '';
-  document.getElementById('modalNetDist').focus();
-  renderNetsList();
-  triggerUpdate();
+  state.nets.push({ type: type, name: conf.label + (sameTypeCount > 0 ? ` ${sameTypeCount + 1}` : ''), dist: dist, depth: conf.defaultDepth });
+  document.getElementById('modalNetDist').value = ''; document.getElementById('modalNetDist').focus();
+  renderNetsList(); triggerUpdate();
 }
-document.getElementById('modalNetDist').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') confirmSingleNet();
-});
+document.getElementById('modalNetDist').addEventListener('keypress', function(e) { if (e.key === 'Enter') confirmSingleNet(); });
 
 function autoOptimizeDepth() {
-  if (state.isGNP) {
-      alert("В режиме ГНП авто-углубление недоступно (трасса прямая). Измените глубину входа и выхода вручную.");
-      return;
-  }
+  if (state.isGNP) { alert("В режиме ГНП авто-углубление недоступно (трасса прямая). Измените глубину входа и выхода вручную."); return; }
   if (state.nets.length === 0) { alert("Нет сетей для обхода!"); return; }
-  
-  let targetZ = state.depthHall; 
-  let safeZ = snapToSafeDepth(targetZ + 1.0); 
+  let targetZ = state.depthHall; let safeZ = snapToSafeDepth(targetZ + 1.0); 
   if (safeZ) {
       state.depthHall = +(safeZ.toFixed(2));
       document.getElementById('inpHall').value = state.depthHall.toFixed(2);
-      triggerUpdate();
-      alert(`Горизонт перенесен на безопасную отметку: Z = ${state.depthHall} м.`);
-  } else {
-      alert("Не удалось найти безопасную отметку ниже всех сетей. Проверьте радиус.");
-  }
+      triggerUpdate(); alert(`Горизонт перенесен на безопасную отметку: Z = ${state.depthHall} м.`);
+  } else { alert("Не удалось найти безопасную отметку ниже всех сетей. Проверьте радиус."); }
 }
 
 let currentZoom = 0.85;
-function applyZoom() {
-  document.getElementById('sheetWrapper').style.transform = `scale(${currentZoom})`;
-  document.getElementById('zoomValLabel').textContent = Math.round(currentZoom * 100) + '%';
-}
+function applyZoom() { document.getElementById('sheetWrapper').style.transform = `scale(${currentZoom})`; document.getElementById('zoomValLabel').textContent = Math.round(currentZoom * 100) + '%'; }
 function zoomIn() { currentZoom = Math.min(2.5, currentZoom + 0.1); applyZoom(); }
 function zoomOut() { currentZoom = Math.max(0.3, currentZoom - 0.1); applyZoom(); }
 function resetZoom(val = 1.0) { currentZoom = val; applyZoom(); }
 function fitToScreen() {
   const vp = document.getElementById('viewportArea');
-  const ratioW = (vp.clientWidth - 48) / 1587;
-  const ratioH = (vp.clientHeight - 48) / 1122;
+  const ratioW = (vp.clientWidth - 48) / 1587; const ratioH = (vp.clientHeight - 48) / 1122;
   currentZoom = Math.max(0.3, Math.min(1.5, +(Math.min(ratioW, ratioH)).toFixed(2)));
   applyZoom();
 }
-document.getElementById('viewportArea').addEventListener('wheel', function(e) {
-  if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (e.deltaY < 0) zoomIn(); else zoomOut(); }
-}, { passive: false });
-
+document.getElementById('viewportArea').addEventListener('wheel', function(e) { if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (e.deltaY < 0) zoomIn(); else zoomOut(); } }, { passive: false });
 
 /* --- ГЕНЕРАЦИЯ SVG ЧЕРТЕЖА --- */
 function getProfileHtml(s, isMultiPrint) {
-  const L = s.length;
-  const R = s.radius;
-  
+  const L = s.length; const R = s.radius;
   let getZ = getTerrainInterpolator(s); 
   
   let aEnt = s.angleEntry !== undefined ? s.angleEntry : 14;
   let aEx = s.angleExit !== undefined ? s.angleExit : 14;
   
-  let zEnt = getZ(0) - s.entryDepth;
-  let zEx = getZ(L) - s.exitDepth;
-  
-  let allZ = [];
-  for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
-  
+  let zEnt = getZ(0) - s.entryDepth; let zEx = getZ(L) - s.exitDepth;
+  let allZ = []; for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
   let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
   allZ.push(pipeMinZ - 3); 
-  
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
-  let maxZ = Math.ceil(Math.max(...allZ)) + 1;
-  let minZ = Math.floor(Math.min(...allZ));
-
-  let maxDeltaZ = maxZ - minZ;
-  let availableHeight = 450; 
+  let maxZ = Math.ceil(Math.max(...allZ)) + 1; let minZ = Math.floor(Math.min(...allZ));
+  let maxDeltaZ = maxZ - minZ; let availableHeight = 450; 
   let scaleY = Math.min(60, availableHeight / maxDeltaZ);
   
-  const leftX = 130;
-  const rightX = 1430;
-  const scaleX = (rightX - leftX) / L;
+  const leftX = 130; const rightX = 1430; const scaleX = (rightX - leftX) / L;
   const toSvgX = (dist) => leftX + (dist * scaleX);
+  const startY = 150; const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
   
-  const startY = 150; 
-  const toSvgY = (absElev) => startY + (maxZ - absElev) * scaleY;
-  
-  window.currentSvgTransform = {
-      leftX: leftX,
-      scaleX: scaleX,
-      startY: startY,
-      scaleY: scaleY,
-      maxZ: maxZ,
-      L: L,
-      isGNP: s.isGNP
-  };
-  
+  window.currentSvgTransform = { leftX: leftX, scaleX: scaleX, startY: startY, scaleY: scaleY, maxZ: maxZ, L: L, isGNP: s.isGNP };
   let gridBottomY = toSvgY(minZ);
 
-  let markup = '';
-  let gridLines = '';
-  let gridTextsX = ''; 
-  let xPts = [];
-  
-  let gridStep = 5;
-  if (L <= 30) {
-      gridStep = 1;
-  } else if (L <= 80) {
-      gridStep = 2;
-  } else if (L <= 150) {
-      gridStep = 5;
-  } else if (L <= 300) {
-      gridStep = 10;
-  } else {
-      gridStep = 20;
-  }
-  
+  let markup = ''; let gridLines = ''; let gridTextsX = ''; let xPts = [];
+  let gridStep = L <= 30 ? 1 : L <= 80 ? 2 : L <= 150 ? 5 : L <= 300 ? 10 : 20;
   for (let x = 0; x <= L; x += gridStep) xPts.push(x);
   if (L % gridStep !== 0) xPts.push(L);
   
@@ -1579,37 +1444,52 @@ function getProfileHtml(s, isMultiPrint) {
       gridLines += `<line x1="${px}" y1="${startY}" x2="${px}" y2="${gridBottomY}" stroke-dasharray="3,3" />`;
       gridTextsX += `<text x="${px}" y="${gridBottomY + 18}" font-size="13">${x}</text>`;
   });
-
   markup += `<g stroke="rgb(128, 128, 128)" stroke-width="1.2">${gridLines}`;
   for (let z = minZ; z <= maxZ; z++) {
-      let gy = toSvgY(z);
-      markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke-dasharray="3,3" />`;
+      let gy = toSvgY(z); markup += `<line x1="${leftX-20}" y1="${gy}" x2="${rightX+20}" y2="${gy}" stroke-dasharray="3,3" />`;
   }
   markup += `</g>`;
-
   markup += `<g font-size="14" fill="#444" text-anchor="end">`;
   for (let z = minZ; z <= maxZ; z++) {
-      let gy = toSvgY(z);
-      markup += `<text x="${leftX-28}" y="${gy+5}">${z.toFixed(2)}</text>`;
+      let gy = toSvgY(z); markup += `<text x="${leftX-28}" y="${gy+5}">${z.toFixed(2)}</text>`;
   }
   markup += `</g>`;
-
-  markup += `
-    <g font-size="13" fill="#666" text-anchor="middle">
-      ${gridTextsX}
-    </g>
-    <text x="${leftX-28}" y="${gridBottomY+18}" font-size="13" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>
-  `;
+  markup += `<g font-size="13" fill="#666" text-anchor="middle">${gridTextsX}</g><text x="${leftX-28}" y="${gridBottomY+18}" font-size="13" fill="#444" font-weight="bold" text-anchor="end">ПК (м):</text>`;
 
   let groundPathD = `M ${toSvgX(0)} ${toSvgY(getZ(0))}`;
-  for (let x = 0.5; x <= L; x += 0.5) {
-      groundPathD += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`;
-  }
+  for (let x = 0.5; x <= L; x += 0.5) { groundPathD += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`; }
   markup += `<path d="${groundPathD}" fill="none" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />`;
 
-  let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }))
-                              .filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
+  let rawHard = [];
+  s.asphalts.forEach(a => rawHard.push({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }));
+  s.gravels.forEach(g => rawHard.push({ start: Math.max(0, Math.min(L, g.start)), end: Math.max(0, Math.min(L, g.end)) }));
+  rawHard = rawHard.filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
   
+  let mergedHard = [];
+  if (rawHard.length > 0) {
+      let current = {start: rawHard[0].start, end: rawHard[0].end};
+      for (let i = 1; i < rawHard.length; i++) {
+          if (rawHard[i].start <= current.end) current.end = Math.max(current.end, rawHard[i].end);
+          else { mergedHard.push(current); current = {start: rawHard[i].start, end: rawHard[i].end}; }
+      }
+      mergedHard.push(current);
+  }
+
+  let grasses = []; let currentPos = 0;
+  mergedHard.forEach(a => { if (a.start > currentPos) grasses.push({ start: currentPos, end: a.start }); currentPos = a.end; });
+  if (currentPos < L) grasses.push({ start: currentPos, end: L });
+
+  grasses.forEach(g => {
+    let grassPath = `M ${toSvgX(g.start)} ${toSvgY(getZ(g.start))}`;
+    for (let x = g.start + 0.5; x <= g.end; x += 0.5) grassPath += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`;
+    markup += `
+      <path d="${grassPath}" fill="none" stroke="#d4edda" stroke-width="8" transform="translate(0, -4)" stroke-linejoin="round" />
+      <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" stroke-linejoin="round" />
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="#28a745">Газон</text>`;
+  });
+
+  let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) })).filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
   let asphalts = [];
   if (rawAsphalts.length > 0) {
       let current = rawAsphalts[0];
@@ -1619,36 +1499,13 @@ function getProfileHtml(s, isMultiPrint) {
       }
       asphalts.push(current);
   }
-
-  let grasses = [];
-  let currentPos = 0;
   asphalts.forEach(a => {
-      if (a.start > currentPos) grasses.push({ start: currentPos, end: a.start });
-      currentPos = a.end;
-  });
-  if (currentPos < L) grasses.push({ start: currentPos, end: L });
-
-  grasses.forEach(g => {
-    let grassPath = `M ${toSvgX(g.start)} ${toSvgY(getZ(g.start))}`;
-    for (let x = g.start + 0.5; x <= g.end; x += 0.5) grassPath += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`;
-    
-    markup += `
-      <path d="${grassPath}" fill="none" stroke="#d4edda" stroke-width="8" transform="translate(0, -4)" stroke-linejoin="round" />
-      <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" stroke-linejoin="round" />
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="#28a745">Газон</text>
-    `;
-  });
-
-  asphalts.forEach(a => {
-    const y = toSvgY(getZ(a.start));
-    const w = toSvgX(a.end) - toSvgX(a.start);
+    const y = toSvgY(getZ(a.start)); const w = toSvgX(a.end) - toSvgX(a.start);
     markup += `
       <rect x="${toSvgX(a.start)-2}" y="${y-16}" width="4" height="16" fill="#333" />
       <rect x="${toSvgX(a.start)}" y="${y-10}" width="${w}" height="10" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.8" />
       <rect x="${toSvgX(a.end)-2}" y="${y-16}" width="4" height="16" fill="#333" />
-      <text x="${toSvgX((a.start+a.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Асфальтобетон</text>
-    `;
+      <text x="${toSvgX((a.start+a.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Асфальтобетон</text>`;
   });
 
   let rawGravels = s.gravels.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) })).filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
@@ -1662,48 +1519,38 @@ function getProfileHtml(s, isMultiPrint) {
       gravels.push(current);
   }
   gravels.forEach(g => {
-    const y = toSvgY(getZ(g.start));
-    const w = toSvgX(g.end) - toSvgX(g.start);
+    const y = toSvgY(getZ(g.start)); const w = toSvgX(g.end) - toSvgX(g.start);
     markup += `
       <rect x="${toSvgX(g.start)-2}" y="${y-16}" width="4" height="16" fill="#888" />
       <rect x="${toSvgX(g.start)}" y="${y-10}" width="${w}" height="10" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.8" />
       <rect x="${toSvgX(g.end)-2}" y="${y-16}" width="4" height="16" fill="#888" />
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#666">Щебень</text>
-    `;
+      <text x="${toSvgX((g.start+g.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#666">Щебень</text>`;
   });
 
-  let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) }))
-                        .filter(t => t.start < t.end).sort((a,b) => a.start - b.start);
-
+  let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) })).filter(t => t.start < t.end).sort((a,b) => a.start - b.start);
   rawTrees.forEach(t => {
       for(let px = t.start; px <= t.end; px += 4) {
-          let tx = toSvgX(px);
-          let ty = toSvgY(getZ(px)) - 6;
+          let tx = toSvgX(px); let ty = toSvgY(getZ(px)) - 6;
           markup += `
             <line x1="${tx}" y1="${ty}" x2="${tx}" y2="${ty-14}" stroke="#795548" stroke-width="2.5" />
             <circle cx="${tx}" cy="${ty-18}" r="6.5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
             <circle cx="${tx-5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
-            <circle cx="${tx+5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
-          `;
+            <circle cx="${tx+5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />`;
       }
-      let midX = (t.start+t.end)/2;
-      let midY = toSvgY(getZ(midX)) - 38;
+      let midX = (t.start+t.end)/2; let midY = toSvgY(getZ(midX)) - 38;
       markup += `
         <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Зеленые насаждения</text>
-        <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>
-      `;
+        <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>`;
   });
 
   const pitWidthPx = 15; 
   const pitDepthEntryPx = (s.pitDepthEntry !== undefined ? s.pitDepthEntry : 2.0) * scaleY;
   const pitDepthExitPx = (s.pitDepthExit !== undefined ? s.pitDepthExit : 2.0) * scaleY;
-  const startPitY = toSvgY(getZ(0));
-  const endPitY = toSvgY(getZ(L));
+  const startPitY = toSvgY(getZ(0)); const endPitY = toSvgY(getZ(L));
   
   markup += `
     <rect x="${toSvgX(0) - pitWidthPx}" y="${startPitY}" width="${pitWidthPx}" height="${pitDepthEntryPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />
     <line x1="${toSvgX(0)}" y1="${startPitY}" x2="${toSvgX(0)}" y2="${startPitY+pitDepthEntryPx}" stroke="#ff00ff" stroke-width="2.5" />
-    
     <rect x="${toSvgX(L)}" y="${endPitY}" width="${pitWidthPx}" height="${pitDepthExitPx}" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />
     <line x1="${toSvgX(L)}" y1="${endPitY}" x2="${toSvgX(L)}" y2="${endPitY+pitDepthExitPx}" stroke="#ff00ff" stroke-width="2.5" />
   `;
@@ -1719,15 +1566,10 @@ function getProfileHtml(s, isMultiPrint) {
   markup += `
     <path d="${pathD}" fill="none" stroke="#ff00ff" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" />
     <path d="${pathD}" fill="none" stroke="#cc00cc" stroke-width="1.8" stroke-dasharray="8,4" stroke-linejoin="round" />
-  `;
-
-  markup += `
     <circle cx="${toSvgX(0)}" cy="${toSvgY(zEnt)}" r="4.5" fill="#ff00ff" />
     <circle cx="${toSvgX(L)}" cy="${toSvgY(zEx)}" r="4.5" fill="#ff00ff" />
-    
     <text x="${toSvgX(0) - 25}" y="${toSvgY(zEnt) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
     <text x="${toSvgX(0) - 25}" y="${toSvgY(zEnt) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="end">Вход (Z: ${zEnt.toFixed(2)}м)</text>
-    
     <text x="${toSvgX(L) + 25}" y="${toSvgY(zEx) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
     <text x="${toSvgX(L) + 25}" y="${toSvgY(zEx) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
   `;
@@ -1735,52 +1577,32 @@ function getProfileHtml(s, isMultiPrint) {
   if (!s.isGNP) {
       let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
       let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
-      
-      let h_arc_max1 = R * (1 - Math.cos(r1));
-      let L_arc_max1 = R * Math.sin(r1);
-      let tan1 = Math.tan(r1);
-
-      let h_arc_max2 = R * (1 - Math.cos(r2));
-      let L_arc_max2 = R * Math.sin(r2);
-      let tan2 = Math.tan(r2);
-      
-      let h1 = Math.max(0, zEnt - s.depthHall);
-      let h2 = Math.max(0, zEx - s.depthHall);
-      
+      let h_arc_max1 = R * (1 - Math.cos(r1)); let L_arc_max1 = R * Math.sin(r1); let tan1 = Math.tan(r1);
+      let h_arc_max2 = R * (1 - Math.cos(r2)); let L_arc_max2 = R * Math.sin(r2); let tan2 = Math.tan(r2);
+      let h1 = Math.max(0, zEnt - s.depthHall); let h2 = Math.max(0, zEx - s.depthHall);
       let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : L_arc_max1 + (h1 - h_arc_max1)/tan1;
       let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : L_arc_max2 + (h2 - h_arc_max2)/tan2;
-      
       let horizX = toSvgX(L1 + L2 > L ? L * L1 / (L1 + L2 || 1) : L1 + (L - L2 - L1)/2);
       let horizY = toSvgY(s.depthHall) + 22;
-      
       markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
       markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
   }
 
-  let linesMarkup = '';
-  let textsMarkup = '';
-  
+  let linesMarkup = ''; let textsMarkup = '';
   let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
   drawNets.forEach((net, index) => {
-    const nx = toSvgX(net.dist);
-    const zGr = getZ(net.dist);
-    const nz = zGr - net.depth;
-    const ny = toSvgY(nz);
+    const nx = toSvgX(net.dist); const zGr = getZ(net.dist); const nz = zGr - net.depth; const ny = toSvgY(nz);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
-    
     let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx);
     const centerDist = Math.abs(pipeZAtDist - nz);
     const deltaHVal = centerDist - 0.080; 
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
     const isUnderNorm = deltaHVal < 0.49; 
-    
     let staggerOffset = (index % 2) * 25; 
     const textEndY = gridBottomY + 38 + staggerOffset; 
-    
     const paramStr = `${net.name}, Δh=${deltaHStr}м${isUnderNorm ? ' (! < 0,5м)' : ''}`;
-    const textFill = isUnderNorm ? '#d32f2f' : conf.color;
-    const textWeight = isUnderNorm ? 'bold' : 'normal';
+    const textFill = isUnderNorm ? '#d32f2f' : conf.color; const textWeight = isUnderNorm ? 'bold' : 'normal';
 
     linesMarkup += `
       <g class="draggable-net" data-idx="${net._origIdx}">
@@ -1788,18 +1610,14 @@ function getProfileHtml(s, isMultiPrint) {
           <circle cx="${nx}" cy="${ny}" r="6.5" fill="${conf.color}" stroke="${isUnderNorm ? '#d32f2f' : conf.color}" stroke-width="${isUnderNorm ? '2' : '1.2'}" class="net-vis" pointer-events="none" />
       </g>
       <line x1="${nx}" y1="${toSvgY(zGr)}" x2="${nx}" y2="${ny - 6.5}" stroke="${conf.color}" stroke-width="1.2" stroke-dasharray="2,2" pointer-events="none" />
-      <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" pointer-events="none" />
-    `;
-
+      <line x1="${nx}" y1="${ny + 6.5}" x2="${nx}" y2="${textEndY}" stroke="${conf.color}" stroke-width="1.2" pointer-events="none" />`;
     textsMarkup += `
       <text x="${nx + 5}" y="${textEndY}" font-size="14" font-weight="${textWeight}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})" pointer-events="none">${paramStr}</text>
-      <text x="${nx + 5}" y="${textEndY}" font-size="14" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})" pointer-events="none">${paramStr}</text>
-    `;
+      <text x="${nx + 5}" y="${textEndY}" font-size="14" fill="${textFill}" font-weight="${textWeight}" text-anchor="end" transform="rotate(-90 ${nx + 5} ${textEndY})" pointer-events="none">${paramStr}</text>`;
   });
   markup += linesMarkup + textsMarkup; 
 
   let notesY = Math.max(900, gridBottomY + 200);
-  
   markup += `
     <g font-size="15" fill="#333">
       <text x="10" y="${notesY}" font-weight="bold">Примечания:</text>
@@ -1809,108 +1627,47 @@ function getProfileHtml(s, isMultiPrint) {
       <text x="10" y="${notesY+88}">2. Приближение к коммуникациям - в допустимых пределах;</text>
       <text x="10" y="${notesY+110}">3. Приближение к поверхности - в допустимых пределах (>1,0м);</text>
       <text x="10" y="${notesY+132}">4. Искривление штанг - в допустимых пределах (>45,0м).</text>
-    </g>
-  `;
+    </g>`;
 
   let legendItems = [];
-  legendItems.push({
-      svg: `<path d="M 0 0 L 30 0" fill="none" stroke="#ff00ff" stroke-width="6" /><path d="M 0 0 L 30 0" fill="none" stroke="#cc00cc" stroke-width="1.5" stroke-dasharray="6,3" />`,
-      text: `Проектируемая трасса ${s.isGNP ? 'ГНП' : 'ГНБ'}`
-  });
-  
-  legendItems.push({
-      svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />`,
-      text: "Стартовый / приемный приямок"
-  });
-
-  if (s.asphalts.length > 0) {
-      legendItems.push({
-          svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.5" />`,
-          text: "Асфальтобетонное покрытие"
-      });
-  }
-  
-  if (s.gravels.length > 0) {
-      legendItems.push({
-          svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.5" />`,
-          text: "Щебеночное покрытие"
-      });
-  }
-
-  if (grasses.length > 0) {
-      legendItems.push({
-          svg: `<rect x="0" y="-4" width="30" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />`,
-          text: "Проектный рельеф (газон)"
-      });
-  }
-
-  if (s.trees.length > 0) {
-      legendItems.push({
-          svg: `<line x1="15" y1="4" x2="15" y2="-6" stroke="#795548" stroke-width="2" />
-                <circle cx="15" cy="-9" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
-                <circle cx="11" cy="-5" r="4" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
-                <circle cx="19" cy="-5" r="4" fill="#81c784" stroke="#2e7d32" stroke-width="1" />`,
-          text: "Зеленые насаждения"
-      });
-  }
+  legendItems.push({ svg: `<path d="M 0 0 L 30 0" fill="none" stroke="#ff00ff" stroke-width="6" /><path d="M 0 0 L 30 0" fill="none" stroke="#cc00cc" stroke-width="1.5" stroke-dasharray="6,3" />`, text: `Проектируемая трасса ${s.isGNP ? 'ГНП' : 'ГНБ'}` });
+  legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />`, text: "Стартовый / приемный приямок" });
+  if (s.asphalts.length > 0) legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.5" />`, text: "Асфальтобетонное покрытие" });
+  if (s.gravels.length > 0) legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.5" />`, text: "Щебеночное покрытие" });
+  if (grasses.length > 0) legendItems.push({ svg: `<rect x="0" y="-4" width="30" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />`, text: "Проектный рельеф (газон)" });
+  if (s.trees.length > 0) legendItems.push({ svg: `<line x1="15" y1="4" x2="15" y2="-6" stroke="#795548" stroke-width="2" /><circle cx="15" cy="-9" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" /><circle cx="11" cy="-5" r="4" fill="#81c784" stroke="#2e7d32" stroke-width="1" /><circle cx="19" cy="-5" r="4" fill="#81c784" stroke="#2e7d32" stroke-width="1" />`, text: "Зеленые насаждения" });
 
   let uniqueNets = [...new Set(s.nets.map(n => n.type))];
   uniqueNets.forEach(netType => {
       const conf = NET_TYPES[netType];
-      legendItems.push({
-          svg: `<circle cx="15" cy="0" r="5" fill="${conf.color}" stroke="${conf.color}" stroke-width="1.2" />`,
-          text: conf.label
-      });
+      legendItems.push({ svg: `<circle cx="15" cy="0" r="5" fill="${conf.color}" stroke="${conf.color}" stroke-width="1.2" />`, text: conf.label });
   });
 
-  let legendX = 450; 
-  let legendItemHeight = 24;
+  let legendX = 450; let legendItemHeight = 24;
   let legendTotalHeight = 24 + legendItems.length * legendItemHeight;
-  
   let legendY = notesY;
-  if (legendY + legendTotalHeight > 1080) {
-      legendY = 1080 - legendTotalHeight;
-  }
+  if (legendY + legendTotalHeight > 1080) legendY = 1080 - legendTotalHeight;
 
-  let legendMarkup = `<g transform="translate(${legendX}, ${legendY})">
-      <text x="0" y="0" font-size="15" font-weight="bold" fill="#333">Условные обозначения:</text>`;
-  
+  let legendMarkup = `<g transform="translate(${legendX}, ${legendY})"><text x="0" y="0" font-size="15" font-weight="bold" fill="#333">Условные обозначения:</text>`;
   legendItems.forEach((item, index) => {
       let yOff = 24 + index * legendItemHeight;
-      legendMarkup += `
-          <g transform="translate(0, ${yOff})">
-              <g transform="translate(0, -4)">${item.svg}</g>
-              <text x="35" y="1" font-size="14" fill="#333">${item.text}</text>
-          </g>
-      `;
+      legendMarkup += `<g transform="translate(0, ${yOff})"><g transform="translate(0, -4)">${item.svg}</g><text x="35" y="1" font-size="14" fill="#333">${item.text}</text></g>`;
   });
   legendMarkup += `</g>`;
-
   markup += legendMarkup;
 
   return `
     <div class="sheet ${isMultiPrint ? 'print-page' : ''}">
       <div class="frame">
-        <div class="title-block">
-          ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ${s.isGNP ? 'ГНП' : 'ГНБ'} №${s.hddNumber}
-          <div class="subtitle">
-            Масштаб: вертикальный 1:50, горизонтальный - адаптивный | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong>
-          </div>
+        <div class="title-block">ПРОДОЛЬНЫЙ ПРОФИЛЬ ЗАКРЫТОГО ПЕРЕХОДА МЕТОДОМ ${s.isGNP ? 'ГНП' : 'ГНБ'} №${s.hddNumber}
+          <div class="subtitle">Масштаб: вертикальный 1:50, горизонтальный - адаптивный | Длина перехода L = ${L.toFixed(1)} м, количество пересечений - <strong>${s.nets.length}</strong></div>
         </div>
         <div class="svg-container">
           <svg viewBox="0 0 1560 1100">
             <defs>
-              <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="8" stroke="#ff00ff" stroke-width="1.2" />
-              </pattern>
-              <pattern id="asphaltHatch_${s.hddNumber}" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" />
-              </pattern>
-              <pattern id="gravelHatch_${s.hddNumber}" width="8" height="8" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1.5" fill="#888" />
-                <circle cx="6" cy="5" r="2" fill="#aaa" />
-                <circle cx="3" cy="7" r="1" fill="#666" />
-              </pattern>
+              <pattern id="pitHatch_${s.hddNumber}" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#ff00ff" stroke-width="1.2" /></pattern>
+              <pattern id="asphaltHatch_${s.hddNumber}" width="6" height="6" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#444" stroke-width="0.8" /></pattern>
+              <pattern id="gravelHatch_${s.hddNumber}" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.5" fill="#888" /><circle cx="6" cy="5" r="2" fill="#aaa" /><circle cx="3" cy="7" r="1" fill="#666" /></pattern>
             </defs>
             ${markup}
           </svg>
@@ -1920,42 +1677,26 @@ function getProfileHtml(s, isMultiPrint) {
   `;
 }
 
-function renderSvg() {
-  document.getElementById('sheetWrapper').innerHTML = getProfileHtml(state, false);
-}
+function renderSvg() { document.getElementById('sheetWrapper').innerHTML = getProfileHtml(state, false); }
 
 function printPureSheet() {
-  const savedZoom = currentZoom;
-  document.getElementById('sheetWrapper').style.transform = 'none';
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => { document.getElementById('sheetWrapper').style.transform = `scale(${savedZoom})`; }, 300);
-  }, 50);
+  const savedZoom = currentZoom; document.getElementById('sheetWrapper').style.transform = 'none';
+  setTimeout(() => { window.print(); setTimeout(() => { document.getElementById('sheetWrapper').style.transform = `scale(${savedZoom})`; }, 300); }, 50);
 }
 
 function printAllSheets() {
   const multiArea = document.getElementById('multiPrintArea');
   multiArea.innerHTML = profiles.map(p => getProfileHtml(p, true)).join('');
   document.body.classList.add('print-all-mode');
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => {
-      document.body.classList.remove('print-all-mode');
-      multiArea.innerHTML = '';
-    }, 300);
-  }, 50);
+  setTimeout(() => { window.print(); setTimeout(() => { document.body.classList.remove('print-all-mode'); multiArea.innerHTML = ''; }, 300); }, 50);
 }
 
 window.onload = () => {
-  const savedArr = localStorage.getItem('gnbProfilesArray');
-  const savedIdx = localStorage.getItem('gnbActiveIndex');
-  
+  const savedArr = localStorage.getItem('gnbProfilesArray'); const savedIdx = localStorage.getItem('gnbActiveIndex');
   if (savedArr) {
     try {
-      profiles = JSON.parse(savedArr);
-      activeProfileIdx = parseInt(savedIdx) || 0;
+      profiles = JSON.parse(savedArr); activeProfileIdx = parseInt(savedIdx) || 0;
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
-      
       profiles.forEach(p => {
           if (p.isGNP === undefined) p.isGNP = false;
           if (!p.hddNumber) p.hddNumber = "1";
@@ -1968,23 +1709,12 @@ window.onload = () => {
           if (!p.gravels) p.gravels = []; 
           if (!p.trees) p.trees = []; 
           if (!p.nets) p.nets = [];
-          if (!p.terrain) {
-              p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ];
-              if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall;
-          }
+          if (!p.terrain) { p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ]; if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall; }
       });
-      sortProfiles();
-      if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
-      switchTab(activeProfileIdx);
+      sortProfiles(); if (activeProfileIdx >= profiles.length) activeProfileIdx = 0; switchTab(activeProfileIdx);
     } catch (err) { alert("Ошибка при чтении файла проекта!"); }
-        event.target.value = ''; 
-  } else {
-    profiles = [getDefaultProfile(false, "1")];
-    switchTab(0);
-  }
-  
-  renderTabs();
-  fitToScreen();
+  } else { profiles = [getDefaultProfile(false, "1")]; switchTab(0); }
+  renderTabs(); fitToScreen();
 };
 </script>
 
