@@ -7,22 +7,17 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMjUyNTJkIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmMDBmZiIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE1IDUwIFE1MCAxMDAgODUgNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRkYTNmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiNmZjUyNTIiLz48L3N2Zz4=">
 <style>
   :root {
-    /* ТЕМА: DARK NEON GLASSMORPHISM (С УСИЛЕННЫМИ КОНТУРАМИ) */
     --bg-obsidian: #07090e;       
-    --bg-glass-panel: rgba(20, 25, 35, 0.65); /* Чуть плотнее фон */
+    --bg-glass-panel: rgba(20, 25, 35, 0.65); 
     --bg-glass-card: rgba(255, 255, 255, 0.05);       
-    
-    /* Значительно осветляем базовые рамки стекол */
     --border-glass: rgba(255, 255, 255, 0.2);  
     --border-glass-light: rgba(255, 255, 255, 0.35);  
     
     --accent-violet: #8b5cf6;   
     --accent-violet-hover: #7c3aed;  
-    
     --accent-cyan: #06b6d4;   
     --accent-cyan-hover: #0891b2;
     
-    /* Неоновые цветные рамки для четкости окошек */
     --neon-cyan-border: rgba(6, 182, 212, 0.4);
     --neon-violet-border: rgba(139, 92, 246, 0.4);
     
@@ -53,7 +48,7 @@
     overflow: hidden;
   }
 
-  /* БОКОВЫЕ ПАНЕЛИ - ЯРКАЯ ОБВОДКА И ТЕНЬ */
+  /* БОКОВЫЕ ПАНЕЛИ */
   .sidebar {
     width: 380px;
     min-width: 380px;
@@ -91,15 +86,29 @@
     text-shadow: 0 0 10px rgba(255,255,255,0.3);
   }
   
-  /* ПАНЕЛЬ ВКЛАДОК */
+  /* ПАНЕЛЬ ВКЛАДОК С ПОЛЗУНКОМ ПРОКРУТКИ */
   .tabs-container {
     display: flex;
     background: transparent;
     border-bottom: 1px solid var(--border-glass-light);
     overflow-x: auto;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-cyan) rgba(0,0,0,0.3);
   }
-  .tabs-container::-webkit-scrollbar { display: none; }
+  .tabs-container::-webkit-scrollbar {
+    height: 5px;
+  }
+  .tabs-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .tabs-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--accent-violet), var(--accent-cyan));
+    border-radius: 3px;
+  }
+  .tabs-container::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-cyan);
+  }
+
   .tab-btn {
     padding: 10px 16px;
     background: transparent;
@@ -114,6 +123,7 @@
     align-items: center;
     gap: 6px;
     white-space: nowrap;
+    flex-shrink: 0;
     transition: all 0.3s ease;
   }
   .tab-btn.active {
@@ -146,6 +156,7 @@
     padding: 0 16px;
     cursor: pointer;
     font-weight: bold;
+    flex-shrink: 0;
     transition: background 0.2s;
   }
   .tab-add:hover { background: var(--bg-glass-card); text-shadow: 0 0 8px rgba(6, 182, 212, 0.5); }
@@ -179,7 +190,6 @@
   .form-row { display: flex; gap: 8px; }
   .form-row .form-group { flex: 1; margin-bottom: 0; }
   
-  /* ИНПУТЫ В СТИЛЕ СТЕКЛА С ПОДСВЕТКОЙ */
   input, select {
     width: 100%;
     background: rgba(0, 0, 0, 0.3);
@@ -205,7 +215,6 @@
     cursor: not-allowed; 
   }
 
-  /* КАРТОЧКИ СЕТЕЙ (Фиолетовое обрамление) */
   .net-item {
     background: var(--bg-glass-card);
     border: 1px solid var(--neon-violet-border);
@@ -270,7 +279,6 @@
     box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.15), 0 0 10px rgba(6, 182, 212, 0.2);
   }
 
-  /* ФУТЕР И ГЛАВНЫЕ КНОПКИ (ЧЕТКИЕ РАМКИ) */
   .sidebar-footer {
     padding: 16px 20px;
     background: transparent;
@@ -373,7 +381,6 @@
     user-select: none;
   }
   
-  /* ПАНЕЛЬ МАСШТАБИРОВАНИЯ - СВЕТЯЩЕЕСЯ СТЕКЛО */
   .zoom-toolbar {
     position: absolute;
     top: 16px;
@@ -421,7 +428,6 @@
     transition: transform 0.12s ease-out;
   }
   
-  /* ЧЕРТЕЖ */
   .sheet {
     width: 1587px;
     height: 1122px;
@@ -480,7 +486,6 @@
   .draggable-net:active { cursor: grabbing; }
   .draggable-net:hover .net-vis { r: 8.5px; stroke: #fff !important; stroke-width: 2px !important; }
 
-  /* МОДАЛЬНОЕ ОКНО */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -693,7 +698,12 @@
     <div class="section-title">Деревья (По рельефу)</div>
     <div id="treesContainer"></div>
     <button class="btn-add-net" style="margin-bottom:12px;" onclick="addTree()">+ Добавить деревья</button>
-    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">*Зеленые зоны (газон) строятся автоматически там, где нет твердых покрытий.</div>
+
+    <div class="section-title">Ж/д пути (Колея 1520 мм)</div>
+    <div id="railsContainer"></div>
+    <button class="btn-add-net" style="margin-bottom:12px;" onclick="addRail()">+ Добавить ж/д путь</button>
+
+    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">*Зеленые зоны (газон) строятся автоматически там, где нет твердых покрытий и ж/д путей.</div>
 
     <div class="section-title">
       <span>Пересекаемые сети</span>
@@ -739,9 +749,18 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     asphalts: [],
     gravels: [],
     trees: [],
+    rails: [],
     nets: []
   };
 }
+
+/* Прокрутка вкладок колесиком мыши */
+document.getElementById('tabsContainer').addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+        e.preventDefault();
+        this.scrollLeft += e.deltaY;
+    }
+}, { passive: false });
 
 /* --- ИНТЕРАКТИВНЫЙ DRAG & DROP СЕТЕЙ НА ЧЕРТЕЖЕ --- */
 let isDraggingNet = false;
@@ -1095,12 +1114,19 @@ function renderTabs() {
   addBtn.innerHTML = '+';
   addBtn.onclick = addNewTab;
   container.appendChild(addBtn);
+  
+  // Автопрокрутка к активной вкладке
+  const activeEl = container.querySelector('.tab-btn.active');
+  if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  }
 }
 
 function switchTab(idx) {
   activeProfileIdx = idx;
   state = profiles[activeProfileIdx];
   if(!state.terrain || state.terrain.length === 0) state.terrain = [ {x:0, z:100.0}, {x:state.length, z:100.0} ];
+  if(!state.rails) state.rails = [];
   state.terrain.sort((a,b) => a.x - b.x);
   renderTabs(); 
   syncInputs();
@@ -1108,6 +1134,7 @@ function switchTab(idx) {
   renderAsphaltsList();
   renderGravelsList();
   renderTreesList();
+  renderRailsList();
   renderNetsList();
   triggerUpdate();
 }
@@ -1150,7 +1177,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.10", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.11", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1186,6 +1213,7 @@ function loadProject(event) {
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.gravels) p.gravels = []; 
                 if (!p.trees) p.trees = []; 
+                if (!p.rails) p.rails = []; 
                 if (!p.nets) p.nets = [];
                 if (!p.terrain) { p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ]; if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall; }
             });
@@ -1268,7 +1296,7 @@ function triggerUpdate() {
   renderSvg();
 }
 
-/* РЕЛЬЕФ, ПОКРЫТИЯ, СЕТИ */
+/* РЕЛЬЕФ, ПОКРЫТИЯ, Ж/Д ПУТИ, СЕТИ */
 function renderTerrainList() {
   const container = document.getElementById('terrainContainer');
   container.innerHTML = '';
@@ -1334,6 +1362,29 @@ function addTree() { state.trees.push({ start: 10, end: 30 }); renderTreesList()
 function updateTreeStart(i, val) { state.trees[i].start = parseFloat(val) || 0; triggerUpdate(); }
 function updateTreeEnd(i, val) { state.trees[i].end = parseFloat(val) || 0; triggerUpdate(); }
 function removeTree(i) { state.trees.splice(i, 1); renderTreesList(); triggerUpdate(); }
+
+/* Ж/Д ПУТИ (1520 мм) */
+function renderRailsList() {
+  const container = document.getElementById('railsContainer'); container.innerHTML = '';
+  if (!state.rails) state.rails = [];
+  state.rails.forEach((r, index) => {
+    const div = document.createElement('div'); div.className = 'form-row'; div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <div class="form-group" style="flex:1; margin-bottom:0;">
+        <input type="number" step="0.5" value="${r.dist}" onchange="updateRailDist(${index}, this.value)" placeholder="Ось пути (ПК, м)">
+      </div>
+      <button class="btn-remove-net" style="padding: 0 8px;" onclick="removeRail(${index})">✕</button>`;
+    container.appendChild(div);
+  });
+}
+function addRail() { 
+  if (!state.rails) state.rails = [];
+  state.rails.push({ dist: Math.round(state.length / 2) }); 
+  renderRailsList(); 
+  triggerUpdate(); 
+}
+function updateRailDist(i, val) { state.rails[i].dist = parseFloat(val) || 0; triggerUpdate(); }
+function removeRail(i) { state.rails.splice(i, 1); renderRailsList(); triggerUpdate(); }
 
 function renderNetsList() {
   const container = document.getElementById('netsContainer'); container.innerHTML = '';
@@ -1471,9 +1522,12 @@ function getProfileHtml(s, isMultiPrint) {
   for (let x = 0.5; x <= L; x += 0.5) { groundPathD += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`; }
   markup += `<path d="${groundPathD}" fill="none" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />`;
 
+  let rails = (s.rails || []).map(r => ({ dist: Math.max(0, Math.min(L, r.dist)) })).sort((a,b) => a.dist - b.dist);
+
   let rawHard = [];
   s.asphalts.forEach(a => rawHard.push({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) }));
   s.gravels.forEach(g => rawHard.push({ start: Math.max(0, Math.min(L, g.start)), end: Math.max(0, Math.min(L, g.end)) }));
+  rails.forEach(r => rawHard.push({ start: Math.max(0, r.dist - 1.5), end: Math.min(L, r.dist + 1.5) }));
   rawHard = rawHard.filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
   
   let mergedHard = [];
@@ -1536,6 +1590,25 @@ function getProfileHtml(s, isMultiPrint) {
       <rect x="${toSvgX(g.start)}" y="${y-10}" width="${w}" height="10" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.8" />
       <rect x="${toSvgX(g.end)-2}" y="${y-16}" width="4" height="16" fill="#888" />
       <text x="${toSvgX((g.start+g.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#666">Щебень</text>`;
+  });
+
+  /* ОТРИСОВКА Ж/Д ПУТЕЙ (КОЛЕЯ 1520 мм = 1.52 м) */
+  rails.forEach(r => {
+    const halfGauge = 1.52 / 2; // 0.76 м от оси пути до каждого рельса
+    const x1 = toSvgX(Math.max(0, r.dist - halfGauge));
+    const x2 = toSvgX(Math.min(L, r.dist + halfGauge));
+    const xCenter = toSvgX(r.dist);
+    const yGround = toSvgY(getZ(r.dist));
+    const sleeperLeft = x1 - 7;
+    const sleeperWidth = (x2 - x1) + 14;
+    
+    markup += `
+      <rect x="${sleeperLeft}" y="${yGround - 5}" width="${sleeperWidth}" height="5" fill="#5d4037" stroke="#222" stroke-width="1" />
+      <path d="M ${x1 - 3.5} ${yGround - 15} L ${x1 + 3.5} ${yGround - 15} L ${x1 + 3.5} ${yGround - 12} L ${x1 + 1.2} ${yGround - 12} L ${x1 + 1.2} ${yGround - 7} L ${x1 + 4} ${yGround - 7} L ${x1 + 4} ${yGround - 5} L ${x1 - 4} ${yGround - 5} L ${x1 - 4} ${yGround - 7} L ${x1 - 1.2} ${yGround - 7} L ${x1 - 1.2} ${yGround - 12} L ${x1 - 3.5} ${yGround - 12} Z" fill="#1e293b" />
+      <path d="M ${x2 - 3.5} ${yGround - 15} L ${x2 + 3.5} ${yGround - 15} L ${x2 + 3.5} ${yGround - 12} L ${x2 + 1.2} ${yGround - 12} L ${x2 + 1.2} ${yGround - 7} L ${x2 + 4} ${yGround - 7} L ${x2 + 4} ${yGround - 5} L ${x2 - 4} ${yGround - 5} L ${x2 - 4} ${yGround - 7} L ${x2 - 1.2} ${yGround - 7} L ${x2 - 1.2} ${yGround - 12} L ${x2 - 3.5} ${yGround - 12} Z" fill="#1e293b" />
+      <text x="${xCenter}" y="${yGround - 22}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Ж/д путь</text>
+      <text x="${xCenter}" y="${yGround - 22}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Ж/д путь</text>
+    `;
   });
 
   let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) })).filter(t => t.start < t.end).sort((a,b) => a.start - b.start);
@@ -1645,6 +1718,14 @@ function getProfileHtml(s, isMultiPrint) {
   legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#pitHatch_${s.hddNumber})" stroke="#ff00ff" stroke-width="1.5" />`, text: "Стартовый / приемный приямок" });
   if (s.asphalts.length > 0) legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.5" />`, text: "Асфальтобетонное покрытие" });
   if (s.gravels.length > 0) legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.5" />`, text: "Щебеночное покрытие" });
+  if (rails.length > 0) {
+    legendItems.push({ 
+      svg: `<rect x="2" y="2" width="26" height="4" fill="#5d4037" stroke="#222" stroke-width="0.8" />
+            <path d="M 6 -7 L 11 -7 L 11 -5 L 9.5 -5 L 9.5 0 L 11.5 0 L 11.5 2 L 5.5 2 L 5.5 0 L 7.5 0 L 7.5 -5 L 6 -5 Z" fill="#1e293b" />
+            <path d="M 19 -7 L 24 -7 L 24 -5 L 22.5 -5 L 22.5 0 L 24.5 0 L 24.5 2 L 18.5 2 L 18.5 0 L 20.5 0 L 20.5 -5 L 19 -5 Z" fill="#1e293b" />`, 
+      text: "Железнодорожный путь (1520 мм)" 
+    });
+  }
   if (grasses.length > 0) legendItems.push({ svg: `<rect x="0" y="-4" width="30" height="8" fill="#d4edda" stroke="#28a745" stroke-width="1" />`, text: "Проектный рельеф (газон)" });
   if (s.trees.length > 0) legendItems.push({ svg: `<line x1="15" y1="4" x2="15" y2="-6" stroke="#795548" stroke-width="2" /><circle cx="15" cy="-9" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" /><circle cx="11" cy="-5" r="4" fill="#81c784" stroke="#2e7d32" stroke-width="1" /><circle cx="19" cy="-5" r="4" fill="#81c784" stroke="#2e7d32" stroke-width="1" />`, text: "Зеленые насаждения" });
 
@@ -1719,6 +1800,7 @@ window.onload = () => {
           if (!p.asphalts) p.asphalts = [];
           if (!p.gravels) p.gravels = []; 
           if (!p.trees) p.trees = []; 
+          if (!p.rails) p.rails = []; 
           if (!p.nets) p.nets = [];
           if (!p.terrain) { p.terrain = [ {x:0, z:100.0}, {x:p.length, z:100.0} ]; if (p.depthHall && p.depthHall > 0 && p.depthHall < 20) p.depthHall = 100.0 - p.depthHall; }
       });
