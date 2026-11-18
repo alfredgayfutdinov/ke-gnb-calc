@@ -15,6 +15,7 @@
     
     --accent-violet: #8b5cf6;   
     --accent-violet-hover: #7c3aed;  
+    
     --accent-cyan: #06b6d4;   
     --accent-cyan-hover: #0891b2;
     
@@ -754,7 +755,6 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
   };
 }
 
-/* Прокрутка вкладок колесиком мыши */
 document.getElementById('tabsContainer').addEventListener('wheel', function(e) {
     if (e.deltaY !== 0) {
         e.preventDefault();
@@ -1115,7 +1115,6 @@ function renderTabs() {
   addBtn.onclick = addNewTab;
   container.appendChild(addBtn);
   
-  // Автопрокрутка к активной вкладке
   const activeEl = container.querySelector('.tab-btn.active');
   if (activeEl) {
       activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
@@ -1177,7 +1176,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.11", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.12", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1544,14 +1543,24 @@ function getProfileHtml(s, isMultiPrint) {
   mergedHard.forEach(a => { if (a.start > currentPos) grasses.push({ start: currentPos, end: a.start }); currentPos = a.end; });
   if (currentPos < L) grasses.push({ start: currentPos, end: L });
 
+  // Сборщик всех верхних текстовых меток для исключения наложений
+  let surfaceLabels = [];
+
   grasses.forEach(g => {
     let grassPath = `M ${toSvgX(g.start)} ${toSvgY(getZ(g.start))}`;
     for (let x = g.start + 0.5; x <= g.end; x += 0.5) grassPath += ` L ${toSvgX(x)} ${toSvgY(getZ(x))}`;
     markup += `
       <path d="${grassPath}" fill="none" stroke="#d4edda" stroke-width="8" transform="translate(0, -4)" stroke-linejoin="round" />
-      <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" stroke-linejoin="round" />
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Газон</text>
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${toSvgY(getZ((g.start+g.end)/2)) - 16}" text-anchor="middle" font-size="14" font-weight="bold" fill="#28a745">Газон</text>`;
+      <path d="${grassPath}" fill="none" stroke="#28a745" stroke-width="1.5" transform="translate(0, -8)" stroke-linejoin="round" />`;
+    let midX = (g.start + g.end) / 2;
+    surfaceLabels.push({
+      x: toSvgX(midX),
+      baseY: toSvgY(getZ(midX)) - 16,
+      anchorY: toSvgY(getZ(midX)) - 8,
+      text: 'Газон',
+      color: '#28a745',
+      priority: 3
+    });
   });
 
   let rawAsphalts = s.asphalts.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) })).filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
@@ -1569,8 +1578,16 @@ function getProfileHtml(s, isMultiPrint) {
     markup += `
       <rect x="${toSvgX(a.start)-2}" y="${y-16}" width="4" height="16" fill="#333" />
       <rect x="${toSvgX(a.start)}" y="${y-10}" width="${w}" height="10" fill="url(#asphaltHatch_${s.hddNumber})" stroke="#111" stroke-width="1.8" />
-      <rect x="${toSvgX(a.end)-2}" y="${y-16}" width="4" height="16" fill="#333" />
-      <text x="${toSvgX((a.start+a.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Асфальтобетон</text>`;
+      <rect x="${toSvgX(a.end)-2}" y="${y-16}" width="4" height="16" fill="#333" />`;
+    let midX = (a.start + a.end) / 2;
+    surfaceLabels.push({
+      x: toSvgX(midX),
+      baseY: y - 18,
+      anchorY: y - 10,
+      text: 'Асфальтобетон',
+      color: '#111',
+      priority: 1
+    });
   });
 
   let rawGravels = s.gravels.map(a => ({ start: Math.max(0, Math.min(L, a.start)), end: Math.max(0, Math.min(L, a.end)) })).filter(a => a.start < a.end).sort((a,b) => a.start - b.start);
@@ -1588,27 +1605,42 @@ function getProfileHtml(s, isMultiPrint) {
     markup += `
       <rect x="${toSvgX(g.start)-2}" y="${y-16}" width="4" height="16" fill="#888" />
       <rect x="${toSvgX(g.start)}" y="${y-10}" width="${w}" height="10" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.8" />
-      <rect x="${toSvgX(g.end)-2}" y="${y-16}" width="4" height="16" fill="#888" />
-      <text x="${toSvgX((g.start+g.end)/2)}" y="${y-18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#666">Щебень</text>`;
+      <rect x="${toSvgX(g.end)-2}" y="${y-16}" width="4" height="16" fill="#888" />`;
+    let midX = (g.start + g.end) / 2;
+    surfaceLabels.push({
+      x: toSvgX(midX),
+      baseY: y - 18,
+      anchorY: y - 10,
+      text: 'Щебень',
+      color: '#666',
+      priority: 1
+    });
   });
 
-  /* ОТРИСОВКА Ж/Д ПУТЕЙ (КОЛЕЯ 1520 мм = 1.52 м) */
+  /* ОТРИСОВКА Ж/Д ПУТЕЙ (ПОДНЯТО ПО ВЫСОТЕ ДО УРОВНЯ АСФАЛЬТА) */
   rails.forEach(r => {
-    const halfGauge = 1.52 / 2; // 0.76 м от оси пути до каждого рельса
+    const halfGauge = 1.52 / 2; // 1520 мм
     const x1 = toSvgX(Math.max(0, r.dist - halfGauge));
     const x2 = toSvgX(Math.min(L, r.dist + halfGauge));
     const xCenter = toSvgX(r.dist);
     const yGround = toSvgY(getZ(r.dist));
-    const sleeperLeft = x1 - 7;
-    const sleeperWidth = (x2 - x1) + 14;
+    const sleeperLeft = x1 - 8;
+    const sleeperWidth = (x2 - x1) + 16;
     
+    // Шпала высотой 10px (как асфальт), рельсы сверху
     markup += `
-      <rect x="${sleeperLeft}" y="${yGround - 5}" width="${sleeperWidth}" height="5" fill="#5d4037" stroke="#222" stroke-width="1" />
-      <path d="M ${x1 - 3.5} ${yGround - 15} L ${x1 + 3.5} ${yGround - 15} L ${x1 + 3.5} ${yGround - 12} L ${x1 + 1.2} ${yGround - 12} L ${x1 + 1.2} ${yGround - 7} L ${x1 + 4} ${yGround - 7} L ${x1 + 4} ${yGround - 5} L ${x1 - 4} ${yGround - 5} L ${x1 - 4} ${yGround - 7} L ${x1 - 1.2} ${yGround - 7} L ${x1 - 1.2} ${yGround - 12} L ${x1 - 3.5} ${yGround - 12} Z" fill="#1e293b" />
-      <path d="M ${x2 - 3.5} ${yGround - 15} L ${x2 + 3.5} ${yGround - 15} L ${x2 + 3.5} ${yGround - 12} L ${x2 + 1.2} ${yGround - 12} L ${x2 + 1.2} ${yGround - 7} L ${x2 + 4} ${yGround - 7} L ${x2 + 4} ${yGround - 5} L ${x2 - 4} ${yGround - 5} L ${x2 - 4} ${yGround - 7} L ${x2 - 1.2} ${yGround - 7} L ${x2 - 1.2} ${yGround - 12} L ${x2 - 3.5} ${yGround - 12} Z" fill="#1e293b" />
-      <text x="${xCenter}" y="${yGround - 22}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Ж/д путь</text>
-      <text x="${xCenter}" y="${yGround - 22}" text-anchor="middle" font-size="14" font-weight="bold" fill="#111">Ж/д путь</text>
+      <rect x="${sleeperLeft}" y="${yGround - 10}" width="${sleeperWidth}" height="10" fill="#5d4037" stroke="#222" stroke-width="1.4" />
+      <path d="M ${x1 - 4} ${yGround - 22} L ${x1 + 4} ${yGround - 22} L ${x1 + 4} ${yGround - 19} L ${x1 + 1.5} ${yGround - 19} L ${x1 + 1.5} ${yGround - 12} L ${x1 + 4.5} ${yGround - 12} L ${x1 + 4.5} ${yGround - 10} L ${x1 - 4.5} ${yGround - 10} L ${x1 - 4.5} ${yGround - 12} L ${x1 - 1.5} ${yGround - 12} L ${x1 - 1.5} ${yGround - 19} L ${x1 - 4} ${yGround - 19} Z" fill="#1e293b" />
+      <path d="M ${x2 - 4} ${yGround - 22} L ${x2 + 4} ${yGround - 22} L ${x2 + 4} ${yGround - 19} L ${x2 + 1.5} ${yGround - 19} L ${x2 + 1.5} ${yGround - 12} L ${x2 + 4.5} ${yGround - 12} L ${x2 + 4.5} ${yGround - 10} L ${x2 - 4.5} ${yGround - 10} L ${x2 - 4.5} ${yGround - 12} L ${x2 - 1.5} ${yGround - 12} L ${x2 - 1.5} ${yGround - 19} L ${x2 - 4} ${yGround - 19} Z" fill="#1e293b" />
     `;
+    surfaceLabels.push({
+      x: xCenter,
+      baseY: yGround - 28,
+      anchorY: yGround - 22,
+      text: 'Ж/д путь',
+      color: '#111',
+      priority: 0
+    });
   });
 
   let rawTrees = s.trees.map(t => ({ start: Math.max(0, Math.min(L, t.start)), end: Math.max(0, Math.min(L, t.end)) })).filter(t => t.start < t.end).sort((a,b) => a.start - b.start);
@@ -1621,10 +1653,42 @@ function getProfileHtml(s, isMultiPrint) {
             <circle cx="${tx-5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />
             <circle cx="${tx+5}" cy="${ty-13}" r="5" fill="#81c784" stroke="#2e7d32" stroke-width="1" />`;
       }
-      let midX = (t.start+t.end)/2; let midY = toSvgY(getZ(midX)) - 38;
-      markup += `
-        <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Зеленые насаждения</text>
-        <text x="${toSvgX(midX)}" y="${midY}" text-anchor="middle" font-size="14" font-weight="bold" fill="#1b5e20">Зеленые насаждения</text>`;
+      let midX = (t.start+t.end)/2;
+      surfaceLabels.push({
+        x: toSvgX(midX),
+        baseY: toSvgY(getZ(midX)) - 38,
+        anchorY: toSvgY(getZ(midX)) - 25,
+        text: 'Зеленые насаждения',
+        color: '#1b5e20',
+        priority: 2
+      });
+  });
+
+  /* РАЗРЕШЕНИЕ КОНФЛИКТОВ ТЕКСТОВЫХ МЕТОК НА ПОВЕРХНОСТИ */
+  surfaceLabels.sort((a, b) => a.priority - b.priority || a.x - b.x);
+  let placedLabels = [];
+  surfaceLabels.forEach(lbl => {
+    let halfW = lbl.text.length * 4.3 + 8;
+    let y = lbl.baseY;
+    let safetyCounter = 0;
+    while (safetyCounter < 12) {
+      let conflict = placedLabels.some(p => {
+        let overlapX = Math.abs(lbl.x - p.x) < (halfW + p.halfW);
+        let overlapY = Math.abs(y - p.y) < 17;
+        return overlapX && overlapY;
+      });
+      if (!conflict) break;
+      y -= 18;
+      safetyCounter++;
+    }
+    placedLabels.push({ x: lbl.x, y: y, halfW: halfW });
+
+    if (lbl.baseY - y >= 16) {
+      markup += `<line x1="${lbl.x}" y1="${lbl.anchorY}" x2="${lbl.x}" y2="${y + 4}" stroke="${lbl.color}" stroke-width="0.9" stroke-dasharray="2,2" opacity="0.7" />`;
+    }
+    markup += `
+      <text x="${lbl.x}" y="${y}" text-anchor="middle" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">${lbl.text}</text>
+      <text x="${lbl.x}" y="${y}" text-anchor="middle" font-size="14" font-weight="bold" fill="${lbl.color}">${lbl.text}</text>`;
   });
 
   const pitWidthPx = 15; 
@@ -1720,9 +1784,9 @@ function getProfileHtml(s, isMultiPrint) {
   if (s.gravels.length > 0) legendItems.push({ svg: `<rect x="0" y="-8" width="30" height="16" fill="url(#gravelHatch_${s.hddNumber})" stroke="#777" stroke-width="1.5" />`, text: "Щебеночное покрытие" });
   if (rails.length > 0) {
     legendItems.push({ 
-      svg: `<rect x="2" y="2" width="26" height="4" fill="#5d4037" stroke="#222" stroke-width="0.8" />
-            <path d="M 6 -7 L 11 -7 L 11 -5 L 9.5 -5 L 9.5 0 L 11.5 0 L 11.5 2 L 5.5 2 L 5.5 0 L 7.5 0 L 7.5 -5 L 6 -5 Z" fill="#1e293b" />
-            <path d="M 19 -7 L 24 -7 L 24 -5 L 22.5 -5 L 22.5 0 L 24.5 0 L 24.5 2 L 18.5 2 L 18.5 0 L 20.5 0 L 20.5 -5 L 19 -5 Z" fill="#1e293b" />`, 
+      svg: `<rect x="2" y="0" width="26" height="6" fill="#5d4037" stroke="#222" stroke-width="0.8" />
+            <path d="M 6 -9 L 11 -9 L 11 -7 L 9.5 -7 L 9.5 -2 L 11.5 -2 L 11.5 0 L 5.5 0 L 5.5 -2 L 7.5 -2 L 7.5 -7 L 6 -7 Z" fill="#1e293b" />
+            <path d="M 19 -9 L 24 -9 L 24 -7 L 22.5 -7 L 22.5 -2 L 24.5 -2 L 24.5 0 L 18.5 0 L 18.5 -2 L 20.5 -2 L 20.5 -7 L 19 -7 Z" fill="#1e293b" />`, 
       text: "Железнодорожный путь (1520 мм)" 
     });
   }
