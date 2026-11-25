@@ -629,12 +629,17 @@
     </div>
 
     <div class="form-row" style="margin-top: 8px;">
-      <div class="form-group">
-        <label>Отметка горизонта (Z)</label>
-        <input type="number" id="inpHall" value="95.00" step="0.05" onchange="triggerUpdate()">
+      <div class="form-group" style="flex: 1.35;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <label id="lblHall" style="margin-bottom:0;">Заглубление (м)</label>
+          <label style="display:flex; align-items:center; gap:3px; color:var(--accent-cyan); font-size:10px; cursor:pointer; margin:0; font-weight:bold;">
+            <input type="checkbox" id="chkFollowTerrain" checked onchange="toggleFollowTerrain()" style="width:auto; margin:0;"> Отступ
+          </label>
+        </div>
+        <input type="number" id="inpHall" value="4.00" step="0.1" onchange="triggerUpdate()">
       </div>
-      <div class="form-group">
-        <label>Радиус изгиба (м)</label>
+      <div class="form-group" style="flex: 0.65;">
+        <label>Радиус (м)</label>
         <input type="number" id="inpRadius" value="60" step="1" onchange="triggerUpdate()">
       </div>
     </div>
@@ -737,8 +742,10 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
   return {
     hddNumber: numStr,
     isGNP: isGNP,
+    followTerrain: true,
+    depthOffset: 4.00,
     length: 60,
-    depthHall: 95.00,
+    depthHall: 96.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
     angleEntry: 14,
@@ -975,7 +982,7 @@ function getTerrainInterpolator(s) {
     return createSplineInterpolator(eff);
 }
 
-function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aEntry = 14, aExit = 14) {
+function getTruePipeDepth(x, paramVal, entryDepth, exitDepth, L, R, getZ, isGNP, aEntry = 14, aExit = 14, followTerrain = false) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
 
@@ -988,6 +995,60 @@ function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aE
     if (x <= 0) return zEnt;
     if (x >= L) return zEx;
 
+    // Режим постоянного отступа от рельефа (параллельно поверхности земли)
+    if (followTerrain) {
+        let depthOffset = paramVal;
+        let h1 = Math.max(0, depthOffset - entryDepth);
+        let h2 = Math.max(0, depthOffset - exitDepth);
+
+        let rad1 = Math.max(1, Math.min(45, aEntry)) * Math.PI / 180;
+        let tan1 = Math.tan(rad1);
+        let h_arc_max1 = R * (1 - Math.cos(rad1));
+        let L_arc_max1 = R * Math.sin(rad1);
+
+        let rad2 = Math.max(1, Math.min(45, aExit)) * Math.PI / 180;
+        let tan2 = Math.tan(rad2);
+        let h_arc_max2 = R * (1 - Math.cos(rad2));
+        let L_arc_max2 = R * Math.sin(rad2);
+
+        function getFootprint(h, harc, Larc, tan) {
+            if (h <= harc) return Math.sqrt(Math.max(0, 2 * R * h - h * h));
+            else return Larc + (h - harc) / tan;
+        }
+        function getDepthFromDX(dx, harc, Larc, tan) {
+            if (dx <= Larc) return depthOffset - R + Math.sqrt(Math.max(0, R * R - dx * dx));
+            else return depthOffset - harc - (dx - Larc) * tan;
+        }
+
+        let L1 = getFootprint(h1, h_arc_max1, L_arc_max1, tan1);
+        let L2 = getFootprint(h2, h_arc_max2, L_arc_max2, tan2);
+
+        let xHorizStart = L1;
+        let xHorizEnd = L - L2;
+        let dAtX;
+
+        if (xHorizStart > xHorizEnd) {
+            let midX = L * L1 / (L1 + L2 || 1);
+            if (x <= midX) {
+                let dx = L1 - (x / midX) * L1;
+                dAtX = getDepthFromDX(dx, h_arc_max1, L_arc_max1, tan1);
+            } else {
+                let dx = L2 - ((L - x) / (L - midX)) * L2;
+                dAtX = getDepthFromDX(dx, h_arc_max2, L_arc_max2, tan2);
+            }
+        } else if (x < xHorizStart) {
+            dAtX = getDepthFromDX(xHorizStart - x, h_arc_max1, L_arc_max1, tan1);
+        } else if (x > xHorizEnd) {
+            dAtX = getDepthFromDX(x - xHorizEnd, h_arc_max2, L_arc_max2, tan2);
+        } else {
+            dAtX = depthOffset;
+        }
+
+        return getZ(x) - dAtX;
+    }
+
+    // Режим жесткой горизонтальной отметки Z
+    let zHall = paramVal;
     let h1 = Math.max(0, zEnt - zHall);
     let h2 = Math.max(0, zEx - zHall);
 
@@ -1036,8 +1097,8 @@ function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aE
     }
 }
 
-function snapToSafeDepth(targetZ) {
-    if (state.nets.length === 0 || state.isGNP) return targetZ;
+function snapToSafeDepth(targetVal) {
+    if (state.nets.length === 0 || state.isGNP) return targetVal;
 
     const L = state.length;
     const R = state.radius;
@@ -1045,43 +1106,69 @@ function snapToSafeDepth(targetZ) {
     let getZ = getTerrainInterpolator(state);
     let aEnt = state.angleEntry !== undefined ? state.angleEntry : 14;
     let aEx = state.angleExit !== undefined ? state.angleExit : 14;
+    let follow = !!state.followTerrain;
 
-    function isValid(zH) {
-        let zEnt = getZ(0) - state.entryDepth;
-        let zEx = getZ(L) - state.exitDepth;
-        if (zH > zEnt || zH > zEx) return false;
-        
-        let h1 = zEnt - zH;
-        let h2 = zEx - zH;
-        
-        let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
-        let h_arc_max1 = R * (1 - Math.cos(r1));
-        let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : R*Math.sin(r1) + (h1 - h_arc_max1)/Math.tan(r1);
+    function isValid(val) {
+        if (follow) {
+            if (val < state.entryDepth || val < state.exitDepth) return false;
+            let h1 = val - state.entryDepth;
+            let h2 = val - state.exitDepth;
+            let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
+            let h_arc_max1 = R * (1 - Math.cos(r1));
+            let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : R*Math.sin(r1) + (h1 - h_arc_max1)/Math.tan(r1);
+            let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
+            let h_arc_max2 = R * (1 - Math.cos(r2));
+            let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : R*Math.sin(r2) + (h2 - h_arc_max2)/Math.tan(r2);
+            if (L1 + L2 > L) return false;
 
-        let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
-        let h_arc_max2 = R * (1 - Math.cos(r2));
-        let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : R*Math.sin(r2) + (h2 - h_arc_max2)/Math.tan(r2);
-        
-        if (L1 + L2 > L) return false;
+            for (let net of state.nets) {
+                let pipeZ = getTruePipeDepth(net.dist, val, state.entryDepth, state.exitDepth, L, R, getZ, state.isGNP, aEnt, aEx, true);
+                let netZ = getZ(net.dist) - net.depth;
+                if (Math.abs(pipeZ - netZ) < clearance) return false;
+            }
+            return true;
+        } else {
+            let zEnt = getZ(0) - state.entryDepth;
+            let zEx = getZ(L) - state.exitDepth;
+            if (val > zEnt || val > zEx) return false;
+            
+            let h1 = zEnt - val;
+            let h2 = zEx - val;
+            
+            let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
+            let h_arc_max1 = R * (1 - Math.cos(r1));
+            let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : R*Math.sin(r1) + (h1 - h_arc_max1)/Math.tan(r1);
 
-        for (let net of state.nets) {
-            let pipeZ = getTruePipeDepth(net.dist, zH, state.entryDepth, state.exitDepth, L, R, getZ, state.isGNP, aEnt, aEx);
-            let netZ = getZ(net.dist) - net.depth;
-            if (Math.abs(pipeZ - netZ) < clearance) return false;
+            let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
+            let h_arc_max2 = R * (1 - Math.cos(r2));
+            let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : R*Math.sin(r2) + (h2 - h_arc_max2)/Math.tan(r2);
+            
+            if (L1 + L2 > L) return false;
+
+            for (let net of state.nets) {
+                let pipeZ = getTruePipeDepth(net.dist, val, state.entryDepth, state.exitDepth, L, R, getZ, state.isGNP, aEnt, aEx, false);
+                let netZ = getZ(net.dist) - net.depth;
+                if (Math.abs(pipeZ - netZ) < clearance) return false;
+            }
+            return true;
         }
-        return true;
     }
 
-    if (isValid(targetZ)) return targetZ;
+    if (isValid(targetVal)) return targetVal;
     for (let step = 0; step <= 25.0; step += 0.05) {
-        let testZ = targetZ - step;
-        if (isValid(testZ)) return testZ;
+        let testVal = follow ? (targetVal + step) : (targetVal - step);
+        if (isValid(testVal)) return testVal;
     }
     return null;
 }
 
 function autoSetDepth5m() {
   if (!state || state.isGNP) return;
+  if (state.followTerrain) {
+      state.depthOffset = 5.0;
+      document.getElementById('inpHall').value = state.depthOffset.toFixed(2);
+      return;
+  }
   let getZ = getTerrainInterpolator(state);
   let minZ = getZ(0);
   for (let x = 0.5; x <= state.length; x += 0.5) {
@@ -1126,6 +1213,8 @@ function switchTab(idx) {
   state = profiles[activeProfileIdx];
   if(!state.terrain || state.terrain.length === 0) state.terrain = [ {x:0, z:100.0}, {x:state.length, z:100.0} ];
   if(!state.rails) state.rails = [];
+  if(state.followTerrain === undefined) state.followTerrain = false;
+  if(state.depthOffset === undefined) state.depthOffset = 4.00;
   state.terrain.sort((a,b) => a.x - b.x);
   renderTabs(); 
   syncInputs();
@@ -1176,7 +1265,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.12", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.13", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1203,6 +1292,8 @@ function loadProject(event) {
             
             profiles.forEach(p => {
                 if (p.isGNP === undefined) p.isGNP = false;
+                if (p.followTerrain === undefined) p.followTerrain = false;
+                if (p.depthOffset === undefined) p.depthOffset = 4.00;
                 if (!p.hddNumber) p.hddNumber = "1";
                 if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
@@ -1241,11 +1332,37 @@ function toggleGNP() {
     triggerUpdate();
 }
 
+function toggleFollowTerrain() {
+    let follow = document.getElementById('chkFollowTerrain').checked;
+    state.followTerrain = follow;
+    let getZ = getTerrainInterpolator(state);
+    let midZ = getZ(state.length / 2);
+    if (follow) {
+        let calcOffset = midZ - state.depthHall;
+        state.depthOffset = (calcOffset >= 1.5 && calcOffset <= 25) ? +(calcOffset.toFixed(2)) : 4.00;
+    } else {
+        state.depthHall = +(midZ - (state.depthOffset || 4.00)).toFixed(2);
+    }
+    syncInputs();
+    triggerUpdate();
+}
+
 function syncInputs() {
   document.getElementById('chkIsGNP').checked = !!state.isGNP;
+  document.getElementById('chkFollowTerrain').checked = !!state.followTerrain;
   document.getElementById('inpNumber').value = state.hddNumber;
   document.getElementById('inpLength').value = state.length;
-  document.getElementById('inpHall').value = state.depthHall.toFixed(2);
+  
+  if (state.followTerrain) {
+      document.getElementById('lblHall').textContent = 'Заглубление (м)';
+      document.getElementById('inpHall').value = (state.depthOffset !== undefined ? state.depthOffset : 4.00).toFixed(2);
+      document.getElementById('inpHall').step = '0.1';
+  } else {
+      document.getElementById('lblHall').textContent = 'Горизонт (Z)';
+      document.getElementById('inpHall').value = state.depthHall.toFixed(2);
+      document.getElementById('inpHall').step = '0.05';
+  }
+
   document.getElementById('inpEntryDepth').value = state.entryDepth;
   document.getElementById('inpExitDepth').value = state.exitDepth;
   document.getElementById('inpRadius').value = state.radius !== undefined ? state.radius : 60;
@@ -1255,14 +1372,15 @@ function syncInputs() {
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
 
   let hallInp = document.getElementById('inpHall');
+  let followChk = document.getElementById('chkFollowTerrain');
   let radInp = document.getElementById('inpRadius');
   let angEntInp = document.getElementById('inpAngleEntry');
   let angExInp = document.getElementById('inpAngleExit');
   if (state.isGNP) {
-      hallInp.disabled = true; radInp.disabled = true;
+      hallInp.disabled = true; followChk.disabled = true; radInp.disabled = true;
       angEntInp.disabled = true; angExInp.disabled = true;
   } else {
-      hallInp.disabled = false; radInp.disabled = false;
+      hallInp.disabled = false; followChk.disabled = false; radInp.disabled = false;
       angEntInp.disabled = false; angExInp.disabled = false;
   }
 }
@@ -1271,7 +1389,10 @@ function triggerUpdate() {
   let oldNumber = state.hddNumber;
   state.hddNumber = document.getElementById('inpNumber').value || "1";
   state.length = parseFloat(document.getElementById('inpLength').value) || 60;
-  let userZ = parseFloat(document.getElementById('inpHall').value) || 95.00;
+  state.followTerrain = document.getElementById('chkFollowTerrain').checked;
+  let userVal = parseFloat(document.getElementById('inpHall').value);
+  if (isNaN(userVal)) userVal = state.followTerrain ? 4.00 : 95.00;
+
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 60;
@@ -1282,12 +1403,23 @@ function triggerUpdate() {
   state.terrain.sort((a,b) => a.x - b.x);
 
   if (!state.isGNP && document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
-      let safeZ = snapToSafeDepth(userZ);
-      if (safeZ !== null && Math.abs(safeZ - userZ) > 0.01) {
-          state.depthHall = +(safeZ.toFixed(2));
-          document.getElementById('inpHall').value = state.depthHall.toFixed(2);
-      } else { state.depthHall = userZ; }
-  } else { state.depthHall = userZ; }
+      let safeVal = snapToSafeDepth(userVal);
+      if (safeVal !== null && Math.abs(safeVal - userVal) > 0.01) {
+          if (state.followTerrain) {
+              state.depthOffset = +(safeVal.toFixed(2));
+              document.getElementById('inpHall').value = state.depthOffset.toFixed(2);
+          } else {
+              state.depthHall = +(safeVal.toFixed(2));
+              document.getElementById('inpHall').value = state.depthHall.toFixed(2);
+          }
+      } else {
+          if (state.followTerrain) state.depthOffset = userVal;
+          else state.depthHall = userVal;
+      }
+  } else {
+      if (state.followTerrain) state.depthOffset = userVal;
+      else state.depthHall = userVal;
+  }
 
   if (oldNumber !== state.hddNumber) { sortProfiles(); renderTabs(); }
   localStorage.setItem('gnbProfilesArray', JSON.stringify(profiles));
@@ -1309,10 +1441,10 @@ function renderTerrainList() {
     container.appendChild(div);
   });
 }
-function addTerrainPoint() { let last = state.terrain[state.terrain.length - 1]; state.terrain.push({ x: last.x + 10, z: last.z }); state.terrain.sort((a,b) => a.x - b.x); autoSetDepth5m(); renderTerrainList(); triggerUpdate(); }
-function updateTerrainX(i, val) { state.terrain[i].x = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function updateTerrainZ(i, val) { state.terrain[i].z = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function removeTerrain(i) { if (state.terrain.length > 2) { state.terrain.splice(i, 1); autoSetDepth5m(); renderTerrainList(); triggerUpdate(); } }
+function addTerrainPoint() { let last = state.terrain[state.terrain.length - 1]; state.terrain.push({ x: last.x + 10, z: last.z }); state.terrain.sort((a,b) => a.x - b.x); if (!state.followTerrain) autoSetDepth5m(); renderTerrainList(); triggerUpdate(); }
+function updateTerrainX(i, val) { state.terrain[i].x = parseFloat(val) || 0; if (!state.followTerrain) autoSetDepth5m(); triggerUpdate(); }
+function updateTerrainZ(i, val) { state.terrain[i].z = parseFloat(val) || 0; if (!state.followTerrain) autoSetDepth5m(); triggerUpdate(); }
+function removeTerrain(i) { if (state.terrain.length > 2) { state.terrain.splice(i, 1); if (!state.followTerrain) autoSetDepth5m(); renderTerrainList(); triggerUpdate(); } }
 
 function renderAsphaltsList() {
   const container = document.getElementById('asphaltsContainer'); container.innerHTML = '';
@@ -1325,10 +1457,10 @@ function renderAsphaltsList() {
     container.appendChild(div);
   });
 }
-function addAsphalt() { state.asphalts.push({ start: 0, end: 10 }); autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
-function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function removeAsphalt(i) { state.asphalts.splice(i, 1); autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
+function addAsphalt() { state.asphalts.push({ start: 0, end: 10 }); if (!state.followTerrain) autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
+function updateAsphaltStart(i, val) { state.asphalts[i].start = parseFloat(val) || 0; if (!state.followTerrain) autoSetDepth5m(); triggerUpdate(); }
+function updateAsphaltEnd(i, val) { state.asphalts[i].end = parseFloat(val) || 0; if (!state.followTerrain) autoSetDepth5m(); triggerUpdate(); }
+function removeAsphalt(i) { state.asphalts.splice(i, 1); if (!state.followTerrain) autoSetDepth5m(); renderAsphaltsList(); triggerUpdate(); }
 
 function renderGravelsList() {
   const container = document.getElementById('gravelsContainer'); container.innerHTML = '';
@@ -1341,10 +1473,10 @@ function renderGravelsList() {
     container.appendChild(div);
   });
 }
-function addGravel() { state.gravels.push({ start: 0, end: 10 }); autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
-function updateGravelStart(i, val) { state.gravels[i].start = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function updateGravelEnd(i, val) { state.gravels[i].end = parseFloat(val) || 0; autoSetDepth5m(); triggerUpdate(); }
-function removeGravel(i) { state.gravels.splice(i, 1); autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
+function addGravel() { state.gravels.push({ start: 0, end: 10 }); if (!state.followTerrain) autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
+function updateGravelStart(i, val) { state.gravels[i].start = parseFloat(val) || 0; if (!state.followTerrain) autoSetDepth5m(); triggerUpdate(); }
+function updateGravelEnd(i, val) { state.gravels[i].end = parseFloat(val) || 0; if (!state.followTerrain) autoSetDepth5m(); triggerUpdate(); }
+function removeGravel(i) { state.gravels.splice(i, 1); if (!state.followTerrain) autoSetDepth5m(); renderGravelsList(); triggerUpdate(); }
 
 function renderTreesList() {
   const container = document.getElementById('treesContainer'); container.innerHTML = '';
@@ -1449,12 +1581,21 @@ document.getElementById('modalNetDist').addEventListener('keypress', function(e)
 function autoOptimizeDepth() {
   if (state.isGNP) { alert("В режиме ГНП авто-углубление недоступно (трасса прямая). Измените глубину входа и выхода вручную."); return; }
   if (state.nets.length === 0) { alert("Нет сетей для обхода!"); return; }
-  let targetZ = state.depthHall; let safeZ = snapToSafeDepth(targetZ + 1.0); 
-  if (safeZ) {
-      state.depthHall = +(safeZ.toFixed(2));
-      document.getElementById('inpHall').value = state.depthHall.toFixed(2);
-      triggerUpdate(); alert(`Горизонт перенесен на безопасную отметку: Z = ${state.depthHall} м.`);
-  } else { alert("Не удалось найти безопасную отметку ниже всех сетей. Проверьте радиус."); }
+  if (state.followTerrain) {
+      let safeOffset = snapToSafeDepth(Math.max(1.5, (state.depthOffset || 4.0) - 1.0));
+      if (safeOffset) {
+          state.depthOffset = +(safeOffset.toFixed(2));
+          document.getElementById('inpHall').value = state.depthOffset.toFixed(2);
+          triggerUpdate(); alert(`Заглубление установлено на безопасный отступ: H = ${state.depthOffset} м от рельефа.`);
+      } else { alert("Не удалось найти безопасное заглубление ниже всех сетей. Проверьте радиус."); }
+  } else {
+      let targetZ = state.depthHall; let safeZ = snapToSafeDepth(targetZ + 1.0); 
+      if (safeZ) {
+          state.depthHall = +(safeZ.toFixed(2));
+          document.getElementById('inpHall').value = state.depthHall.toFixed(2);
+          triggerUpdate(); alert(`Горизонт перенесен на безопасную отметку: Z = ${state.depthHall} м.`);
+      } else { alert("Не удалось найти безопасную отметку ниже всех сетей. Проверьте радиус."); }
+  }
 }
 
 let currentZoom = 0.85;
@@ -1477,11 +1618,17 @@ function getProfileHtml(s, isMultiPrint) {
   
   let aEnt = s.angleEntry !== undefined ? s.angleEntry : 14;
   let aEx = s.angleExit !== undefined ? s.angleExit : 14;
+  let follow = !!s.followTerrain;
+  let pipeParam = follow ? (s.depthOffset !== undefined ? s.depthOffset : 4.0) : s.depthHall;
   
   let zEnt = getZ(0) - s.entryDepth; let zEx = getZ(L) - s.exitDepth;
-  let allZ = []; for(let x=0; x<=L; x+=1) allZ.push(getZ(x));
-  let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(zEnt, zEx, s.depthHall);
-  allZ.push(pipeMinZ - 3); 
+  let allZ = []; 
+  for(let x=0; x<=L; x+=1) {
+      allZ.push(getZ(x));
+      if (!s.isGNP) allZ.push(getTruePipeDepth(x, pipeParam, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx, follow));
+  }
+  let pipeMinZ = s.isGNP ? Math.min(zEnt, zEx) : Math.min(...allZ);
+  allZ.push(pipeMinZ - 2.5); 
   s.nets.forEach(n => allZ.push(getZ(n.dist) - n.depth));
   
   let maxZ = Math.ceil(Math.max(...allZ)) + 1; let minZ = Math.floor(Math.min(...allZ));
@@ -1543,7 +1690,6 @@ function getProfileHtml(s, isMultiPrint) {
   mergedHard.forEach(a => { if (a.start > currentPos) grasses.push({ start: currentPos, end: a.start }); currentPos = a.end; });
   if (currentPos < L) grasses.push({ start: currentPos, end: L });
 
-  // Сборщик всех верхних текстовых меток для исключения наложений
   let surfaceLabels = [];
 
   grasses.forEach(g => {
@@ -1627,7 +1773,6 @@ function getProfileHtml(s, isMultiPrint) {
     const sleeperLeft = x1 - 8;
     const sleeperWidth = (x2 - x1) + 16;
     
-    // Шпала высотой 10px (как асфальт), рельсы сверху
     markup += `
       <rect x="${sleeperLeft}" y="${yGround - 10}" width="${sleeperWidth}" height="10" fill="#5d4037" stroke="#222" stroke-width="1.4" />
       <path d="M ${x1 - 4} ${yGround - 22} L ${x1 + 4} ${yGround - 22} L ${x1 + 4} ${yGround - 19} L ${x1 + 1.5} ${yGround - 19} L ${x1 + 1.5} ${yGround - 12} L ${x1 + 4.5} ${yGround - 12} L ${x1 + 4.5} ${yGround - 10} L ${x1 - 4.5} ${yGround - 10} L ${x1 - 4.5} ${yGround - 12} L ${x1 - 1.5} ${yGround - 12} L ${x1 - 1.5} ${yGround - 19} L ${x1 - 4} ${yGround - 19} Z" fill="#1e293b" />
@@ -1705,10 +1850,10 @@ function getProfileHtml(s, isMultiPrint) {
 
   let pathD = `M ${toSvgX(0)} ${toSvgY(getZ(0) - s.entryDepth)}`;
   for (let x = 0.5; x <= L; x += 0.5) {
-      let zPipe = getTruePipeDepth(x, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx);
+      let zPipe = getTruePipeDepth(x, pipeParam, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx, follow);
       pathD += ` L ${toSvgX(x)} ${toSvgY(zPipe)}`;
   }
-  let yEx = getTruePipeDepth(L, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx);
+  let yEx = getTruePipeDepth(L, pipeParam, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx, follow);
   pathD += ` L ${toSvgX(L)} ${toSvgY(yEx)}`;
 
   markup += `
@@ -1727,13 +1872,17 @@ function getProfileHtml(s, isMultiPrint) {
       let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
       let h_arc_max1 = R * (1 - Math.cos(r1)); let L_arc_max1 = R * Math.sin(r1); let tan1 = Math.tan(r1);
       let h_arc_max2 = R * (1 - Math.cos(r2)); let L_arc_max2 = R * Math.sin(r2); let tan2 = Math.tan(r2);
-      let h1 = Math.max(0, zEnt - s.depthHall); let h2 = Math.max(0, zEx - s.depthHall);
+      let h1 = follow ? Math.max(0, pipeParam - s.entryDepth) : Math.max(0, zEnt - s.depthHall);
+      let h2 = follow ? Math.max(0, pipeParam - s.exitDepth) : Math.max(0, zEx - s.depthHall);
       let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : L_arc_max1 + (h1 - h_arc_max1)/tan1;
       let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : L_arc_max2 + (h2 - h_arc_max2)/tan2;
-      let horizX = toSvgX(L1 + L2 > L ? L * L1 / (L1 + L2 || 1) : L1 + (L - L2 - L1)/2);
-      let horizY = toSvgY(s.depthHall) + 22;
-      markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
-      markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">Горизонт (Z: ${s.depthHall.toFixed(2)}м)</text>`;
+      let midDist = L1 + L2 > L ? L * L1 / (L1 + L2 || 1) : L1 + (L - L2 - L1)/2;
+      let horizX = toSvgX(midDist);
+      let midPipeZ = getTruePipeDepth(midDist, pipeParam, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx, follow);
+      let horizY = toSvgY(midPipeZ) + 22;
+      let midLabel = follow ? `Заглубление (H: ${pipeParam.toFixed(2)}м)` : `Горизонт (Z: ${s.depthHall.toFixed(2)}м)`;
+      markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">${midLabel}</text>`;
+      markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">${midLabel}</text>`;
   }
 
   let linesMarkup = ''; let textsMarkup = '';
@@ -1742,7 +1891,7 @@ function getProfileHtml(s, isMultiPrint) {
   drawNets.forEach((net, index) => {
     const nx = toSvgX(net.dist); const zGr = getZ(net.dist); const nz = zGr - net.depth; const ny = toSvgY(nz);
     const conf = NET_TYPES[net.type] || NET_TYPES.gas;
-    let pipeZAtDist = getTruePipeDepth(net.dist, s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx);
+    let pipeZAtDist = getTruePipeDepth(net.dist, pipeParam, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx, follow);
     const centerDist = Math.abs(pipeZAtDist - nz);
     const deltaHVal = centerDist - 0.080; 
     const deltaHStr = deltaHVal.toFixed(2).replace('.', ',');
@@ -1855,6 +2004,8 @@ window.onload = () => {
       if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
       profiles.forEach(p => {
           if (p.isGNP === undefined) p.isGNP = false;
+          if (p.followTerrain === undefined) p.followTerrain = false;
+          if (p.depthOffset === undefined) p.depthOffset = 4.00;
           if (!p.hddNumber) p.hddNumber = "1";
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
