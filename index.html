@@ -982,6 +982,102 @@ function getTerrainInterpolator(s) {
     return createSplineInterpolator(eff);
 }
 
+/* РАСЧЕТ ГЕОМЕТРИИ СКВАЖИНЫ (ГОРИЗОНТ ИЛИ НАКЛОННАЯ ПРЯМАЯ С ПРИВЯЗКОЙ К ВХОДУ/ВЫХОДУ) */
+function computeBoreGeometry(z1, z2, zEnt, zEx, L, R, aEnt, aEx) {
+    let rad1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
+    let rad2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
+    let tan1 = Math.tan(rad1);
+    let tan2 = Math.tan(rad2);
+
+    // Итерационно находим угол наклона средней прямой (beta) с учетом дуг сопряжения радиуса R
+    let beta = Math.atan2(z2 - z1, L);
+    let L1 = 0, L2 = 0, xStart = 0, xEnd = L;
+
+    for (let iter = 0; iter < 15; iter++) {
+        let effRad1 = Math.max(0.001, rad1 + beta);
+        let h_arc1 = R * (Math.cos(beta) - Math.cos(rad1));
+        let L_arc1 = R * (Math.sin(rad1) - Math.sin(beta));
+        let h1 = Math.max(0, zEnt - z1);
+        if (h1 <= h_arc1) {
+            // Если перепад высоты меньше полной дуги разворота
+            let cosTheta = Math.max(-1, Math.min(1, Math.cos(beta) + h1 / R));
+            let theta = Math.acos(cosTheta);
+            L1 = Math.max(0, R * (Math.sin(theta) - Math.sin(beta)));
+        } else {
+            L1 = L_arc1 + (h1 - h_arc1) / tan1;
+        }
+
+        let effRad2 = Math.max(0.001, rad2 - beta);
+        let h_arc2 = R * (Math.cos(beta) - Math.cos(rad2));
+        let L_arc2 = R * (Math.sin(rad2) + Math.sin(beta));
+        let h2 = Math.max(0, zEx - z2);
+        if (h2 <= h_arc2) {
+            let cosTheta = Math.max(-1, Math.min(1, Math.cos(beta) + h2 / R));
+            let theta = Math.acos(cosTheta);
+            L2 = Math.max(0, R * (Math.sin(theta) + Math.sin(beta)));
+        } else {
+            L2 = L_arc2 + (h2 - h_arc2) / tan2;
+        }
+
+        xStart = L1;
+        xEnd = L - L2;
+        if (xEnd - xStart > 0.5) {
+            beta = Math.atan2(z2 - z1, xEnd - xStart);
+        } else {
+            beta = Math.atan2(z2 - z1, L);
+            break;
+        }
+    }
+
+    let h_arc1 = R * (Math.cos(beta) - Math.cos(rad1));
+    let L_arc1 = R * (Math.sin(rad1) - Math.sin(beta));
+    let h_arc2 = R * (Math.cos(beta) - Math.cos(rad2));
+    let L_arc2 = R * (Math.sin(rad2) + Math.sin(beta));
+
+    function getZfromDX1(dx) {
+        // dx = xStart - x (расстояние влево от точки касания прямой на входе)
+        let u = dx + R * Math.sin(beta);
+        if (dx <= L_arc1) {
+            let val = Math.max(0, R * R - u * u);
+            return z1 + R * Math.cos(beta) - Math.sqrt(val);
+        } else {
+            return z1 + h_arc1 + (dx - L_arc1) * tan1;
+        }
+    }
+
+    function getZfromDX2(dx) {
+        // dx = x - xEnd (расстояние вправо от точки касания прямой на выходе)
+        let u = dx - R * Math.sin(beta);
+        if (dx <= L_arc2) {
+            let val = Math.max(0, R * R - u * u);
+            return z2 + R * Math.cos(beta) - Math.sqrt(val);
+        } else {
+            return z2 + h_arc2 + (dx - L_arc2) * tan2;
+        }
+    }
+
+    return {
+        xStart: xStart,
+        xEnd: xEnd,
+        L1: L1,
+        L2: L2,
+        z1: z1,
+        z2: z2,
+        evalZ: function(x) {
+            if (x <= 0) return zEnt;
+            if (x >= L) return zEx;
+            if (xStart >= xEnd) {
+                let midX = L * L1 / (L1 + L2 || 1);
+                if (x <= midX) return getZfromDX1(L1 - (x / midX) * L1);
+                else return getZfromDX2(L2 - ((L - x) / (L - midX)) * L2);
+            }
+            if (x < xStart) return getZfromDX1(xStart - x);
+            if (x > xEnd) return getZfromDX2(x - xEnd);
+            return z1 + (z2 - z1) * ((x - xStart) / (xEnd - xStart));
+        }
+    };
+}
+
 function getTruePipeDepth(x, paramVal, entryDepth, exitDepth, L, R, getZ, isGNP, aEntry = 14, aExit = 14, followTerrain = false) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
@@ -992,170 +1088,54 @@ function getTruePipeDepth(x, paramVal, entryDepth, exitDepth, L, R, getZ, isGNP,
         return zEnt + (zEx - zEnt) * (x / L);
     }
 
-    if (x <= 0) return zEnt;
-    if (x >= L) return zEx;
-
-    // Режим постоянного отступа от рельефа (параллельно поверхности земли)
-    if (followTerrain) {
-        let depthOffset = paramVal;
-        let h1 = Math.max(0, depthOffset - entryDepth);
-        let h2 = Math.max(0, depthOffset - exitDepth);
-
-        let rad1 = Math.max(1, Math.min(45, aEntry)) * Math.PI / 180;
-        let tan1 = Math.tan(rad1);
-        let h_arc_max1 = R * (1 - Math.cos(rad1));
-        let L_arc_max1 = R * Math.sin(rad1);
-
-        let rad2 = Math.max(1, Math.min(45, aExit)) * Math.PI / 180;
-        let tan2 = Math.tan(rad2);
-        let h_arc_max2 = R * (1 - Math.cos(rad2));
-        let L_arc_max2 = R * Math.sin(rad2);
-
-        function getFootprint(h, harc, Larc, tan) {
-            if (h <= harc) return Math.sqrt(Math.max(0, 2 * R * h - h * h));
-            else return Larc + (h - harc) / tan;
-        }
-        function getDepthFromDX(dx, harc, Larc, tan) {
-            if (dx <= Larc) return depthOffset - R + Math.sqrt(Math.max(0, R * R - dx * dx));
-            else return depthOffset - harc - (dx - Larc) * tan;
-        }
-
-        let L1 = getFootprint(h1, h_arc_max1, L_arc_max1, tan1);
-        let L2 = getFootprint(h2, h_arc_max2, L_arc_max2, tan2);
-
-        let xHorizStart = L1;
-        let xHorizEnd = L - L2;
-        let dAtX;
-
-        if (xHorizStart > xHorizEnd) {
-            let midX = L * L1 / (L1 + L2 || 1);
-            if (x <= midX) {
-                let dx = L1 - (x / midX) * L1;
-                dAtX = getDepthFromDX(dx, h_arc_max1, L_arc_max1, tan1);
-            } else {
-                let dx = L2 - ((L - x) / (L - midX)) * L2;
-                dAtX = getDepthFromDX(dx, h_arc_max2, L_arc_max2, tan2);
-            }
-        } else if (x < xHorizStart) {
-            dAtX = getDepthFromDX(xHorizStart - x, h_arc_max1, L_arc_max1, tan1);
-        } else if (x > xHorizEnd) {
-            dAtX = getDepthFromDX(x - xHorizEnd, h_arc_max2, L_arc_max2, tan2);
-        } else {
-            dAtX = depthOffset;
-        }
-
-        return getZ(x) - dAtX;
-    }
-
-    // Режим жесткой горизонтальной отметки Z
-    let zHall = paramVal;
-    let h1 = Math.max(0, zEnt - zHall);
-    let h2 = Math.max(0, zEx - zHall);
-
-    let rad1 = Math.max(1, Math.min(45, aEntry)) * Math.PI / 180;
-    let tan1 = Math.tan(rad1);
-    let h_arc_max1 = R * (1 - Math.cos(rad1));
-    let L_arc_max1 = R * Math.sin(rad1);
-
-    let rad2 = Math.max(1, Math.min(45, aExit)) * Math.PI / 180;
-    let tan2 = Math.tan(rad2);
-    let h_arc_max2 = R * (1 - Math.cos(rad2));
-    let L_arc_max2 = R * Math.sin(rad2);
-
-    function getFootprint(h, harc, Larc, tan) {
-        if (h <= harc) return Math.sqrt(Math.max(0, 2 * R * h - h * h));
-        else return Larc + (h - harc) / tan;
-    }
-    function getZfromDX(dx, harc, Larc, tan) {
-        if (dx <= Larc) return zHall + R - Math.sqrt(Math.max(0, R * R - dx * dx));
-        else return zHall + harc + (dx - Larc) * tan;
-    }
-
-    let L1 = getFootprint(h1, h_arc_max1, L_arc_max1, tan1);
-    let L2 = getFootprint(h2, h_arc_max2, L_arc_max2, tan2);
-
-    let xHorizStart = L1;
-    let xHorizEnd = L - L2;
-
-    if (xHorizStart > xHorizEnd) {
-        let midX = L * L1 / (L1 + L2 || 1);
-        if (x <= midX) {
-            let dx = L1 - (x / midX) * L1; 
-            return getZfromDX(dx, h_arc_max1, L_arc_max1, tan1);
-        } else {
-            let dx = L2 - ((L - x) / (L - midX)) * L2;
-            return getZfromDX(dx, h_arc_max2, L_arc_max2, tan2);
-        }
-    } 
-
-    if (x < xHorizStart) {
-        return getZfromDX(xHorizStart - x, h_arc_max1, L_arc_max1, tan1);
-    } else if (x > xHorizEnd) {
-        return getZfromDX(x - xHorizEnd, h_arc_max2, L_arc_max2, tan2);
-    } else {
-        return zHall;
-    }
+    let z1 = followTerrain ? (getZ(0) - paramVal) : paramVal;
+    let z2 = followTerrain ? (getZ(L) - paramVal) : paramVal;
+    return computeBoreGeometry(z1, z2, zEnt, zEx, L, R, aEntry, aExit).evalZ(x);
 }
 
 function snapToSafeDepth(targetVal) {
-    if (state.nets.length === 0 || state.isGNP) return targetVal;
+    if (state.isGNP) return targetVal;
 
     const L = state.length;
     const R = state.radius;
-    const clearance = 0.58; 
+    const netClearance = 0.58;   // >= 0.5 м между стенками + радиусы труб
+    const groundClearance = 1.05; // >= 1.0 м от поверхности земли на среднем участке
     let getZ = getTerrainInterpolator(state);
     let aEnt = state.angleEntry !== undefined ? state.angleEntry : 14;
     let aEx = state.angleExit !== undefined ? state.angleExit : 14;
     let follow = !!state.followTerrain;
+    let zEnt = getZ(0) - state.entryDepth;
+    let zEx = getZ(L) - state.exitDepth;
 
     function isValid(val) {
+        let z1 = follow ? (getZ(0) - val) : val;
+        let z2 = follow ? (getZ(L) - val) : val;
+        if (z1 > zEnt || z2 > zEx) return false;
+
+        let geom = computeBoreGeometry(z1, z2, zEnt, zEx, L, R, aEnt, aEx);
+        if (geom.L1 + geom.L2 > L - 1.0) return false;
+
+        // 1. Проверка приближения к рельефу (особенно актуально при буграх в середине трассы)
         if (follow) {
-            if (val < state.entryDepth || val < state.exitDepth) return false;
-            let h1 = val - state.entryDepth;
-            let h2 = val - state.exitDepth;
-            let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
-            let h_arc_max1 = R * (1 - Math.cos(r1));
-            let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : R*Math.sin(r1) + (h1 - h_arc_max1)/Math.tan(r1);
-            let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
-            let h_arc_max2 = R * (1 - Math.cos(r2));
-            let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : R*Math.sin(r2) + (h2 - h_arc_max2)/Math.tan(r2);
-            if (L1 + L2 > L) return false;
-
-            for (let net of state.nets) {
-                let pipeZ = getTruePipeDepth(net.dist, val, state.entryDepth, state.exitDepth, L, R, getZ, state.isGNP, aEnt, aEx, true);
-                let netZ = getZ(net.dist) - net.depth;
-                if (Math.abs(pipeZ - netZ) < clearance) return false;
+            let checkStart = Math.max(geom.xStart, L * 0.1);
+            let checkEnd = Math.min(geom.xEnd, L * 0.9);
+            for (let x = checkStart; x <= checkEnd; x += 1.0) {
+                let pipeZ = geom.evalZ(x);
+                if (getZ(x) - pipeZ < groundClearance) return false;
             }
-            return true;
-        } else {
-            let zEnt = getZ(0) - state.entryDepth;
-            let zEx = getZ(L) - state.exitDepth;
-            if (val > zEnt || val > zEx) return false;
-            
-            let h1 = zEnt - val;
-            let h2 = zEx - val;
-            
-            let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
-            let h_arc_max1 = R * (1 - Math.cos(r1));
-            let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : R*Math.sin(r1) + (h1 - h_arc_max1)/Math.tan(r1);
-
-            let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
-            let h_arc_max2 = R * (1 - Math.cos(r2));
-            let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : R*Math.sin(r2) + (h2 - h_arc_max2)/Math.tan(r2);
-            
-            if (L1 + L2 > L) return false;
-
-            for (let net of state.nets) {
-                let pipeZ = getTruePipeDepth(net.dist, val, state.entryDepth, state.exitDepth, L, R, getZ, state.isGNP, aEnt, aEx, false);
-                let netZ = getZ(net.dist) - net.depth;
-                if (Math.abs(pipeZ - netZ) < clearance) return false;
-            }
-            return true;
         }
+
+        // 2. Проверка приближения ко всем пересекаемым сетям
+        for (let net of state.nets) {
+            let pipeZ = geom.evalZ(net.dist);
+            let netZ = getZ(net.dist) - net.depth;
+            if (Math.abs(pipeZ - netZ) < netClearance) return false;
+        }
+        return true;
     }
 
     if (isValid(targetVal)) return targetVal;
-    for (let step = 0; step <= 25.0; step += 0.05) {
+    for (let step = 0.05; step <= 35.0; step += 0.05) {
         let testVal = follow ? (targetVal + step) : (targetVal - step);
         if (isValid(testVal)) return testVal;
     }
@@ -1265,7 +1245,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.13", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.14", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1336,12 +1316,12 @@ function toggleFollowTerrain() {
     let follow = document.getElementById('chkFollowTerrain').checked;
     state.followTerrain = follow;
     let getZ = getTerrainInterpolator(state);
-    let midZ = getZ(state.length / 2);
+    let minEndZ = Math.min(getZ(0), getZ(state.length));
     if (follow) {
-        let calcOffset = midZ - state.depthHall;
+        let calcOffset = minEndZ - state.depthHall;
         state.depthOffset = (calcOffset >= 1.5 && calcOffset <= 25) ? +(calcOffset.toFixed(2)) : 4.00;
     } else {
-        state.depthHall = +(midZ - (state.depthOffset || 4.00)).toFixed(2);
+        state.depthHall = +(minEndZ - (state.depthOffset || 4.00)).toFixed(2);
     }
     syncInputs();
     triggerUpdate();
@@ -1402,7 +1382,8 @@ function triggerUpdate() {
   state.pitDepthExit = parseFloat(document.getElementById('inpPitDepthExit').value) || 2.0;
   state.terrain.sort((a,b) => a.x - b.x);
 
-  if (!state.isGNP && document.getElementById('chkAutoSnap').checked && state.nets.length > 0) {
+  // Автоматическое притопление под бугры рельефа и пересекаемые сети
+  if (!state.isGNP && document.getElementById('chkAutoSnap').checked) {
       let safeVal = snapToSafeDepth(userVal);
       if (safeVal !== null && Math.abs(safeVal - userVal) > 0.01) {
           if (state.followTerrain) {
@@ -1580,14 +1561,13 @@ document.getElementById('modalNetDist').addEventListener('keypress', function(e)
 
 function autoOptimizeDepth() {
   if (state.isGNP) { alert("В режиме ГНП авто-углубление недоступно (трасса прямая). Измените глубину входа и выхода вручную."); return; }
-  if (state.nets.length === 0) { alert("Нет сетей для обхода!"); return; }
   if (state.followTerrain) {
       let safeOffset = snapToSafeDepth(Math.max(1.5, (state.depthOffset || 4.0) - 1.0));
       if (safeOffset) {
           state.depthOffset = +(safeOffset.toFixed(2));
           document.getElementById('inpHall').value = state.depthOffset.toFixed(2);
-          triggerUpdate(); alert(`Заглубление установлено на безопасный отступ: H = ${state.depthOffset} м от рельефа.`);
-      } else { alert("Не удалось найти безопасное заглубление ниже всех сетей. Проверьте радиус."); }
+          triggerUpdate(); alert(`Заглубление установлено на безопасный отступ: H = ${state.depthOffset} м (с учетом рельефа и сетей).`);
+      } else { alert("Не удалось найти безопасное заглубление ниже всех сетей и рельефа. Проверьте радиус."); }
   } else {
       let targetZ = state.depthHall; let safeZ = snapToSafeDepth(targetZ + 1.0); 
       if (safeZ) {
@@ -1868,19 +1848,16 @@ function getProfileHtml(s, isMultiPrint) {
   `;
 
   if (!s.isGNP) {
-      let r1 = Math.max(1, Math.min(45, aEnt)) * Math.PI / 180;
-      let r2 = Math.max(1, Math.min(45, aEx)) * Math.PI / 180;
-      let h_arc_max1 = R * (1 - Math.cos(r1)); let L_arc_max1 = R * Math.sin(r1); let tan1 = Math.tan(r1);
-      let h_arc_max2 = R * (1 - Math.cos(r2)); let L_arc_max2 = R * Math.sin(r2); let tan2 = Math.tan(r2);
-      let h1 = follow ? Math.max(0, pipeParam - s.entryDepth) : Math.max(0, zEnt - s.depthHall);
-      let h2 = follow ? Math.max(0, pipeParam - s.exitDepth) : Math.max(0, zEx - s.depthHall);
-      let L1 = h1 <= h_arc_max1 ? Math.sqrt(Math.max(0, 2*R*h1 - h1*h1)) : L_arc_max1 + (h1 - h_arc_max1)/tan1;
-      let L2 = h2 <= h_arc_max2 ? Math.sqrt(Math.max(0, 2*R*h2 - h2*h2)) : L_arc_max2 + (h2 - h_arc_max2)/tan2;
-      let midDist = L1 + L2 > L ? L * L1 / (L1 + L2 || 1) : L1 + (L - L2 - L1)/2;
+      let z1 = follow ? (getZ(0) - pipeParam) : s.depthHall;
+      let z2 = follow ? (getZ(L) - pipeParam) : s.depthHall;
+      let geom = computeBoreGeometry(z1, z2, zEnt, zEx, L, R, aEnt, aEx);
+      let midDist = geom.xStart >= geom.xEnd ? (L * geom.L1 / (geom.L1 + geom.L2 || 1)) : (geom.xStart + (geom.xEnd - geom.xStart) / 2);
       let horizX = toSvgX(midDist);
-      let midPipeZ = getTruePipeDepth(midDist, pipeParam, s.entryDepth, s.exitDepth, L, R, getZ, s.isGNP, aEnt, aEx, follow);
-      let horizY = toSvgY(midPipeZ) + 22;
-      let midLabel = follow ? `Заглубление (H: ${pipeParam.toFixed(2)}м)` : `Горизонт (Z: ${s.depthHall.toFixed(2)}м)`;
+      let midPipeZ = geom.evalZ(midDist);
+      let horizY = toSvgY(midPipeZ) + 24;
+      let midLabel = follow 
+        ? `Заглубление H=${pipeParam.toFixed(2)}м (Z: ${z1.toFixed(2)} → ${z2.toFixed(2)}м)` 
+        : `Горизонт (Z: ${s.depthHall.toFixed(2)}м)`;
       markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">${midLabel}</text>`;
       markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">${midLabel}</text>`;
   }
