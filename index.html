@@ -652,11 +652,11 @@
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
         <label>Угол входа (°)</label>
-        <input type="number" id="inpAngleEntry" value="14" step="1" min="1" max="45" onchange="triggerUpdate()">
+        <input type="number" id="inpAngleEntry" value="30" step="1" min="1" max="45" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
         <label>Угол выхода (°)</label>
-        <input type="number" id="inpAngleExit" value="14" step="1" min="1" max="45" onchange="triggerUpdate()">
+        <input type="number" id="inpAngleExit" value="30" step="1" min="1" max="45" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -785,7 +785,7 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     entryDepth: 1.0,
     exitDepth: 1.0,
     angleEntry: 14,
-    angleExit: 14,
+    angleExit: 30,
     radius: 60,
     pitDepthEntry: isGNP ? 1.0 : 2.0,
     pitDepthExit: isGNP ? 1.0 : 2.0,
@@ -1361,8 +1361,8 @@ function syncInputs() {
   document.getElementById('inpEntryDepth').value = state.entryDepth;
   document.getElementById('inpExitDepth').value = state.exitDepth;
   document.getElementById('inpRadius').value = state.radius !== undefined ? state.radius : 60;
-  document.getElementById('inpAngleEntry').value = state.angleEntry !== undefined ? state.angleEntry : 14;
-  document.getElementById('inpAngleExit').value = state.angleExit !== undefined ? state.angleExit : 14;
+  document.getElementById('inpAngleEntry').value = state.angleEntry !== undefined ? state.angleEntry : 30;
+  document.getElementById('inpAngleExit').value = state.angleExit !== undefined ? state.angleExit : 30;
   document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
 
@@ -1387,8 +1387,8 @@ function triggerUpdate() {
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 60;
-  state.angleEntry = parseFloat(document.getElementById('inpAngleEntry').value) || 14;
-  state.angleExit = parseFloat(document.getElementById('inpAngleExit').value) || 14;
+  state.angleEntry = parseFloat(document.getElementById('inpAngleEntry').value) || 30;
+  state.angleExit = parseFloat(document.getElementById('inpAngleExit').value) || 30;
   state.pitDepthEntry = parseFloat(document.getElementById('inpPitDepthEntry').value) || 2.0;
   state.pitDepthExit = parseFloat(document.getElementById('inpPitDepthExit').value) || 2.0;
   state.terrain.sort((a,b) => a.x - b.x);
@@ -1972,8 +1972,8 @@ window.onload = () => {
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.radius === undefined) p.radius = 60; 
-          if (p.angleEntry === undefined) p.angleEntry = 14; 
-          if (p.angleExit === undefined) p.angleExit = 14; 
+          if (p.angleEntry === undefined) p.angleEntry = 30; 
+          if (p.angleExit === undefined) p.angleExit = 30; 
           if (!p.asphalts) p.asphalts = [];
           if (!p.gravels) p.gravels = []; 
           if (!p.trees) p.trees = []; 
