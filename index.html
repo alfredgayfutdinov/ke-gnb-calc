@@ -1019,6 +1019,7 @@ function getTerrainInterpolator(s) {
 }
 
 /* РАСЧЕТ ГЕОМЕТРИИ СКВАЖИНЫ ПОД УГЛОМ ЛИНИИ "ВХОД — ВЫХОД" */
+/* РАСЧЕТ ГЕОМЕТРИИ СКВАЖИНЫ ПОД УГЛОМ ЛИНИИ "ВХОД — ВЫХОД" (БЕЗ ИЗЛОМОВ) */
 function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14, aExit = 14) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
@@ -1027,8 +1028,7 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
     let beta = L > 0 ? Math.atan2(zEx - zEnt, L) : 0;
     let tanBeta = Math.tan(beta);
 
-    // Опорная линия прогона параллельна линии Вход-Выход: Z_ref(x) = zHall + x * tan(beta)
-    // Глубина опускания h1 на входе и h2 на выходе от точек входа/выхода до этой наклонной линии
+    // Опорная линия прогона: Z_ref(x) = zHall + x * tan(beta)
     let h1 = Math.max(0, zEnt - zHall);
     let h2 = Math.max(0, zEx - (zHall + L * tanBeta));
 
@@ -1038,20 +1038,19 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
     let rad2 = Math.max(1, Math.min(45, aExit)) * Math.PI / 180;
     let tan2 = Math.tan(rad2);
 
-    // Параметры входного сопряжения (от угла -rad1 до угла +beta)
-    // Вертикальный перепад между касательной прямой (угол -rad1) и наклонной линией прогона (угол beta)
-    // в зависимости от смещения dx влево от точки касания xStart:
-    // На дуге (0 <= dx <= L_arc1): Z_arc(dx) = Z_ref(xStart - dx) + R*cos(beta) - sqrt(R^2 - (dx + R*sin(beta))^2) + dx*tan(beta)
-    // Разность dZ(dx) = Z(xStart - dx) - Z_ref(xStart - dx):
+    // ВХОДНАЯ ДУГА: касательная в точке (xStart, Z_ref(xStart)) имеет угол +beta,
+    // а при движении влево (dx > 0) поворачивает до угла входа -rad1.
+    // Превышение дуги над линией Z_ref(xStart - dx):
+    // dZ1(dx) = R * cos(beta) - sqrt(R^2 - (dx + R * sin(beta))^2) + dx * tan(beta)
     let L_arc1 = Math.max(0, R * (Math.sin(rad1) - Math.sin(beta)));
-    let dZ_arc1 = R * (Math.cos(beta) - Math.cos(rad1)) + L_arc1 * tanBeta;
+    let uMax1 = L_arc1 + R * Math.sin(beta); // = R * sin(rad1)
+    let dZ_arc1 = R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - uMax1 * uMax1)) + L_arc1 * tanBeta;
     let slopeDiff1 = Math.max(0.01, tan1 + tanBeta);
 
     let L1 = 0;
     if (h1 <= dZ_arc1) {
-        // Бисекция для точного нахождения dx на дуге, где Z(x) - Z_ref(x) = h1
         let lo = 0, hi = L_arc1;
-        for (let i = 0; i < 25; i++) {
+        for (let i = 0; i < 30; i++) {
             let mid = 0.5 * (lo + hi);
             let u = mid + R * Math.sin(beta);
             let val = R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - u * u)) + mid * tanBeta;
@@ -1062,17 +1061,21 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
         L1 = L_arc1 + (h1 - dZ_arc1) / slopeDiff1;
     }
 
-    // Параметры выходного сопряжения (от угла +beta до угла +rad2)
-    let L_arc2 = Math.max(0, R * (Math.sin(rad2) + Math.sin(beta)));
-    let dZ_arc2 = R * (Math.cos(beta) - Math.cos(rad2)) - L_arc2 * tanBeta;
+    // ВЫХОДНАЯ ДУГА: касательная в точке (xEnd, Z_ref(xEnd)) имеет угол +beta,
+    // а при движении вправо (dx > 0) поворачивает вверх до угла выхода +rad2.
+    // Превышение дуги над линией Z_ref(xEnd + dx):
+    // dZ2(dx) = R * cos(beta) - sqrt(R^2 - (dx + R * sin(beta))^2) - dx * tan(beta)
+    let L_arc2 = Math.max(0, R * (Math.sin(rad2) - Math.sin(beta)));
+    let uMax2 = L_arc2 + R * Math.sin(beta); // = R * sin(rad2)
+    let dZ_arc2 = R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - uMax2 * uMax2)) - L_arc2 * tanBeta;
     let slopeDiff2 = Math.max(0.01, tan2 - tanBeta);
 
     let L2 = 0;
     if (h2 <= dZ_arc2) {
         let lo = 0, hi = L_arc2;
-        for (let i = 0; i < 25; i++) {
+        for (let i = 0; i < 30; i++) {
             let mid = 0.5 * (lo + hi);
-            let u = mid - R * Math.sin(beta);
+            let u = mid + R * Math.sin(beta);
             let val = R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - u * u)) - mid * tanBeta;
             if (val < h2) lo = mid; else hi = mid;
         }
@@ -1089,7 +1092,7 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
         let zRef = zHall + x * tanBeta;
         if (dx <= L_arc1) {
             let u = dx + R * Math.sin(beta);
-            return zRef + R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - u * u)) + dx * tanBeta;
+            return zRef + (R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - u * u)) + dx * tanBeta);
         } else {
             return zRef + dZ_arc1 + (dx - L_arc1) * slopeDiff1;
         }
@@ -1099,8 +1102,8 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
         let x = xEnd + dx;
         let zRef = zHall + x * tanBeta;
         if (dx <= L_arc2) {
-            let u = dx - R * Math.sin(beta);
-            return zRef + R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - u * u)) - dx * tanBeta;
+            let u = dx + R * Math.sin(beta);
+            return zRef + (R * Math.cos(beta) - Math.sqrt(Math.max(0, R * R - u * u)) - dx * tanBeta);
         } else {
             return zRef + dZ_arc2 + (dx - L_arc2) * slopeDiff2;
         }
@@ -1117,10 +1120,14 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
         evalZ: function(x) {
             if (x <= 0) return zEnt;
             if (x >= L) return zEx;
+            // Если трасса короткая и кривые перекрываются (L1 + L2 > L),
+            // плавно сопрягаем их без разрыва по высоте:
             if (xStart > xEnd) {
-                let midX = L * L1 / (L1 + L2 || 1);
-                if (x <= midX) return getZfromDX1(L1 - (x / midX) * L1);
-                else return getZfromDX2(L2 - ((L - x) / (L - midX)) * L2);
+                let t = x / L;
+                let z1 = getZfromDX1(L1 * (1 - t));
+                let z2 = getZfromDX2(L2 * t);
+                let w = t * t * (3 - 2 * t); // гладкий переход Эрмита
+                return z1 * (1 - w) + z2 * w;
             }
             if (x < xStart) return getZfromDX1(xStart - x);
             if (x > xEnd) return getZfromDX2(x - xEnd);
