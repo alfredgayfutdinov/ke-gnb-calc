@@ -652,11 +652,11 @@
     <div class="form-row" style="margin-top: 8px;">
       <div class="form-group">
         <label>Угол входа (°)</label>
-        <input type="number" id="inpAngleEntry" value="30" step="1" min="1" max="45" onchange="triggerUpdate()">
+        <input type="number" id="inpAngleEntry" value="24" step="1" min="1" max="45" onchange="triggerUpdate()">
       </div>
       <div class="form-group">
         <label>Угол выхода (°)</label>
-        <input type="number" id="inpAngleExit" value="30" step="1" min="1" max="45" onchange="triggerUpdate()">
+        <input type="number" id="inpAngleExit" value="24" step="1" min="1" max="45" onchange="triggerUpdate()">
       </div>
     </div>
 
@@ -784,8 +784,8 @@ function getDefaultProfile(isGNP = false, numStr = "1") {
     depthHall: 95.00,
     entryDepth: 1.0,
     exitDepth: 1.0,
-    angleEntry: 30,
-    angleExit: 30,
+    angleEntry: 24,
+    angleExit: 24,
     radius: 60,
     pitDepthEntry: isGNP ? 1.0 : 2.0,
     pitDepthExit: isGNP ? 1.0 : 2.0,
@@ -1018,10 +1018,8 @@ function getTerrainInterpolator(s) {
     return createSplineInterpolator(eff);
 }
 
-/* РАСЧЕТ ГЕОМЕТРИИ СКВАЖИНЫ ПОД УГЛОМ ЛИНИИ "ВХОД — ВЫХОД" */
-/* РАСЧЕТ ГЕОМЕТРИИ СКВАЖИНЫ ПОД УГЛОМ ЛИНИИ "ВХОД — ВЫХОД" (БЕЗ ИЗЛОМОВ) */
 /* РАСЧЕТ ГЕОМЕТРИИ СКВАЖИНЫ ПОД УГЛОМ ЛИНИИ "ВХОД — ВЫХОД" (ТОЧНОЕ КАСАНИЕ) */
-function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14, aExit = 14) {
+function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 24, aExit = 24) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
 
@@ -1038,9 +1036,6 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
     let tan2 = Math.tan(rad2);
 
     // ВХОДНАЯ ДУГА: поворот касательной от угла -rad1 (вниз) до угла +beta (по оси прогона).
-    // В локальных координатах центра окружности: x_c = xStart - R*sin(beta), z_c = Z_ref(xStart) + R*cos(beta).
-    // При смещении влево на dx >= 0: x = xStart - dx, u = dx - R*sin(beta).
-    // Производная dZ/dx при dx = 0 равна (0 - R*sin(beta)) / (R*cos(beta)) * (-1) = +tan(beta) — идеальное касание!
     let L_arc1 = Math.max(0, R * (Math.sin(rad1) + Math.sin(beta)));
     let dZ_arc1 = R * (Math.cos(beta) - Math.cos(rad1)) + L_arc1 * tanBeta;
     let slopeDiff1 = Math.max(0.01, tan1 + tanBeta);
@@ -1060,9 +1055,6 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
     }
 
     // ВЫХОДНАЯ ДУГА: поворот касательной от угла +beta (ось прогона) до угла +rad2 (выход вверх).
-    // Центр окружности: x_c = xEnd - R*sin(beta), z_c = Z_ref(xEnd) + R*cos(beta).
-    // При смещении вправо на dx >= 0: x = xEnd + dx, u = dx + R*sin(beta).
-    // Производная dZ/dx при dx = 0 равна +(R*sin(beta)) / (R*cos(beta)) = +tan(beta) — идеальное касание!
     let L_arc2 = Math.max(0, R * (Math.sin(rad2) - Math.sin(beta)));
     let dZ_arc2 = R * (Math.cos(beta) - Math.cos(rad2)) - L_arc2 * tanBeta;
     let slopeDiff2 = Math.max(0.01, tan2 - tanBeta);
@@ -1131,7 +1123,7 @@ function computeSlopedBore(zHall, entryDepth, exitDepth, L, R, getZ, aEntry = 14
     };
 }
 
-function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aEntry = 14, aExit = 14) {
+function getTruePipeDepth(x, zHall, entryDepth, exitDepth, L, R, getZ, isGNP, aEntry = 24, aExit = 24) {
     let zEnt = getZ(0) - entryDepth;
     let zEx = getZ(L) - exitDepth;
 
@@ -1152,8 +1144,8 @@ function snapToSafeDepth(targetZ) {
     const netClearance = 0.58;
     const groundClearance = 1.05;
     let getZ = getTerrainInterpolator(state);
-    let aEnt = state.angleEntry !== undefined ? state.angleEntry : 14;
-    let aEx = state.angleExit !== undefined ? state.angleExit : 14;
+    let aEnt = state.angleEntry !== undefined ? state.angleEntry : 24;
+    let aEx = state.angleExit !== undefined ? state.angleExit : 24;
 
     function isValid(zH) {
         let zEnt = getZ(0) - state.entryDepth;
@@ -1194,7 +1186,6 @@ function autoSetDepth5m() {
   let zEx = getZ(state.length) - state.exitDepth;
   let tanBeta = state.length > 0 ? (zEx - zEnt) / state.length : 0;
 
-  // Находим максимальный "провис" рельефа относительно наклонной линии входа-выхода
   let minOffset = getZ(0);
   for (let x = 0.5; x <= state.length; x += 0.5) {
       let relZ = getZ(x) - x * tanBeta;
@@ -1288,7 +1279,7 @@ function resetAllData() {
 }
 
 function saveProject() {
-    const dataToSave = { version: "2.16", profiles: profiles, activeIndex: activeProfileIdx };
+    const dataToSave = { version: "2.17", profiles: profiles, activeIndex: activeProfileIdx };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1319,8 +1310,8 @@ function loadProject(event) {
                 if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
                 if (p.radius === undefined) p.radius = 60; 
-                if (p.angleEntry === undefined) p.angleEntry = 14; 
-                if (p.angleExit === undefined) p.angleExit = 14; 
+                if (p.angleEntry === undefined) p.angleEntry = 24; 
+                if (p.angleExit === undefined) p.angleExit = 24; 
                 if (!p.asphalts) p.asphalts = [];
                 if (!p.gravels) p.gravels = []; 
                 if (!p.trees) p.trees = []; 
@@ -1361,8 +1352,8 @@ function syncInputs() {
   document.getElementById('inpEntryDepth').value = state.entryDepth;
   document.getElementById('inpExitDepth').value = state.exitDepth;
   document.getElementById('inpRadius').value = state.radius !== undefined ? state.radius : 60;
-  document.getElementById('inpAngleEntry').value = state.angleEntry !== undefined ? state.angleEntry : 30;
-  document.getElementById('inpAngleExit').value = state.angleExit !== undefined ? state.angleExit : 30;
+  document.getElementById('inpAngleEntry').value = state.angleEntry !== undefined ? state.angleEntry : 24;
+  document.getElementById('inpAngleExit').value = state.angleExit !== undefined ? state.angleExit : 24;
   document.getElementById('inpPitDepthEntry').value = state.pitDepthEntry !== undefined ? state.pitDepthEntry : 2.0;
   document.getElementById('inpPitDepthExit').value = state.pitDepthExit !== undefined ? state.pitDepthExit : 2.0;
 
@@ -1387,8 +1378,8 @@ function triggerUpdate() {
   state.entryDepth = parseFloat(document.getElementById('inpEntryDepth').value) || 1.0;
   state.exitDepth = parseFloat(document.getElementById('inpExitDepth').value) || 1.0;
   state.radius = parseFloat(document.getElementById('inpRadius').value) || 60;
-  state.angleEntry = parseFloat(document.getElementById('inpAngleEntry').value) || 30;
-  state.angleExit = parseFloat(document.getElementById('inpAngleExit').value) || 30;
+  state.angleEntry = parseFloat(document.getElementById('inpAngleEntry').value) || 24;
+  state.angleExit = parseFloat(document.getElementById('inpAngleExit').value) || 24;
   state.pitDepthEntry = parseFloat(document.getElementById('inpPitDepthEntry').value) || 2.0;
   state.pitDepthExit = parseFloat(document.getElementById('inpPitDepthExit').value) || 2.0;
   state.terrain.sort((a,b) => a.x - b.x);
@@ -1586,8 +1577,8 @@ function getProfileHtml(s, isMultiPrint) {
   const L = s.length; const R = s.radius;
   let getZ = getTerrainInterpolator(s); 
   
-  let aEnt = s.angleEntry !== undefined ? s.angleEntry : 14;
-  let aEx = s.angleExit !== undefined ? s.angleExit : 14;
+  let aEnt = s.angleEntry !== undefined ? s.angleEntry : 24;
+  let aEx = s.angleExit !== undefined ? s.angleExit : 24;
   
   let zEnt = getZ(0) - s.entryDepth; let zEx = getZ(L) - s.exitDepth;
   let allZ = []; 
@@ -1972,8 +1963,8 @@ window.onload = () => {
           if (p.pitDepthEntry === undefined) p.pitDepthEntry = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.pitDepthExit === undefined) p.pitDepthExit = p.pitDepth !== undefined ? p.pitDepth : 2.0;
           if (p.radius === undefined) p.radius = 60; 
-          if (p.angleEntry === undefined) p.angleEntry = 30; 
-          if (p.angleExit === undefined) p.angleExit = 30; 
+          if (p.angleEntry === undefined) p.angleEntry = 24; 
+          if (p.angleExit === undefined) p.angleExit = 24; 
           if (!p.asphalts) p.asphalts = [];
           if (!p.gravels) p.gravels = []; 
           if (!p.trees) p.trees = []; 
