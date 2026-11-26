@@ -1825,21 +1825,7 @@ function getProfileHtml(s, isMultiPrint) {
     <text x="${toSvgX(L) + 25}" y="${toSvgY(zEx) + 4}" font-size="14" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
     <text x="${toSvgX(L) + 25}" y="${toSvgY(zEx) + 4}" font-size="14" fill="#cc00cc" font-weight="bold" text-anchor="start">Выход (Z: ${zEx.toFixed(2)}м)</text>
   `;
-
-  if (!s.isGNP) {
-      let geom = computeSlopedBore(s.depthHall, s.entryDepth, s.exitDepth, L, R, getZ, aEnt, aEx);
-      let midDist = geom.xStart > geom.xEnd ? (L * geom.L1 / (geom.L1 + geom.L2 || 1)) : (geom.xStart + (geom.xEnd - geom.xStart) / 2);
-      let horizX = toSvgX(midDist);
-      let midZ = geom.evalZ(midDist);
-      let horizY = toSvgY(midZ) + 24;
-      let degBeta = geom.beta * 180 / Math.PI;
-      let labelText = Math.abs(degBeta) < 0.05
-        ? `Горизонт (Z: ${s.depthHall.toFixed(2)}м)`
-        : `Ось прогона (Z: ${s.depthHall.toFixed(2)} → ${geom.zEndHall.toFixed(2)}м, уклон ${degBeta > 0 ? '+' : ''}${degBeta.toFixed(1)}°)`;
-      markup += `<text x="${horizX}" y="${horizY}" font-size="15" font-weight="bold" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" text-anchor="middle">${labelText}</text>`;
-      markup += `<text x="${horizX}" y="${horizY}" font-size="15" fill="#cc00cc" font-weight="bold" text-anchor="middle">${labelText}</text>`;
-  }
-
+  
   let linesMarkup = ''; let textsMarkup = '';
   let drawNets = s.nets.map((net, idx) => Object.assign({}, net, { _origIdx: idx })).sort((a, b) => a.dist - b.dist);
 
